@@ -23,6 +23,7 @@ interface CartContextType {
   total: number;
   itemCount: number;
   getCategoryCount: (categoryId: string) => number;
+  getItemQuantity: (subcategoryId: string) => number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -107,6 +108,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     [items]
   );
 
+  const getItemQuantity = useCallback(
+    (subcategoryId: string) => {
+      const item = items.find((i) => i.subcategory.id === subcategoryId);
+      return item ? item.quantity : 0;
+    },
+    [items]
+  );
+
   return (
     <CartContext.Provider
       value={{
@@ -120,6 +129,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         total,
         itemCount,
         getCategoryCount,
+        getItemQuantity,
       }}
     >
       {children}

@@ -36,8 +36,8 @@ export default function CategoryCard({ category, onPress }: Props) {
             {category.subcategories.length} items • From ₹
             {Math.min(...category.subcategories.map((s) => s.price))}
           </Text>
-          <Text className="text-xs text-blue-600 font-medium">
-            View Menu →
+          <Text className="text-xs text-green-600 font-medium">
+            Add to Cart →
           </Text>
         </View>
       </View>

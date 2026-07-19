@@ -3,7 +3,7 @@ import { Dimensions, Image, ScrollView, Text, View } from "react-native";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const BANNER_WIDTH = SCREEN_WIDTH - 32;
-const BANNER_HEIGHT = 220;
+const BANNER_HEIGHT = 300;
 
 const banners = [
   {
