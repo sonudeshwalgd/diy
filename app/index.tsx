@@ -9,6 +9,7 @@ import CartSheet from "../components/CartSheet";
 import OrderBottomSheet, { PHONE_NUMBER } from "../components/OrderBottomSheet";
 import BannerCarousel from "../components/BannerCarousel";
 import FloatingCartBar from "../components/FloatingCartBar";
+import WifiBottomSheet from "../components/WifiBottomSheet";
 import { useCart } from "../context/CartContext";
 
 function Footer() {
@@ -92,7 +93,10 @@ export default function HomeScreen() {
   const [subcatVisible, setSubcatVisible] = useState(false);
   const [cartVisible, setCartVisible] = useState(false);
   const [orderVisible, setOrderVisible] = useState(true);
+  const [wifiVisible, setWifiVisible] = useState(false);
   const { itemCount } = useCart();
+
+  const GOOGLE_REVIEW_URL = "https://share.google/eHWfYf3ncBuInmlEJ";
 
   useEffect(() => {
     const timer = setTimeout(() => setOrderVisible(true), 600);
@@ -151,6 +155,23 @@ export default function HomeScreen() {
             </Pressable>
           </View>
         </View>
+
+        <View className="flex-row items-center gap-2 mt-3">
+          <Pressable
+            onPress={() => Linking.openURL(GOOGLE_REVIEW_URL)}
+            className="flex-1 flex-row items-center justify-center gap-2 bg-amber-50 border border-amber-200 rounded-xl py-2.5"
+          >
+            <Ionicons name="star" size={18} color="#F59E0B" />
+            <Text className="text-amber-700 text-sm font-semibold">Rate us on Google</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setWifiVisible(true)}
+            className="flex-1 flex-row items-center justify-center gap-2 bg-blue-50 border border-blue-200 rounded-xl py-2.5"
+          >
+            <Ionicons name="wifi" size={18} color="#2563EB" />
+            <Text className="text-blue-700 text-sm font-semibold">Wi-Fi Password</Text>
+          </Pressable>
+        </View>
       </View>
 
       {/* Scrollable content: banner + categories + footer */}
@@ -192,6 +213,11 @@ export default function HomeScreen() {
       <OrderBottomSheet
         visible={orderVisible}
         onClose={() => setOrderVisible(false)}
+      />
+
+      <WifiBottomSheet
+        visible={wifiVisible}
+        onClose={() => setWifiVisible(false)}
       />
     </SafeAreaView>
   );
