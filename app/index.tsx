@@ -10,6 +10,7 @@ import OrderBottomSheet, { PHONE_NUMBER } from "../components/OrderBottomSheet";
 import BannerCarousel from "../components/BannerCarousel";
 import FloatingCartBar from "../components/FloatingCartBar";
 import WifiBottomSheet from "../components/WifiBottomSheet";
+import OrderHistoryModal from "../components/OrderHistoryModal";
 import { useCart } from "../context/CartContext";
 
 function Footer() {
@@ -94,6 +95,7 @@ export default function HomeScreen() {
   const [cartVisible, setCartVisible] = useState(false);
   const [orderVisible, setOrderVisible] = useState(true);
   const [wifiVisible, setWifiVisible] = useState(false);
+  const [historyVisible, setHistoryVisible] = useState(false);
   const { itemCount } = useCart();
 
   const GOOGLE_REVIEW_URL = "https://share.google/eHWfYf3ncBuInmlEJ";
@@ -158,12 +160,21 @@ export default function HomeScreen() {
 
         <View className="flex-row items-center gap-2 mt-3">
           <Pressable
+            onPress={() => setHistoryVisible(true)}
+            className="flex-1 flex-row items-center justify-center gap-2 bg-purple-50 border border-purple-200 rounded-xl py-2.5"
+          >
+            <Ionicons name="receipt-outline" size={18} color="#7C3AED" />
+            <Text className="text-purple-700 text-sm font-semibold">Order History</Text>
+          </Pressable>
+          <Pressable
             onPress={() => Linking.openURL(GOOGLE_REVIEW_URL)}
             className="flex-1 flex-row items-center justify-center gap-2 bg-amber-50 border border-amber-200 rounded-xl py-2.5"
           >
             <Ionicons name="star" size={18} color="#F59E0B" />
             <Text className="text-amber-700 text-sm font-semibold">Rate us on Google</Text>
           </Pressable>
+        </View>
+        <View className="flex-row items-center gap-2 mt-2">
           <Pressable
             onPress={() => setWifiVisible(true)}
             className="flex-1 flex-row items-center justify-center gap-2 bg-blue-50 border border-blue-200 rounded-xl py-2.5"
@@ -178,6 +189,8 @@ export default function HomeScreen() {
       <FlatList
         data={categories}
         keyExtractor={(item) => item.id}
+        numColumns={2}
+        columnWrapperStyle={{ paddingHorizontal: 4 }}
         ListHeaderComponent={
           <View>
             <BannerCarousel />
@@ -218,6 +231,11 @@ export default function HomeScreen() {
       <WifiBottomSheet
         visible={wifiVisible}
         onClose={() => setWifiVisible(false)}
+      />
+
+      <OrderHistoryModal
+        visible={historyVisible}
+        onClose={() => setHistoryVisible(false)}
       />
     </SafeAreaView>
   );
