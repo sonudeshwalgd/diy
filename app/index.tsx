@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { FlatList, Linking, Pressable, Text, View } from "react-native";
+import { Link } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { categories, type Category } from "../data/products";
@@ -84,6 +85,11 @@ function Footer() {
             </Text>
           </View>
         </View>
+        <Link href="/privacy" asChild>
+          <Text className="text-gray-400 text-xs mt-4 underline">
+            Privacy Policy
+          </Text>
+        </Link>
       </View>
     </View>
   );
