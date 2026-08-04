@@ -1,11 +1,22 @@
 import { useCallback, useEffect, useState } from "react";
-import { FlatList, Linking, Pressable, Text, View } from "react-native";
+import {
+  FlatList,
+  Linking,
+  Pressable,
+  Text,
+  View,
+} from "react-native";
 import { Link } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { categories, type Category } from "../data/products";
+import { categories, combos, iceCreams, type Category, type Combo, type IceCreamItem } from "../data/products";
 import CategoryCard from "../components/CategoryCard";
 import SubcategorySheet from "../components/SubcategorySheet";
+import ComboCard from "../components/ComboCard";
+import ComboSheet from "../components/ComboSheet";
+import IceCreamCard from "../components/IceCreamCard";
+import IceCreamSheet from "../components/IceCreamSheet";
+import FeedbackSheet from "../components/FeedbackSheet";
 import CartSheet from "../components/CartSheet";
 import OrderBottomSheet, { PHONE_NUMBER } from "../components/OrderBottomSheet";
 import BannerCarousel from "../components/BannerCarousel";
@@ -98,10 +109,15 @@ function Footer() {
 export default function HomeScreen() {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [subcatVisible, setSubcatVisible] = useState(false);
+  const [selectedCombo, setSelectedCombo] = useState<Combo | null>(null);
+  const [comboVisible, setComboVisible] = useState(false);
+  const [selectedIceCream, setSelectedIceCream] = useState<IceCreamItem | null>(null);
+  const [iceCreamVisible, setIceCreamVisible] = useState(false);
   const [cartVisible, setCartVisible] = useState(false);
   const [orderVisible, setOrderVisible] = useState(true);
   const [wifiVisible, setWifiVisible] = useState(false);
   const [historyVisible, setHistoryVisible] = useState(false);
+  const [feedbackVisible, setFeedbackVisible] = useState(false);
   const { itemCount } = useCart();
 
   const GOOGLE_REVIEW_URL = "https://share.google/eHWfYf3ncBuInmlEJ";
@@ -114,6 +130,16 @@ export default function HomeScreen() {
   const handleCategoryPress = useCallback((category: Category) => {
     setSelectedCategory(category);
     setSubcatVisible(true);
+  }, []);
+
+  const handleComboPress = useCallback((combo: Combo) => {
+    setSelectedCombo(combo);
+    setComboVisible(true);
+  }, []);
+
+  const handleIceCreamPress = useCallback((iceCream: IceCreamItem) => {
+    setSelectedIceCream(iceCream);
+    setIceCreamVisible(true);
   }, []);
 
   const handleCall = () => {
@@ -188,6 +214,13 @@ export default function HomeScreen() {
             <Ionicons name="wifi" size={18} color="#2563EB" />
             <Text className="text-blue-700 text-sm font-semibold">Wi-Fi Password</Text>
           </Pressable>
+          <Pressable
+            onPress={() => setFeedbackVisible(true)}
+            className="flex-1 flex-row items-center justify-center gap-2 bg-indigo-50 border border-indigo-200 rounded-xl py-2.5"
+          >
+            <Ionicons name="chatbubble-ellipses-outline" size={18} color="#4F46E5" />
+            <Text className="text-indigo-700 text-sm font-semibold">Feedback</Text>
+          </Pressable>
         </View>
       </View>
 
@@ -199,14 +232,60 @@ export default function HomeScreen() {
         columnWrapperStyle={{ paddingHorizontal: 4 }}
         ListHeaderComponent={
           <View>
-            <BannerCarousel />
+            <BannerCarousel onComboPress={handleComboPress} />
+            {iceCreams.length > 0 && (
+              <View className="mt-5">
+                <View className="px-4 mb-2">
+                  <Text className="text-lg font-bold text-gray-900">
+                    Ice Cream
+                  </Text>
+                  <Text className="text-sm text-gray-500">
+                    Choose your favourite flavours
+                  </Text>
+                </View>
+                <View className="flex-row flex-wrap justify-between px-3">
+                  {iceCreams.map((iceCream) => (
+                    <IceCreamCard
+                      key={iceCream.id}
+                      iceCream={iceCream}
+                      onPress={handleIceCreamPress}
+                    />
+                  ))}
+                </View>
+              </View>
+            )}
             <View className="px-4 mt-5 mb-2">
               <Text className="text-lg font-bold text-gray-900">Our Menu</Text>
               <Text className="text-sm text-gray-500">Tap to add items to cart</Text>
             </View>
           </View>
         }
-        ListFooterComponent={<Footer />}
+        ListFooterComponent={
+          <View>
+            {combos.length > 0 && (
+              <View className="mt-5">
+                <View className="px-4 mb-2">
+                  <Text className="text-lg font-bold text-gray-900">
+                    Combos & Meals
+                  </Text>
+                  <Text className="text-sm text-gray-500">
+                    Save more with our combos
+                  </Text>
+                </View>
+                <View className="flex-row flex-wrap justify-between px-3">
+                  {combos.map((combo) => (
+                    <ComboCard
+                      key={combo.id}
+                      combo={combo}
+                      onPress={handleComboPress}
+                    />
+                  ))}
+                </View>
+              </View>
+            )}
+            <Footer />
+          </View>
+        }
         renderItem={({ item }) => (
           <CategoryCard category={item} onPress={handleCategoryPress} />
         )}
@@ -227,6 +306,24 @@ export default function HomeScreen() {
         }}
       />
 
+      <ComboSheet
+        visible={comboVisible}
+        combo={selectedCombo}
+        onClose={() => {
+          setComboVisible(false);
+          setSelectedCombo(null);
+        }}
+      />
+
+      <IceCreamSheet
+        visible={iceCreamVisible}
+        iceCream={selectedIceCream}
+        onClose={() => {
+          setIceCreamVisible(false);
+          setSelectedIceCream(null);
+        }}
+      />
+
       <CartSheet visible={cartVisible} onClose={() => setCartVisible(false)} />
 
       <OrderBottomSheet
@@ -237,6 +334,11 @@ export default function HomeScreen() {
       <WifiBottomSheet
         visible={wifiVisible}
         onClose={() => setWifiVisible(false)}
+      />
+
+      <FeedbackSheet
+        visible={feedbackVisible}
+        onClose={() => setFeedbackVisible(false)}
       />
 
       <OrderHistoryModal

@@ -1,9 +1,6 @@
 import {
   ActivityIndicator,
   FlatList,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
   Pressable,
   Text,
   TextInput,
@@ -14,8 +11,11 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   getOrderHistory,
+  type OrderHistoryOrder,
   type OrderHistoryResponse,
 } from "../services/api";
+import Sheet from "./Sheet";
+import FeedbackSheet from "./FeedbackSheet";
 
 interface Props {
   visible: boolean;
@@ -30,6 +30,7 @@ export default function OrderHistoryModal({ visible, onClose }: Props) {
   const [data, setData] = useState<OrderHistoryResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [feedbackOrder, setFeedbackOrder] = useState<OrderHistoryOrder | null>(null);
 
   useEffect(() => {
     if (visible) {
@@ -71,6 +72,18 @@ export default function OrderHistoryModal({ visible, onClose }: Props) {
     await fetchHistory(cleaned);
   };
 
+  const handleFeedbackSubmitted = () => {
+    setData((prev) => {
+      if (!prev || !feedbackOrder) return prev;
+      return {
+        ...prev,
+        orders: prev.orders.map((o) =>
+          o._id === feedbackOrder._id ? { ...o, feedbackGiven: true } : o
+        ),
+      };
+    });
+  };
+
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
     return d.toLocaleDateString("en-IN", {
@@ -83,14 +96,15 @@ export default function OrderHistoryModal({ visible, onClose }: Props) {
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        className="flex-1"
-      >
-        <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-gray-50 rounded-t-3xl" style={{ maxHeight: "90%" }}>
-            <View className="px-5 pt-5 pb-3 flex-row items-center justify-between">
+    <>
+    <Sheet
+      visible={visible}
+      onClose={onClose}
+      keyboardAvoiding
+      sheetClassName="bg-gray-50 rounded-t-3xl"
+      sheetStyle={{ maxHeight: "90%" }}
+    >
+      <View className="px-5 pt-5 pb-3 flex-row items-center justify-between">
               <View>
                 <Text className="text-xl font-bold text-gray-900">Order History</Text>
                 <Text className="text-sm text-gray-500 mt-0.5">
@@ -253,15 +267,50 @@ export default function OrderHistoryModal({ visible, onClose }: Props) {
                         </Text>
                       </View>
                     </View>
+
+                    <Pressable
+                      onPress={() => setFeedbackOrder(item)}
+                      disabled={!!item.feedbackGiven}
+                      className={`mt-3 rounded-lg py-2.5 items-center flex-row justify-center gap-1.5 ${
+                        item.feedbackGiven
+                          ? "bg-green-50"
+                          : "bg-blue-600 active:bg-blue-700"
+                      }`}
+                    >
+                      <Ionicons
+                        name={
+                          item.feedbackGiven
+                            ? "checkmark"
+                            : "chatbubble-ellipses-outline"
+                        }
+                        size={16}
+                        color={item.feedbackGiven ? "#16A34A" : "#FFFFFF"}
+                      />
+                      <Text
+                        className={`text-sm font-semibold ${
+                          item.feedbackGiven
+                            ? "text-green-700"
+                            : "text-white"
+                        }`}
+                      >
+                        {item.feedbackGiven ? "Feedback Given" : "Give Feedback"}
+                      </Text>
+                    </Pressable>
                   </View>
                 )}
                 contentContainerStyle={{ paddingBottom: 40 }}
                 showsVerticalScrollIndicator={false}
               />
             )}
-          </View>
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
+    </Sheet>
+
+      <FeedbackSheet
+        visible={!!feedbackOrder}
+        order={feedbackOrder}
+        mobile={savedMobile || undefined}
+        onClose={() => setFeedbackOrder(null)}
+        onSubmitted={handleFeedbackSubmitted}
+      />
+    </>
   );
 }

@@ -6,6 +6,8 @@ interface Props {
   size?: number;
 }
 
+
+
 export default function QRCodeGenerator({ value, size = 200 }: Props) {
   return (
     <View style={{ alignItems: "center", justifyContent: "center" }}>

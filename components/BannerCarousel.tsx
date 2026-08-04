@@ -1,56 +1,40 @@
 import { useEffect, useRef, useState } from "react";
-import { Dimensions, Image, ScrollView, Text, View } from "react-native";
+import {
+  Dimensions,
+  Image,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
+import { combos, type Combo } from "../data/products";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const BANNER_WIDTH = SCREEN_WIDTH - 32;
 const BANNER_HEIGHT = 300;
 
-const banners = [
-  {
-    id: "1",
-    title: "Combo Deal!",
-    subtitle: "Burger + Fries + Coke at ₹249 only",
-    color: "#DC2626",
-    image: "https://loremflickr.com/800/400/burger,deal",
-  },
-  {
-    id: "2",
-    title: "Flat 20% Off",
-    subtitle: "On all Beverages this weekend",
-    color: "#2563EB",
-    image: "https://loremflickr.com/800/400/cocktail,drink",
-  },
-  {
-    id: "3",
-    title: "Buy 1 Get 1 Free",
-    subtitle: "On all Momos — Limited time only!",
-    color: "#7C3AED",
-    image: "https://loremflickr.com/800/400/momos,food",
-  },
-  {
-    id: "4",
-    title: "Pizza Party!",
-    subtitle: "Order 2 large pizzas, get garlic bread free",
-    color: "#EA580C",
-    image: "https://loremflickr.com/800/400/pizza,party",
-  },
-  {
-    id: "5",
-    title: "Free Delivery",
-    subtitle: "On orders above ₹500 — No minimum charge",
-    color: "#16A34A",
-    image: "https://loremflickr.com/800/400/delivery,food",
-  },
+const BANNER_COLORS = [
+  "#DC2626",
+  "#2563EB",
+  "#7C3AED",
+  "#EA580C",
+  "#16A34A",
+  "#DB2777",
+  "#0891B2",
 ];
 
-export default function BannerCarousel() {
+interface Props {
+  onComboPress?: (combo: Combo) => void;
+}
+
+export default function BannerCarousel({ onComboPress }: Props) {
   const scrollRef = useRef<ScrollView>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setActiveIndex((prev) => {
-        const next = (prev + 1) % banners.length;
+        const next = (prev + 1) % combos.length;
         scrollRef.current?.scrollTo({
           x: next * (BANNER_WIDTH + 12),
           animated: true,
@@ -64,7 +48,7 @@ export default function BannerCarousel() {
   const onScroll = (e: any) => {
     const offsetX = e.nativeEvent.contentOffset.x;
     const idx = Math.round(offsetX / (BANNER_WIDTH + 12));
-    if (idx >= 0 && idx < banners.length) {
+    if (idx >= 0 && idx < combos.length) {
       setActiveIndex(idx);
     }
   };
@@ -82,9 +66,10 @@ export default function BannerCarousel() {
         scrollEventThrottle={16}
         contentContainerStyle={{ paddingHorizontal: 16 }}
       >
-        {banners.map((banner) => (
-          <View
-            key={banner.id}
+        {combos.map((combo, index) => (
+          <Pressable
+            key={combo.id}
+            onPress={() => onComboPress?.(combo)}
             style={{
               width: BANNER_WIDTH,
               height: BANNER_HEIGHT,
@@ -94,7 +79,7 @@ export default function BannerCarousel() {
             }}
           >
             <Image
-              source={{ uri: banner.image }}
+              source={{ uri: combo.image }}
               style={{ width: BANNER_WIDTH, height: BANNER_HEIGHT }}
               resizeMode="cover"
             />
@@ -105,23 +90,24 @@ export default function BannerCarousel() {
                 left: 0,
                 right: 0,
                 padding: 16,
-                backgroundColor: banner.color + "CC",
+                backgroundColor: BANNER_COLORS[index % BANNER_COLORS.length] + "CC",
               }}
             >
               <Text style={{ color: "white", fontSize: 20, fontWeight: "bold" }}>
-                {banner.title}
+                {combo.name}
               </Text>
               <Text style={{ color: "white", fontSize: 14, marginTop: 4, opacity: 0.9 }}>
-                {banner.subtitle}
+                {combo.description} · {combo.subItems.length} items · ₹
+                {combo.totalPrice}
               </Text>
             </View>
-          </View>
+          </Pressable>
         ))}
       </ScrollView>
 
       {/* Dots */}
       <View style={{ flexDirection: "row", justifyContent: "center", marginTop: 12, gap: 6 }}>
-        {banners.map((_, i) => (
+        {combos.map((_, i) => (
           <View
             key={i}
             style={{

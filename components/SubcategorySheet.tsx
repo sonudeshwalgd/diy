@@ -1,6 +1,5 @@
 import {
   Image,
-  Modal,
   Pressable,
   ScrollView,
   Text,
@@ -9,6 +8,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import type { Category } from "../data/products";
 import { useCart } from "../context/CartContext";
+import Sheet from "./Sheet";
 
 interface Props {
   visible: boolean;
@@ -22,10 +22,13 @@ export default function SubcategorySheet({ visible, category, onClose }: Props) 
   if (!category) return null;
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View className="flex-1 justify-end bg-black/50">
-        <View className="bg-gray-50 rounded-t-3xl" style={{ maxHeight: "80%" }}>
-          {/* Header */}
+    <Sheet
+      visible={visible}
+      onClose={onClose}
+      sheetClassName="bg-gray-50 rounded-t-3xl"
+      sheetStyle={{ maxHeight: "80%" }}
+    >
+      {/* Header */}
           <View className="px-5 pt-5 pb-3 flex-row items-center justify-between">
             <View className="flex-row items-center gap-3">
               <Image
@@ -104,8 +107,6 @@ export default function SubcategorySheet({ visible, category, onClose }: Props) 
               );
             })}
           </ScrollView>
-        </View>
-      </View>
-    </Modal>
+    </Sheet>
   );
 }

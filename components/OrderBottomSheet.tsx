@@ -1,11 +1,11 @@
 import {
   Linking,
-  Modal,
   Pressable,
   Text,
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import Sheet from "./Sheet";
 
 export const PHONE_NUMBER = "918445231980";
 const WHATSAPP_MESSAGE = "Hi, I'd like to place an order.";
@@ -26,10 +26,12 @@ export default function OrderBottomSheet({ visible, onClose }: Props) {
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View className="flex-1 justify-end bg-black/50">
-        <View className="bg-white rounded-t-3xl px-6 pt-6 pb-10 items-center">
-          <View className="w-10 h-1 bg-gray-300 rounded-full mb-5" />
+    <Sheet
+      visible={visible}
+      onClose={onClose}
+      sheetClassName="bg-white rounded-t-3xl px-6 pt-6 pb-10 items-center"
+    >
+      <View className="w-10 h-1 bg-gray-300 rounded-full mb-5" />
 
           <Text className="text-lg font-semibold text-gray-900 text-center">
             To place an order, please call on this number
@@ -60,8 +62,6 @@ export default function OrderBottomSheet({ visible, onClose }: Props) {
           <Pressable onPress={onClose} className="mt-6">
             <Text className="text-gray-400 text-sm">Close</Text>
           </Pressable>
-        </View>
-      </View>
-    </Modal>
+    </Sheet>
   );
 }

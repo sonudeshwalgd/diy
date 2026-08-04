@@ -39,25 +39,48 @@ export interface CustomerInfo {
   lifetimeSpent: number;
 }
 
+export interface OrderHistoryOrder {
+  _id: string;
+  items: BackendOrderItem[];
+  totalAmount: number;
+  discountApplied: number;
+  coinsUsed: number;
+  coinsEarned: number;
+  finalAmount: number;
+  orderStatus: string;
+  createdAt: string;
+  feedbackGiven?: boolean;
+}
+
 export interface OrderHistoryResponse {
   customer: CustomerInfo;
-  orders: {
-    _id: string;
-    items: BackendOrderItem[];
-    totalAmount: number;
-    discountApplied: number;
-    coinsUsed: number;
-    coinsEarned: number;
-    finalAmount: number;
-    orderStatus: string;
-    createdAt: string;
-  }[];
+  orders: OrderHistoryOrder[];
 }
 
 export interface RedeemResponse {
   usableDiscount: number;
   coinsUsed: number;
   availableCoins: number;
+}
+
+export interface FeedbackPayload {
+  orderId?: string;
+  customerMobile?: string;
+  rating: number;
+  message?: string;
+  anonymous?: boolean;
+}
+
+export interface FeedbackResponse {
+  feedback: {
+    _id: string;
+    orderId?: string;
+    customerMobile?: string;
+    rating: number;
+    message: string;
+    anonymous: boolean;
+    createdAt: string;
+  };
 }
 
 export const placeOrder = async (payload: PlaceOrderPayload): Promise<PlaceOrderResponse> => {
@@ -104,6 +127,21 @@ export const redeemCoinsAPI = async (
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.error || "Failed to redeem coins");
+  }
+  return res.json();
+};
+
+export const submitFeedback = async (
+  payload: FeedbackPayload
+): Promise<FeedbackResponse> => {
+  const res = await fetch(`${API_BASE}/feedback`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to submit feedback");
   }
   return res.json();
 };

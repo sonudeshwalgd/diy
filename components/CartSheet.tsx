@@ -2,10 +2,7 @@ import {
   Alert,
   FlatList,
   Image,
-  KeyboardAvoidingView,
   Linking,
-  Modal,
-  Platform,
   Pressable,
   Text,
   TextInput,
@@ -21,6 +18,7 @@ import {
   placeOrder,
   type CustomerInfo,
 } from "../services/api";
+import Sheet from "./Sheet";
 
 interface CartSheetProps {
   visible: boolean;
@@ -186,14 +184,14 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
   );
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        className="flex-1"
-      >
-        <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-gray-50 rounded-t-3xl" style={{ maxHeight: "85%" }}>
-            <View className="px-5 pt-5 pb-3 flex-row items-center justify-between">
+    <Sheet
+      visible={visible}
+      onClose={onClose}
+      keyboardAvoiding
+      sheetClassName="bg-gray-50 rounded-t-3xl"
+      sheetStyle={{ maxHeight: "85%" }}
+    >
+      <View className="px-5 pt-5 pb-3 flex-row items-center justify-between">
               <View>
                 <Text className="text-xl font-bold text-gray-900">Your Cart</Text>
                 <Text className="text-sm text-gray-500 mt-0.5">
@@ -444,9 +442,6 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
                 </View>
               </>
             )}
-          </View>
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
+    </Sheet>
   );
 }

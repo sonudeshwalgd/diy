@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Clipboard, Modal, Pressable, Text, View } from "react-native";
+import { Clipboard, Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import QRCodeGenerator from "../utils/QRCodeGenerator";
+import Sheet from "./Sheet";
 
 const WIFI_SSID = "DIY_Shop";
 const WIFI_PASSWORD = "Nitio@123";
@@ -22,10 +23,12 @@ export default function WifiBottomSheet({ visible, onClose }: Props) {
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View className="flex-1 justify-end bg-black/50">
-        <View className="bg-white rounded-t-3xl px-6 pt-6 pb-10 items-center">
-          <View className="w-10 h-1 bg-gray-300 rounded-full mb-5" />
+    <Sheet
+      visible={visible}
+      onClose={onClose}
+      sheetClassName="bg-white rounded-t-3xl px-6 pt-6 pb-10 items-center"
+    >
+      <View className="w-10 h-1 bg-gray-300 rounded-full mb-5" />
 
           <View className="bg-blue-50 rounded-full p-3 mb-4">
             <Ionicons name="wifi" size={28} color="#2563EB" />
@@ -68,8 +71,6 @@ export default function WifiBottomSheet({ visible, onClose }: Props) {
           <Pressable onPress={onClose} className="mt-6">
             <Text className="text-gray-400 text-sm">Close</Text>
           </Pressable>
-        </View>
-      </View>
-    </Modal>
+    </Sheet>
   );
 }
