@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import Sheet from "./Sheet";
 import {
   submitFeedback,
+  FEEDBACK_POINTS,
   type OrderHistoryOrder,
 } from "../services/api";
 
@@ -187,6 +188,9 @@ export default function FeedbackSheet({
           <Text className="text-lg font-bold text-gray-900 mt-4">Thank you!</Text>
           <Text className="text-sm text-gray-500 mt-1 text-center">
             Your feedback has been submitted.
+            {!isAnonymous && FEEDBACK_POINTS > 0
+              ? ` You earned ${FEEDBACK_POINTS} coins 🪙`
+              : ""}
           </Text>
           <Pressable
             onPress={onClose}

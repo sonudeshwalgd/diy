@@ -16,6 +16,7 @@ import { PHONE_NUMBER } from "./OrderBottomSheet";
 import {
   getCustomer,
   placeOrder,
+  COIN_EARN_RATE,
   type CustomerInfo,
 } from "../services/api";
 import Sheet from "./Sheet";
@@ -85,7 +86,7 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
 
   const coinsDiscount = coinsToUse;
   const finalTotal = Math.max(0, total - coinsDiscount);
-  const coinsEarned = Math.floor(finalTotal * 0.05);
+  const coinsEarned = Math.floor(finalTotal * (COIN_EARN_RATE / 100));
 
   const buildWhatsAppMessage = () => {
     let msg = "🛒 *New Order*\n\n";
@@ -371,7 +372,7 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
                       )}
                       {customer.totalCoins === 0 && (
                         <Text className="text-xs text-amber-600">
-                          Place orders to earn coins (5% back)
+                          Place orders to earn coins ({COIN_EARN_RATE}% back)
                         </Text>
                       )}
                     </View>
@@ -404,7 +405,7 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
                     <View className="flex-row justify-between items-center mb-1">
                       <Text className="text-xs text-gray-400">You'll earn</Text>
                       <Text className="text-xs text-green-600 font-medium">
-                        🪙 {Math.floor(total * 0.05)} coins
+                        🪙 {Math.floor(total * (COIN_EARN_RATE / 100))} coins
                       </Text>
                     </View>
                   )}

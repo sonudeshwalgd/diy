@@ -25,6 +25,9 @@ import WifiBottomSheet from "../components/WifiBottomSheet";
 import OrderHistoryModal from "../components/OrderHistoryModal";
 import { useCart } from "../context/CartContext";
 
+const OUTLET_MAPS_URL =
+  "https://www.google.com/maps/place/DIY+Drinks/data=!4m2!3m1!1s0x0:0xb1c683b845157dec?sa=X&ved=1t:2428&ictx=111";
+
 function Footer() {
   return (
     <View className="bg-gray-900 mt-4 px-5 pt-8 pb-10">
@@ -87,7 +90,10 @@ function Footer() {
 
       {/* Address */}
       <View className="border-t border-gray-700 pt-5">
-        <View className="flex-row items-start gap-2">
+        <Pressable
+          onPress={() => Linking.openURL(OUTLET_MAPS_URL)}
+          className="flex-row items-start gap-2"
+        >
           <Ionicons name="location-outline" size={18} color="#9CA3AF" />
           <View className="flex-1">
             <Text className="text-gray-300 text-sm font-medium">Visit us</Text>
@@ -95,7 +101,14 @@ function Footer() {
               Lane Number 9A, Post Office Road,{"\n"}Graphic Era, Near Gate Number 2
             </Text>
           </View>
-        </View>
+        </Pressable>
+        <Pressable
+          onPress={() => Linking.openURL(OUTLET_MAPS_URL)}
+        >
+          <Text className="text-blue-400 text-xs mt-2 underline">
+            Open in Google Maps
+          </Text>
+        </Pressable>
         <Link href="/privacy" asChild>
           <Text className="text-gray-400 text-xs mt-4 underline">
             Privacy Policy
@@ -119,8 +132,6 @@ export default function HomeScreen() {
   const [historyVisible, setHistoryVisible] = useState(false);
   const [feedbackVisible, setFeedbackVisible] = useState(false);
   const { itemCount } = useCart();
-
-  const GOOGLE_REVIEW_URL = "https://share.google/eHWfYf3ncBuInmlEJ";
 
   useEffect(() => {
     const timer = setTimeout(() => setOrderVisible(true), 600);
@@ -199,7 +210,7 @@ export default function HomeScreen() {
             <Text className="text-purple-700 text-sm font-semibold">Order History</Text>
           </Pressable>
           <Pressable
-            onPress={() => Linking.openURL(GOOGLE_REVIEW_URL)}
+            onPress={() => Linking.openURL(OUTLET_MAPS_URL)}
             className="flex-1 flex-row items-center justify-center gap-2 bg-amber-50 border border-amber-200 rounded-xl py-2.5"
           >
             <Ionicons name="star" size={18} color="#F59E0B" />

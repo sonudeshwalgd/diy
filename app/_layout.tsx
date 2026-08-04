@@ -14,6 +14,7 @@ export default function RootLayout() {
           <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="about" options={{ title: "About" }} />
           <Stack.Screen name="privacy" options={{ title: "Privacy Policy" }} />
+          <Stack.Screen name="feedback" options={{ title: "Feedback", headerShown: false }} />
         </Stack>
       </CartProvider>
     </GestureHandlerRootView>

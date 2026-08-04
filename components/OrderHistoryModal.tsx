@@ -268,6 +268,43 @@ export default function OrderHistoryModal({ visible, onClose }: Props) {
                       </View>
                     </View>
 
+                    {item.feedback ? (
+                      <View className="mt-3 bg-amber-50 border border-amber-100 rounded-lg p-3">
+                        <View className="flex-row items-center justify-between mb-1">
+                          <View className="flex-row gap-0.5">
+                            {[1, 2, 3, 4, 5].map((n) => (
+                              <Ionicons
+                                key={n}
+                                name={
+                                  n <= item.feedback!.rating
+                                    ? "star"
+                                    : "star-outline"
+                                }
+                                size={14}
+                                color={
+                                  n <= item.feedback!.rating
+                                    ? "#F59E0B"
+                                    : "#D1D5DB"
+                                }
+                              />
+                            ))}
+                          </View>
+                          <Text className="text-amber-700 text-[10px] font-semibold">
+                            Your Feedback
+                          </Text>
+                        </View>
+                        {item.feedback.message ? (
+                          <Text className="text-sm text-gray-700 leading-5">
+                            {item.feedback.message}
+                          </Text>
+                        ) : (
+                          <Text className="text-xs text-gray-400 italic">
+                            No message
+                          </Text>
+                        )}
+                      </View>
+                    ) : null}
+
                     <Pressable
                       onPress={() => setFeedbackOrder(item)}
                       disabled={!!item.feedbackGiven}
