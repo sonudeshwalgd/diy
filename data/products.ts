@@ -895,20 +895,20 @@ export const combos: Combo[] = [
       currency: "INR",
     },
   },
-  {
-    id: "custom-combo",
-    name: "Custom Combo",
-    description: "Choose eligible items to build your own combo",
-    image: require("../assets/DIY_Drinks_All_Item_Images/combos/full-meal.webp"),
-    items: [],
-    selectionGroups: [],
-    pricing: {
-      type: "sum-of-selected-items",
-      basePrice: 0,
-      currency: "INR",
-    },
-    discountRuleId: "custom-combo-discount",
-  },
+  // {
+  //   id: "custom-combo",
+  //   name: "Custom Combo",
+  //   description: "Choose eligible items to build your own combo",
+  //   image: require("../assets/DIY_Drinks_All_Item_Images/combos/full-meal.webp"),
+  //   items: [],
+  //   selectionGroups: [],
+  //   pricing: {
+  //     type: "sum-of-selected-items",
+  //     basePrice: 0,
+  //     currency: "INR",
+  //   },
+  //   discountRuleId: "custom-combo-discount",
+  // },
 ];
 
 export const customComboRule: CustomComboRule = {
