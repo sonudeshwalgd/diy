@@ -18,7 +18,7 @@ export default function CategoryCard({ category, onPress, index = 0 }: Props) {
   return (
     <Animated.View
       entering={FadeInDown.duration(450).delay(80 + (index % 4) * 70)}
-      className="flex-1 mx-1"
+      style={{ width: "48%" }}
     >
       <Pressable
         onPress={() => onPress(category)}

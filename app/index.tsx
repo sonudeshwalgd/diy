@@ -446,7 +446,10 @@ export default function HomeScreen() {
         data={categories}
         keyExtractor={(item) => item.id}
         numColumns={2}
-        columnWrapperStyle={{ paddingHorizontal: 4 }}
+        columnWrapperStyle={{
+          paddingHorizontal: 16,
+          justifyContent: "space-between",
+        }}
         ListHeaderComponent={
           <View>
             {/* Combos first — top of everything */}
