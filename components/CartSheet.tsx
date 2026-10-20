@@ -40,6 +40,7 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
   const [coinsToUse, setCoinsToUse] = useState(0);
   const [placing, setPlacing] = useState(false);
   const [showMobileInput, setShowMobileInput] = useState(false);
+  const [loyaltyAvailable, setLoyaltyAvailable] = useState(true);
 
   useEffect(() => {
     if (visible) {
@@ -61,9 +62,12 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
     try {
       const data = await getCustomer(m);
       setCustomer(data);
+      setLoyaltyAvailable(true);
       setCoinsToUse(0);
     } catch {
       setCustomer(null);
+      setLoyaltyAvailable(false);
+      setCoinsToUse(0);
     } finally {
       setLoadingCustomer(false);
     }
@@ -150,7 +154,11 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
     try {
       await placeOrder(orderPayload);
     } catch {
-      // Order was already sent on WhatsApp; ignore loyalty backend failures.
+      // Loyalty backend is broken: hide all coin UI on the final step so we
+      // never show coins used/earned that were not actually recorded.
+      setLoyaltyAvailable(false);
+      setCoinsToUse(0);
+      setCustomer(null);
     }
   };
 
@@ -240,7 +248,7 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
 
                 <View className="bg-white/85 rounded-t-3xl px-5 pt-4 pb-8 border-t border-white/60">
                   {/* Use Coins Button / Verified */}
-                  {savedMobile && customer ? (
+                  {loyaltyAvailable && savedMobile && customer ? (
                     <View className="mb-4 bg-amber-50 rounded-xl px-4 py-3 border border-amber-200">
                       <View className="flex-row items-center justify-between mb-1">
                         <View className="flex-row items-center gap-2">
@@ -270,7 +278,7 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
                         </Text>
                       </View>
                     </View>
-                  ) : !showMobileInput ? (
+                  ) : loyaltyAvailable && !showMobileInput ? (
                     <Pressable
                       onPress={() => setShowMobileInput(true)}
                       className="mb-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl px-4 py-3.5 border border-amber-200 flex-row items-center justify-between"
@@ -293,7 +301,7 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
                   ) : null}
 
                   {/* Mobile Input (shown when tapping Use Coins) */}
-                  {showMobileInput && !savedMobile && (
+                  {loyaltyAvailable && showMobileInput && !savedMobile && (
                     <View className="mb-4">
                       <View className="flex-row items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
                         <Text className="text-gray-400 text-lg">+91</Text>
@@ -329,7 +337,7 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
                   )}
 
                   {/* Coins Section */}
-                  {customer && (
+                  {loyaltyAvailable && customer && (
                     <View className="mb-4 bg-amber-50 rounded-lg px-3 py-3 border border-amber-200">
                       <View className="flex-row items-center justify-between mb-2">
                         <Text className="text-sm font-sans-semibold text-amber-800">

@@ -358,7 +358,7 @@ export default function HomeScreen() {
         className="absolute top-0 left-0 right-0 z-10 border-b border-white/60"
       >
         <SafeAreaView edges={["top"]} className="bg-white/50">
-          <View className="px-4 py-3">
+          <View className="px-4 pt-3 pb-2">
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center gap-3">
                 <View className="bg-orange-600 rounded-2xl w-10 h-10 items-center justify-center">
@@ -456,7 +456,7 @@ export default function HomeScreen() {
           <View>
             {/* Combos first — top of everything */}
             <Animated.View entering={FadeInDown.duration(450).delay(60)}>
-              <View className="px-4 pt-4 mb-2 flex-row items-end justify-between">
+              <View className="px-4 pt-2 mb-2 flex-row items-end justify-between">
                 <View className="flex-row items-center gap-2.5">
                   <LinearGradient
                     colors={["#FB923C", "#EA580C"]}
