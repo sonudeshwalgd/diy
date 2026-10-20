@@ -23,8 +23,7 @@ export default function ComboCard({ combo, onPress, index = 0 }: Props) {
   return (
     <Animated.View
       entering={FadeInDown.duration(450).delay(80 + index * 80)}
-      style={{ width: "48%" }}
-      className="mb-3"
+      style={{ width: "48%", marginBottom: 12 }}
     >
       <Pressable
         onPress={() => onPress(combo)}
@@ -37,17 +36,23 @@ export default function ComboCard({ combo, onPress, index = 0 }: Props) {
           elevation: 2,
         }}
       >
-        <View className="relative">
+        <View style={{ position: "relative", overflow: "hidden" }}>
           <Image
             source={combo.image}
-            className="w-full h-28 bg-stone-100"
+            style={{ width: "100%", height: 112 }}
             resizeMode="cover"
           />
           <BlurView
             intensity={60}
             tint="light"
             experimentalBlurMethod="dimezisBlurView"
-            className="absolute top-2 left-2 rounded-full overflow-hidden"
+            style={{
+              position: "absolute",
+              top: 8,
+              left: 8,
+              borderRadius: 999,
+              overflow: "hidden",
+            }}
           >
             <Text
               className="text-white text-[10px] font-sans-bold px-2.5 py-1"

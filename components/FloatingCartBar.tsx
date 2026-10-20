@@ -47,12 +47,17 @@ export default function FloatingCartBar({ onPress }: Props) {
                 <Image
                   key={cat.id}
                   source={cat.image}
-                  className="w-9 h-9 rounded-full border-2 border-white bg-stone-100"
-                  resizeMode="cover"
                   style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 18,
+                    borderWidth: 2,
+                    borderColor: "white",
+                    backgroundColor: "#F5F5F4",
                     marginLeft: i > 0 ? -8 : 0,
                     zIndex: uniqueCategories.length - i,
                   }}
+                  resizeMode="cover"
                 />
               ))}
             </View>

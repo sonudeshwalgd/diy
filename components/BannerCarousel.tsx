@@ -103,7 +103,13 @@ export default function BannerCarousel({ onComboPress }: Props) {
               intensity={70}
               tint="light"
               experimentalBlurMethod="dimezisBlurView"
-              className="absolute top-3 right-3 rounded-full overflow-hidden"
+              style={{
+                position: "absolute",
+                top: 12,
+                right: 12,
+                borderRadius: 999,
+                overflow: "hidden",
+              }}
             >
               <Text
                 className="text-orange-600 text-base font-sans-extrabold px-3.5 py-1.5"

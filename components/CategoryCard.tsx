@@ -31,12 +31,12 @@ export default function CategoryCard({ category, onPress, index = 0 }: Props) {
           elevation: 2,
         }}
       >
-      <View className="relative">
-        <Image
-          source={category.image}
-          className="w-full h-28 bg-stone-100"
-          resizeMode="cover"
-        />
+        <View style={{ position: "relative", overflow: "hidden" }}>
+          <Image
+            source={category.image}
+            style={{ width: "100%", height: 112 }}
+            resizeMode="cover"
+          />
         {count > 0 && (
           <View className="absolute top-2 right-2 bg-emerald-500 rounded-full w-6 h-6 items-center justify-center border-2 border-white">
             <Text className="text-white text-xs font-sans-bold">{count}</Text>
