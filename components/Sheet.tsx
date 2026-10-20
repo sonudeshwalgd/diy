@@ -1,4 +1,5 @@
 import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   KeyboardAvoidingView,
   Modal,
@@ -35,13 +36,18 @@ export default function Sheet({
         style={[{ borderTopLeftRadius: 28, borderTopRightRadius: 28 }, sheetStyle]}
       >
         <BlurView
-          intensity={60}
+          intensity={80}
           tint="light"
           experimentalBlurMethod="dimezisBlurView"
           style={StyleSheet.absoluteFill}
         />
-        <View style={StyleSheet.absoluteFill} className="bg-white/85" />
-        <View className="items-center pt-2.5 pb-1">
+        <LinearGradient
+          colors={["rgba(255,255,255,0.94)", "rgba(255,255,255,0.80)"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+        <View className="items-center pt-3 pb-1">
           <View className="w-10 h-1.5 bg-gray-900/15 rounded-full" />
         </View>
         <View className={sheetClassName}>{children}</View>

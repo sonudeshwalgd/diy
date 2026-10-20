@@ -1,6 +1,8 @@
 import { Image, Pressable, Text, View } from "react-native";
 import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { useCart } from "../context/CartContext";
 
 interface Props {
@@ -17,9 +19,12 @@ export default function FloatingCartBar({ onPress }: Props) {
   ).slice(0, 5);
 
   return (
-    <View className="absolute bottom-0 left-0 right-0 px-4 pb-5 pt-6">
+    <Animated.View
+      entering={FadeInDown.duration(350)}
+      className="absolute bottom-0 left-0 right-0 px-4 pb-5 pt-6"
+    >
       <BlurView
-        intensity={40}
+        intensity={60}
         tint="light"
         experimentalBlurMethod="dimezisBlurView"
         className="rounded-3xl overflow-hidden"
@@ -63,13 +68,25 @@ export default function FloatingCartBar({ onPress }: Props) {
             </View>
 
             {/* Place Order button */}
-            <View className="bg-orange-600 rounded-2xl px-4 py-2.5 flex-row items-center gap-1.5">
+            <LinearGradient
+              colors={["#FB923C", "#EA580C"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{
+                borderRadius: 16,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 6,
+                paddingHorizontal: 16,
+                paddingVertical: 10,
+              }}
+            >
               <Ionicons name="cart-outline" size={16} color="white" />
               <Text className="text-white text-sm font-sans-bold">Place Order</Text>
-            </View>
+            </LinearGradient>
           </Pressable>
         </View>
       </BlurView>
-    </View>
+    </Animated.View>
   );
 }

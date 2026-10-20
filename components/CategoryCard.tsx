@@ -1,5 +1,6 @@
 import { Image, Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import type { Category } from "../data/products";
 import { getItemPrice } from "../data/products";
 import { useCart } from "../context/CartContext";
@@ -7,24 +8,29 @@ import { useCart } from "../context/CartContext";
 interface Props {
   category: Category;
   onPress: (category: Category) => void;
+  index?: number;
 }
 
-export default function CategoryCard({ category, onPress }: Props) {
+export default function CategoryCard({ category, onPress, index = 0 }: Props) {
   const { getCategoryCount } = useCart();
   const count = getCategoryCount(category.id);
 
   return (
-    <Pressable
-      onPress={() => onPress(category)}
-      className="bg-white/90 rounded-3xl mb-3 border border-white/80 active:opacity-90 flex-1 mx-1 overflow-hidden"
-      style={{
-        shadowColor: "#78716C",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-        elevation: 2,
-      }}
+    <Animated.View
+      entering={FadeInDown.duration(450).delay(80 + (index % 4) * 70)}
+      className="flex-1 mx-1"
     >
+      <Pressable
+        onPress={() => onPress(category)}
+        className="bg-white/90 rounded-3xl mb-3 border border-white/80 active:opacity-90 overflow-hidden"
+        style={{
+          shadowColor: "#78716C",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 8,
+          elevation: 2,
+        }}
+      >
       <View className="relative">
         <Image
           source={category.image}
@@ -61,6 +67,7 @@ export default function CategoryCard({ category, onPress }: Props) {
           </View>
         </View>
       </View>
-    </Pressable>
+      </Pressable>
+    </Animated.View>
   );
 }

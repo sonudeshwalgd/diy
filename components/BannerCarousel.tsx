@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Dimensions, Image, Pressable, ScrollView, Text, View } from "react-native";
 import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import {
   combos,
   getComboItemCount,
@@ -53,7 +55,7 @@ export default function BannerCarousel({ onComboPress }: Props) {
   };
 
   return (
-    <View className="mt-3">
+    <Animated.View entering={FadeInDown.duration(450).delay(140)}>
       <ScrollView
         ref={scrollRef}
         horizontal
@@ -75,6 +77,11 @@ export default function BannerCarousel({ onComboPress }: Props) {
               height: BANNER_HEIGHT,
               borderRadius: 24,
               overflow: "hidden",
+              shadowColor: "#78716C",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.15,
+              shadowRadius: 12,
+              elevation: 4,
             }}
           >
             <Image
@@ -82,23 +89,29 @@ export default function BannerCarousel({ onComboPress }: Props) {
               style={{ width: BANNER_WIDTH, height: BANNER_HEIGHT }}
               resizeMode="cover"
             />
-            <View
-              className="absolute top-3 right-3 overflow-hidden rounded-full"
-              style={{ borderRadius: 999 }}
+            <LinearGradient
+              colors={["transparent", "rgba(0,0,0,0.72)"]}
+              style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: "60%",
+              }}
+            />
+            <BlurView
+              intensity={70}
+              tint="light"
+              experimentalBlurMethod="dimezisBlurView"
+              className="absolute top-3 right-3 rounded-full overflow-hidden"
             >
-              <BlurView
-                intensity={50}
-                tint="light"
-                experimentalBlurMethod="dimezisBlurView"
+              <Text
+                className="text-orange-600 text-base font-sans-extrabold px-3.5 py-1.5"
+                style={{ backgroundColor: "rgba(255,255,255,0.6)" }}
               >
-                <Text
-                  className="text-orange-600 text-base font-sans-extrabold px-3.5 py-1.5"
-                  style={{ backgroundColor: "rgba(255,255,255,0.55)" }}
-                >
-                  ₹{getComboStartingPrice(combo)}
-                </Text>
-              </BlurView>
-            </View>
+                ₹{getComboStartingPrice(combo)}
+              </Text>
+            </BlurView>
             <View
               style={{
                 position: "absolute",
@@ -107,9 +120,16 @@ export default function BannerCarousel({ onComboPress }: Props) {
                 right: 0,
                 paddingVertical: 10,
                 paddingHorizontal: 14,
-                backgroundColor: BANNER_COLORS[index % BANNER_COLORS.length] + "D9",
               }}
             >
+              <View className="flex-row items-center gap-2 mb-1">
+                <View
+                  className="rounded-full px-2 py-0.5"
+                  style={{ backgroundColor: BANNER_COLORS[index % BANNER_COLORS.length] }}
+                >
+                  <Text className="text-white text-[9px] font-sans-bold">COMBO</Text>
+                </View>
+              </View>
               <Text
                 className="text-white text-lg font-sans-extrabold"
                 numberOfLines={1}
@@ -141,6 +161,6 @@ export default function BannerCarousel({ onComboPress }: Props) {
           />
         ))}
       </View>
-    </View>
+    </Animated.View>
   );
 }

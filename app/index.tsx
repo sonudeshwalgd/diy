@@ -3,6 +3,8 @@ import { FlatList, Linking, Pressable, ScrollView, Text, View } from "react-nati
 import { Link } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { categories, combos, type Category, type Combo } from "../data/products";
 import CategoryCard from "../components/CategoryCard";
@@ -79,28 +81,41 @@ function QuickPill({
 
 function CODStrip() {
   return (
-    <View className="mx-4 mt-4 rounded-3xl bg-emerald-50/80 border border-emerald-200/60 px-4 py-3.5 flex-row items-center gap-3">
-      <View className="w-11 h-11 rounded-2xl bg-emerald-600 items-center justify-center">
-        <Ionicons name="cash" size={22} color="white" />
-      </View>
-      <View className="flex-1">
-        <Text className="text-[14px] font-sans-bold text-emerald-900">
-          Cash on Delivery available everywhere
-        </Text>
-        <Text className="text-[11px] text-emerald-700 mt-0.5 font-sans-medium">
-          Pay in cash when your order reaches you
-        </Text>
-      </View>
-      <Ionicons name="checkmark-circle" size={22} color="#059669" />
-    </View>
+    <Animated.View
+      entering={FadeInDown.duration(450).delay(220)}
+      className="mx-4 mt-4 rounded-3xl overflow-hidden border border-emerald-200/60"
+    >
+      <LinearGradient
+        colors={["#ECFDF5", "#D1FAE5"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <View className="px-4 py-3.5 flex-row items-center gap-3">
+          <View className="w-11 h-11 rounded-2xl bg-emerald-600 items-center justify-center">
+            <Ionicons name="cash" size={22} color="white" />
+          </View>
+          <View className="flex-1">
+            <Text className="text-[14px] font-sans-bold text-emerald-900">
+              Cash on Delivery available everywhere
+            </Text>
+            <Text className="text-[11px] text-emerald-700 mt-0.5 font-sans-medium">
+              Pay in cash when your order reaches you
+            </Text>
+          </View>
+          <Ionicons name="checkmark-circle" size={22} color="#059669" />
+        </View>
+      </LinearGradient>
+    </Animated.View>
   );
 }
 
 function ComingSoonSection() {
   return (
-    <View className="mt-6">
+    <Animated.View entering={FadeInDown.duration(450).delay(180)} className="mt-6">
       <View className="px-4 mb-3 flex-row items-center gap-2">
-        <Ionicons name="sparkles" size={16} color="#EA580C" />
+        <View className="w-6 h-6 rounded-full bg-orange-100 items-center justify-center">
+          <Ionicons name="sparkles" size={13} color="#EA580C" />
+        </View>
         <Text className="text-lg font-sans-extrabold text-stone-900 tracking-tight">
           Coming Soon
         </Text>
@@ -110,9 +125,10 @@ function ComingSoonSection() {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
       >
-        {COMING_SOON.map((item) => (
-          <View
+        {COMING_SOON.map((item, index) => (
+          <Animated.View
             key={item.id}
+            entering={FadeInDown.duration(400).delay(220 + index * 80)}
             className="w-44 rounded-3xl overflow-hidden border border-white/80"
             style={{
               shadowColor: "#78716C",
@@ -123,14 +139,24 @@ function ComingSoonSection() {
             }}
           >
             <BlurView
-              intensity={50}
+              intensity={70}
               tint="light"
               experimentalBlurMethod="dimezisBlurView"
             >
               <View className="bg-white/70 p-4">
-                <View className="w-14 h-14 rounded-2xl bg-orange-50 items-center justify-center mb-3">
+                <LinearGradient
+                  colors={["#FFF7ED", "#FFEDD5"]}
+                  style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: 16,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginBottom: 12,
+                  }}
+                >
                   <Text style={{ fontSize: 28 }}>{item.emoji}</Text>
-                </View>
+                </LinearGradient>
                 <Text className="text-[15px] font-sans-bold text-stone-900">
                   {item.name}
                 </Text>
@@ -144,10 +170,10 @@ function ComingSoonSection() {
                 </View>
               </View>
             </BlurView>
-          </View>
+          </Animated.View>
         ))}
       </ScrollView>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -324,12 +350,12 @@ export default function HomeScreen() {
     <View className="flex-1 bg-stone-100">
       {/* Glass header */}
       <BlurView
-        intensity={80}
+        intensity={100}
         tint="light"
         experimentalBlurMethod="dimezisBlurView"
-        className="absolute top-0 left-0 right-0 z-10 border-b border-white/50"
+        className="absolute top-0 left-0 right-0 z-10 border-b border-white/60"
       >
-        <SafeAreaView edges={["top"]} className="bg-white/55">
+        <SafeAreaView edges={["top"]} className="bg-white/50">
           <View className="px-4 py-3">
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center gap-3">
@@ -423,51 +449,72 @@ export default function HomeScreen() {
         columnWrapperStyle={{ paddingHorizontal: 4 }}
         ListHeaderComponent={
           <View>
-            <BannerCarousel onComboPress={handleComboPress} />
+            {/* Combos first — top of everything */}
+            <Animated.View entering={FadeInDown.duration(450).delay(60)}>
+              <View className="px-4 pt-4 mb-2 flex-row items-end justify-between">
+                <View className="flex-row items-center gap-2.5">
+                  <LinearGradient
+                    colors={["#FB923C", "#EA580C"]}
+                    style={{ width: 6, height: 26, borderRadius: 3 }}
+                  />
+                  <View>
+                    <Text className="text-lg font-sans-extrabold text-stone-900 tracking-tight">
+                      Combos & Meals
+                    </Text>
+                    <Text className="text-xs text-stone-500 font-sans-medium">
+                      Save more with our combos
+                    </Text>
+                  </View>
+                </View>
+                <View className="bg-orange-100/80 rounded-full px-2.5 py-1">
+                  <Text className="text-[10px] font-sans-bold text-orange-700">
+                    BEST VALUE
+                  </Text>
+                </View>
+              </View>
+              <View className="flex-row flex-wrap justify-between px-3">
+                {combos.map((combo, index) => (
+                  <ComboCard
+                    key={combo.id}
+                    combo={combo}
+                    index={index}
+                    onPress={handleComboPress}
+                  />
+                ))}
+              </View>
+            </Animated.View>
 
-            {/* Combos at the top */}
-            <View className="px-4 mt-6 mb-2 flex-row items-end justify-between">
-              <View>
-                <Text className="text-lg font-sans-extrabold text-stone-900 tracking-tight">
-                  Combos & Meals
-                </Text>
-                <Text className="text-xs text-stone-500 font-sans-medium">
-                  Save more with our combos
-                </Text>
-              </View>
-              <View className="bg-orange-100/80 rounded-full px-2.5 py-1">
-                <Text className="text-[10px] font-sans-bold text-orange-700">
-                  BEST VALUE
-                </Text>
-              </View>
-            </View>
-            <View className="flex-row flex-wrap justify-between px-3">
-              {combos.map((combo) => (
-                <ComboCard
-                  key={combo.id}
-                  combo={combo}
-                  onPress={handleComboPress}
-                />
-              ))}
-            </View>
+            <Animated.View entering={FadeInDown.duration(450).delay(140)}>
+              <BannerCarousel onComboPress={handleComboPress} />
+            </Animated.View>
 
             <ComingSoonSection />
 
             <CODStrip />
 
-            <View className="px-4 mt-6 mb-2">
-              <Text className="text-lg font-sans-extrabold text-stone-900 tracking-tight">
-                Our Menu
-              </Text>
-              <Text className="text-xs text-stone-500 font-sans-medium">
-                Tap to add items to cart
-              </Text>
+            <View className="px-4 mt-6 mb-2 flex-row items-center gap-2.5">
+              <LinearGradient
+                colors={["#FB923C", "#EA580C"]}
+                style={{ width: 6, height: 26, borderRadius: 3 }}
+              />
+              <View>
+                <Text className="text-lg font-sans-extrabold text-stone-900 tracking-tight">
+                  Our Menu
+                </Text>
+                <Text className="text-xs text-stone-500 font-sans-medium">
+                  Tap to add items to cart
+                </Text>
+              </View>
             </View>
           </View>
         }
         ListFooterComponent={<Footer />}
-        renderItem={({ item }) => (
-          <CategoryCard category={item} onPress={handleCategoryPress} />
+        renderItem={({ item, index }) => (
+          <CategoryCard
+            category={item}
+            index={index}
+            onPress={handleCategoryPress}
+          />
         )}
         contentContainerStyle={{ paddingBottom: 120 }}
         showsVerticalScrollIndicator={false}
