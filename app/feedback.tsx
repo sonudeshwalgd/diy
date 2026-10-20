@@ -88,7 +88,7 @@ export default function FeedbackScreen() {
     <View className="flex-1 bg-gray-50">
       <View className="px-5 pt-5 pb-3 flex-row items-center justify-between">
         <View>
-          <Text className="text-xl font-bold text-gray-900">Feedback</Text>
+          <Text className="text-xl font-sans-bold text-gray-900">Feedback</Text>
           <Text className="text-sm text-gray-500 mt-0.5">
             All customer reviews
           </Text>
@@ -116,7 +116,7 @@ export default function FeedbackScreen() {
           ListHeaderComponent={
             data.length > 0 ? (
               <View className="px-5 mb-2">
-                <Text className="text-sm font-semibold text-gray-700">
+                <Text className="text-sm font-sans-semibold text-gray-700">
                   {data.length} review{data.length !== 1 ? "s" : ""}
                 </Text>
               </View>
@@ -146,7 +146,7 @@ export default function FeedbackScreen() {
                 {item.anonymous ? (
                   <View className="flex-row items-center gap-1 bg-gray-100 rounded-full px-2 py-0.5">
                     <Ionicons name="eye-off-outline" size={11} color="#6B7280" />
-                    <Text className="text-gray-500 text-[10px] font-medium">
+                    <Text className="text-gray-500 text-[10px] font-sans-medium">
                       Anonymous
                     </Text>
                   </View>
@@ -173,7 +173,7 @@ export default function FeedbackScreen() {
                   className="mt-3 flex-row items-center gap-1.5"
                 >
                   <Ionicons name="receipt-outline" size={15} color="#4F46E5" />
-                  <Text className="text-indigo-600 text-sm font-semibold">
+                  <Text className="text-indigo-600 text-sm font-sans-semibold">
                     View Order
                   </Text>
                 </Pressable>
@@ -196,7 +196,7 @@ export default function FeedbackScreen() {
       >
         <View className="px-5 pt-5 pb-3 flex-row items-center justify-between">
           <View>
-            <Text className="text-xl font-bold text-gray-900">Order Details</Text>
+            <Text className="text-xl font-sans-bold text-gray-900">Order Details</Text>
             {orderData && (
               <Text className="text-sm text-gray-500 mt-0.5">
                 #{orderData._id.slice(-8).toUpperCase()}
@@ -227,7 +227,7 @@ export default function FeedbackScreen() {
                 {formatDate(orderData.createdAt)}
               </Text>
               <View className="bg-green-100 rounded-full px-2.5 py-0.5">
-                <Text className="text-green-700 text-[10px] font-medium capitalize">
+                <Text className="text-green-700 text-[10px] font-sans-medium capitalize">
                   {orderData.orderStatus}
                 </Text>
               </View>
@@ -261,8 +261,8 @@ export default function FeedbackScreen() {
                 </Text>
               </View>
               <View className="flex-row justify-between">
-                <Text className="text-sm font-bold text-gray-900">Final</Text>
-                <Text className="text-sm font-bold text-blue-600">
+                <Text className="text-sm font-sans-bold text-gray-900">Final</Text>
+                <Text className="text-sm font-sans-bold text-blue-600">
                   ₹{orderData.finalAmount}
                 </Text>
               </View>

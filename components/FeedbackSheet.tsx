@@ -74,13 +74,13 @@ export default function FeedbackSheet({
       visible={visible}
       onClose={onClose}
       keyboardAvoiding
-      sheetClassName="bg-gray-50 rounded-t-3xl"
+      sheetClassName=""
       sheetStyle={{ maxHeight: "85%" }}
     >
       {/* Header */}
       <View className="px-5 pt-5 pb-3 flex-row items-center justify-between">
         <View>
-          <Text className="text-xl font-bold text-gray-900">
+          <Text className="text-xl font-sans-bold text-gray-900">
             {isAnonymous ? "Anonymous Feedback" : "Order Feedback"}
           </Text>
           <Text className="text-sm text-gray-500 mt-0.5">
@@ -100,7 +100,7 @@ export default function FeedbackSheet({
             <View className="mx-5 mb-4 bg-blue-50 rounded-xl p-4 border border-blue-200">
               <View className="flex-row items-center gap-2 mb-1">
                 <Ionicons name="eye-off-outline" size={18} color="#2563EB" />
-                <Text className="text-sm font-semibold text-blue-800">
+                <Text className="text-sm font-sans-semibold text-blue-800">
                   100% Anonymous
                 </Text>
               </View>
@@ -124,8 +124,8 @@ export default function FeedbackSheet({
                 </Text>
               ))}
               <View className="border-t border-gray-100 mt-2 pt-2 flex-row justify-between">
-                <Text className="text-sm font-bold text-gray-900">Total</Text>
-                <Text className="text-sm font-bold text-blue-600">
+                <Text className="text-sm font-sans-bold text-gray-900">Total</Text>
+                <Text className="text-sm font-sans-bold text-orange-600">
                   ₹{order.finalAmount}
                 </Text>
               </View>
@@ -134,7 +134,7 @@ export default function FeedbackSheet({
 
           {/* Rating */}
           <View className="px-5 mb-4">
-            <Text className="text-sm font-semibold text-gray-900 mb-2">
+            <Text className="text-sm font-sans-semibold text-gray-900 mb-2">
               How was your experience?
             </Text>
             <View className="flex-row items-center gap-3">
@@ -152,7 +152,7 @@ export default function FeedbackSheet({
 
           {/* Message */}
           <View className="px-5 mb-4">
-            <Text className="text-sm font-semibold text-gray-900 mb-2">
+            <Text className="text-sm font-sans-semibold text-gray-900 mb-2">
               Your message (optional)
             </Text>
             <TextInput
@@ -172,11 +172,11 @@ export default function FeedbackSheet({
               disabled={rating === 0 || submitting}
               className={`rounded-xl py-4 items-center ${
                 rating === 0 || submitting
-                  ? "bg-gray-300"
-                  : "bg-blue-600 active:bg-blue-700"
+                  ? "bg-stone-300"
+                  : "bg-orange-600 active:bg-orange-700"
               }`}
             >
-              <Text className="text-white text-base font-bold">
+              <Text className="text-white text-base font-sans-bold">
                 {submitting ? "Submitting..." : "Submit Feedback"}
               </Text>
             </Pressable>
@@ -185,7 +185,7 @@ export default function FeedbackSheet({
       ) : (
         <View className="items-center py-14 px-6">
           <Ionicons name="checkmark-circle" size={64} color="#16A34A" />
-          <Text className="text-lg font-bold text-gray-900 mt-4">Thank you!</Text>
+          <Text className="text-lg font-sans-bold text-gray-900 mt-4">Thank you!</Text>
           <Text className="text-sm text-gray-500 mt-1 text-center">
             Your feedback has been submitted.
             {!isAnonymous && FEEDBACK_POINTS > 0
@@ -194,9 +194,9 @@ export default function FeedbackSheet({
           </Text>
           <Pressable
             onPress={onClose}
-            className="mt-6 bg-blue-600 rounded-xl px-8 py-3"
+            className="mt-6 bg-orange-600 rounded-2xl px-8 py-3"
           >
-            <Text className="text-white text-sm font-semibold">Done</Text>
+            <Text className="text-white text-sm font-sans-semibold">Done</Text>
           </Pressable>
         </View>
       )}

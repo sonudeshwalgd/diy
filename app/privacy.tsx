@@ -4,7 +4,7 @@ import { ScrollView, Text, View } from "react-native";
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <View className="mb-6">
-      <Text className="text-lg font-bold text-gray-900 mb-2">{title}</Text>
+      <Text className="text-lg font-sans-bold text-gray-900 mb-2">{title}</Text>
       {children}
     </View>
   );
@@ -14,7 +14,7 @@ export default function PrivacyScreen() {
   return (
     <ScrollView className="flex-1 bg-gray-100">
       <View className="p-5">
-        <Text className="text-3xl font-bold text-green-600 mb-1">Privacy Policy</Text>
+        <Text className="text-3xl font-sans-bold text-green-600 mb-1">Privacy Policy</Text>
         <Text className="text-sm text-gray-500 mb-6">Last updated: July 2026</Text>
 
         <Section title="1. Information We Collect">

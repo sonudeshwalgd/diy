@@ -7,7 +7,15 @@ module.exports = {
   presets: [require("nativewind/preset")],
   darkMode: "class",
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        sans: ["PlusJakartaSans_400Regular"],
+        "sans-medium": ["PlusJakartaSans_500Medium"],
+        "sans-semibold": ["PlusJakartaSans_600SemiBold"],
+        "sans-bold": ["PlusJakartaSans_700Bold"],
+        "sans-extrabold": ["PlusJakartaSans_800ExtraBold"],
+      },
+    },
   },
   plugins: [],
 };

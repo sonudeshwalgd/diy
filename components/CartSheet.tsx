@@ -12,6 +12,7 @@ import { useState, useEffect } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCart, type CartItem } from "../context/CartContext";
+import { getItemPrice } from "../data/products";
 import { PHONE_NUMBER } from "./OrderBottomSheet";
 import {
   getCustomer,
@@ -94,7 +95,7 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
     msg += "━━━━━━━━━━━━━━━━\n";
     items.forEach((item, idx) => {
       msg += `${idx + 1}. *${item.subcategory.name}*\n`;
-      msg += `   ${item.category.name} × ${item.quantity} = ₹${item.subcategory.price * item.quantity}\n`;
+      msg += `   ${item.category.name} × ${item.quantity} = ₹${getItemPrice(item.subcategory) * item.quantity}\n`;
     });
     msg += "━━━━━━━━━━━━━━━━\n";
     msg += `💰 *Original Total:* ₹${total}\n`;
@@ -113,63 +114,76 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
     if (items.length === 0) return;
 
     setPlacing(true);
-    try {
-      const message = buildWhatsAppMessage();
-      const result = await placeOrder({
-        customerMobile: savedMobile || undefined,
-        items: items.map((i) => ({
-          name: i.subcategory.name,
-          price: i.subcategory.price,
-          quantity: i.quantity,
-        })),
-        totalAmount: total,
-        coinsUsed: savedMobile ? coinsToUse : 0,
-        paymentMethod: "cod",
-        whatsappMessage: message,
-      });
 
-      const url = `https://wa.me/${PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
+    const message = buildWhatsAppMessage();
+    const orderPayload = {
+      customerMobile: savedMobile || undefined,
+      items: items.map((i) => ({
+        name: i.subcategory.name,
+        price: getItemPrice(i.subcategory),
+        quantity: i.quantity,
+      })),
+      totalAmount: total,
+      coinsUsed: savedMobile ? coinsToUse : 0,
+      paymentMethod: "cod",
+      whatsappMessage: message,
+    };
+    const url = `https://wa.me/${PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
+
+    // Open WhatsApp first so the order is never blocked by a backend failure.
+    try {
       await Linking.openURL(url);
-      clearCart();
-      onClose();
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : "Failed to place order";
-      Alert.alert("Error", msg);
-    } finally {
+    } catch {
+      Alert.alert(
+        "WhatsApp not available",
+        "Could not open WhatsApp. Please make sure WhatsApp is installed and try again."
+      );
       setPlacing(false);
+      return;
+    }
+
+    clearCart();
+    onClose();
+    setPlacing(false);
+
+    // Record the order for loyalty coins (best effort, non-blocking).
+    try {
+      await placeOrder(orderPayload);
+    } catch {
+      // Order was already sent on WhatsApp; ignore loyalty backend failures.
     }
   };
 
   const renderItem = ({ item }: { item: CartItem }) => (
-    <View className="flex-row items-center bg-white rounded-xl p-3 mb-3 mx-4 border border-gray-100">
+    <View className="flex-row items-center bg-white/85 rounded-3xl p-3 mb-3 mx-4 border border-white/80">
       <Image
-        source={{ uri: item.category.image }}
-        className="w-12 h-12 rounded-lg"
+        source={item.subcategory.image || item.category.image}
+        className="w-16 h-16 rounded-xl bg-gray-100"
         resizeMode="cover"
       />
       <View className="flex-1 ml-3">
         <Text className="text-xs text-gray-400">{item.category.name}</Text>
-        <Text className="text-sm font-semibold text-gray-900">
+        <Text className="text-base font-sans-semibold text-gray-900" numberOfLines={2}>
           {item.subcategory.name}
         </Text>
-        <Text className="text-sm text-blue-600 font-bold mt-0.5">
-          ₹{item.subcategory.price} × {item.quantity}
+        <Text className="text-base text-orange-600 font-sans-extrabold mt-0.5">
+          ₹{getItemPrice(item.subcategory)} × {item.quantity}
         </Text>
       </View>
 
       <View className="flex-row items-center gap-2 mr-2">
         <Pressable
           onPress={() => decrement(item.subcategory.id)}
-          className="w-7 h-7 rounded-full bg-gray-200 items-center justify-center"
+          className="w-8 h-8 rounded-full bg-gray-200 items-center justify-center"
         >
           <Ionicons name="remove" size={16} color="#374151" />
         </Pressable>
-        <Text className="text-sm font-bold text-gray-900 w-5 text-center">
+        <Text className="text-sm font-sans-bold text-gray-900 w-5 text-center">
           {item.quantity}
         </Text>
         <Pressable
           onPress={() => increment(item.subcategory.id)}
-          className="w-7 h-7 rounded-full bg-blue-600 items-center justify-center"
+          className="w-8 h-8 rounded-full bg-orange-600 items-center justify-center"
         >
           <Ionicons name="add" size={16} color="white" />
         </Pressable>
@@ -189,12 +203,12 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
       visible={visible}
       onClose={onClose}
       keyboardAvoiding
-      sheetClassName="bg-gray-50 rounded-t-3xl"
+      sheetClassName=""
       sheetStyle={{ maxHeight: "85%" }}
     >
       <View className="px-5 pt-5 pb-3 flex-row items-center justify-between">
               <View>
-                <Text className="text-xl font-bold text-gray-900">Your Cart</Text>
+                <Text className="text-xl font-sans-bold text-gray-900">Your Cart</Text>
                 <Text className="text-sm text-gray-500 mt-0.5">
                   {itemCount} {itemCount === 1 ? "item" : "items"}
                 </Text>
@@ -219,14 +233,14 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
                   showsVerticalScrollIndicator={false}
                 />
 
-                <View className="bg-white rounded-t-2xl px-5 pt-4 pb-8 border-t border-gray-200">
+                <View className="bg-white/85 rounded-t-3xl px-5 pt-4 pb-8 border-t border-white/60">
                   {/* Use Coins Button / Verified */}
                   {savedMobile && customer ? (
                     <View className="mb-4 bg-amber-50 rounded-xl px-4 py-3 border border-amber-200">
                       <View className="flex-row items-center justify-between mb-1">
                         <View className="flex-row items-center gap-2">
                           <Ionicons name="wallet-outline" size={18} color="#D97706" />
-                          <Text className="text-sm font-semibold text-amber-800">
+                          <Text className="text-sm font-sans-semibold text-amber-800">
                             Loyalty Coins
                           </Text>
                         </View>
@@ -239,14 +253,14 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
                             AsyncStorage.removeItem(MOBILE_KEY);
                           }}
                         >
-                          <Text className="text-amber-600 text-xs font-medium">Change</Text>
+                          <Text className="text-amber-600 text-xs font-sans-medium">Change</Text>
                         </Pressable>
                       </View>
                       <View className="flex-row items-center justify-between">
                         <Text className="text-xs text-amber-700">
                           📱 {savedMobile}
                         </Text>
-                        <Text className="text-sm font-bold text-amber-800">
+                        <Text className="text-sm font-sans-bold text-amber-800">
                           🪙 {customer.totalCoins} coins = ₹{customer.totalCoins}
                         </Text>
                       </View>
@@ -261,7 +275,7 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
                           <Ionicons name="wallet-outline" size={20} color="#D97706" />
                         </View>
                         <View>
-                          <Text className="text-sm font-semibold text-gray-900">
+                          <Text className="text-sm font-sans-semibold text-gray-900">
                             Have Loyalty Coins?
                           </Text>
                           <Text className="text-xs text-gray-500 mt-0.5">
@@ -292,7 +306,7 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
                           className="bg-amber-500 rounded-lg px-3 py-1.5"
                           disabled={loadingCustomer}
                         >
-                          <Text className="text-white text-xs font-semibold">
+                          <Text className="text-white text-xs font-sans-semibold">
                             {loadingCustomer ? "..." : "Apply"}
                           </Text>
                         </Pressable>
@@ -313,7 +327,7 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
                   {customer && (
                     <View className="mb-4 bg-amber-50 rounded-lg px-3 py-3 border border-amber-200">
                       <View className="flex-row items-center justify-between mb-2">
-                        <Text className="text-sm font-semibold text-amber-800">
+                        <Text className="text-sm font-sans-semibold text-amber-800">
                           🪙 Available Coins: {customer.totalCoins}
                         </Text>
                         <Text className="text-xs text-amber-600">
@@ -336,7 +350,7 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
                               }`}
                             >
                               <Text
-                                className={`text-xs font-medium ${
+                                className={`text-xs font-sans-medium ${
                                   coinsToUse === 0 ? "text-white" : "text-amber-700"
                                 }`}
                               >
@@ -352,7 +366,7 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
                               }`}
                             >
                               <Text
-                                className={`text-xs font-medium ${
+                                className={`text-xs font-sans-medium ${
                                   coinsToUse === maxRedeemable
                                     ? "text-white"
                                     : "text-amber-700"
@@ -381,7 +395,9 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
                   {/* Pricing */}
                   <View className="flex-row justify-between items-center mb-1">
                     <Text className="text-sm text-gray-500">Subtotal</Text>
-                    <Text className="text-sm text-gray-700">₹{total}</Text>
+                    <Text className="text-base font-sans-semibold text-gray-900">
+                      ₹{total}
+                    </Text>
                   </View>
 
                   {coinsDiscount > 0 && (
@@ -397,14 +413,14 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
                   </View>
 
                   <View className="flex-row justify-between items-center mb-1 border-t border-gray-100 pt-2">
-                    <Text className="text-lg font-bold text-gray-900">Final Total</Text>
-                    <Text className="text-lg font-bold text-blue-600">₹{finalTotal}</Text>
+                    <Text className="text-lg font-sans-bold text-gray-900">Final Total</Text>
+                    <Text className="text-2xl font-sans-extrabold text-orange-600">₹{finalTotal}</Text>
                   </View>
 
                   {coinsToUse === 0 && maxRedeemable > 0 && (
                     <View className="flex-row justify-between items-center mb-1">
                       <Text className="text-xs text-gray-400">You'll earn</Text>
-                      <Text className="text-xs text-green-600 font-medium">
+                      <Text className="text-xs text-green-600 font-sans-medium">
                         🪙 {Math.floor(total * (COIN_EARN_RATE / 100))} coins
                       </Text>
                     </View>
@@ -413,7 +429,7 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
                   {coinsDiscount > 0 && (
                     <View className="flex-row justify-between items-center mb-3">
                       <Text className="text-xs text-gray-400">You'll earn</Text>
-                      <Text className="text-xs text-green-600 font-medium">
+                      <Text className="text-xs text-green-600 font-sans-medium">
                         🪙 {coinsEarned} coins
                       </Text>
                     </View>
@@ -421,8 +437,8 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
 
                   <View className="flex-row items-center gap-2 mb-4 bg-amber-50 rounded-lg px-3 py-2">
                     <Ionicons name="cash-outline" size={18} color="#D97706" />
-                    <Text className="text-sm text-amber-700 font-medium">
-                      Cash on Delivery only
+                    <Text className="text-sm text-amber-700 font-sans-medium">
+                      Cash on Delivery available everywhere
                     </Text>
                   </View>
 
@@ -434,7 +450,7 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
                     }`}
                   >
                     <Ionicons name="logo-whatsapp" size={22} color="white" />
-                    <Text className="text-white text-base font-bold">
+                    <Text className="text-white text-base font-sans-bold">
                       {placing
                         ? "Placing Order..."
                         : `Order on WhatsApp — ₹${finalTotal}`}

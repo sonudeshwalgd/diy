@@ -26,15 +26,13 @@ export default function WifiBottomSheet({ visible, onClose }: Props) {
     <Sheet
       visible={visible}
       onClose={onClose}
-      sheetClassName="bg-white rounded-t-3xl px-6 pt-6 pb-10 items-center"
+      sheetClassName="px-6 pt-1 pb-10 items-center"
     >
-      <View className="w-10 h-1 bg-gray-300 rounded-full mb-5" />
-
           <View className="bg-blue-50 rounded-full p-3 mb-4">
             <Ionicons name="wifi" size={28} color="#2563EB" />
           </View>
 
-          <Text className="text-lg font-semibold text-gray-900 text-center">
+          <Text className="text-lg font-sans-semibold text-gray-900 text-center">
             Connect to our Wi-Fi
           </Text>
           <Text className="text-sm text-gray-500 mt-1">
@@ -62,7 +60,7 @@ export default function WifiBottomSheet({ visible, onClose }: Props) {
                 size={16}
                 color="white"
               />
-              <Text className="text-white text-sm font-semibold">
+              <Text className="text-white text-sm font-sans-semibold">
                 {copied ? "Copied!" : "Copy"}
               </Text>
             </Pressable>

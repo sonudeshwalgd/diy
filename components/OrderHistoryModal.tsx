@@ -101,12 +101,12 @@ export default function OrderHistoryModal({ visible, onClose }: Props) {
       visible={visible}
       onClose={onClose}
       keyboardAvoiding
-      sheetClassName="bg-gray-50 rounded-t-3xl"
+      sheetClassName=""
       sheetStyle={{ maxHeight: "90%" }}
     >
       <View className="px-5 pt-5 pb-3 flex-row items-center justify-between">
               <View>
-                <Text className="text-xl font-bold text-gray-900">Order History</Text>
+                <Text className="text-xl font-sans-bold text-gray-900">Order History</Text>
                 <Text className="text-sm text-gray-500 mt-0.5">
                   Your loyalty account
                 </Text>
@@ -119,8 +119,8 @@ export default function OrderHistoryModal({ visible, onClose }: Props) {
             {/* Mobile Input */}
             <View className="px-5 mb-4">
               {savedMobile ? (
-                <View className="flex-row items-center justify-between bg-gray-50 rounded-lg px-3 py-2.5 border border-gray-200">
-                  <Text className="text-gray-900 text-sm font-medium">
+                <View className="flex-row items-center justify-between bg-gray-50 rounded-lg px-3 py-2.5 border border-stone-200">
+                  <Text className="text-gray-900 text-sm font-sans-medium">
                     📱 {savedMobile}
                   </Text>
                   <Pressable
@@ -130,13 +130,13 @@ export default function OrderHistoryModal({ visible, onClose }: Props) {
                       AsyncStorage.removeItem(MOBILE_KEY);
                     }}
                   >
-                    <Text className="text-blue-600 text-xs font-medium">Change</Text>
+                    <Text className="text-blue-600 text-xs font-sans-medium">Change</Text>
                   </Pressable>
                 </View>
               ) : (
                 <View className="flex-row items-center gap-2">
                   <TextInput
-                    className="flex-1 bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm"
+                    className="flex-1 bg-white border border-stone-200 rounded-lg px-3 py-2.5 text-sm"
                     placeholder="Enter 10-digit mobile number"
                     keyboardType="numeric"
                     maxLength={10}
@@ -148,7 +148,7 @@ export default function OrderHistoryModal({ visible, onClose }: Props) {
                     className="bg-blue-600 rounded-lg px-4 py-2.5"
                     disabled={loading}
                   >
-                    <Text className="text-white text-sm font-semibold">
+                    <Text className="text-white text-sm font-sans-semibold">
                       {loading ? "..." : "View"}
                     </Text>
                   </Pressable>
@@ -176,32 +176,32 @@ export default function OrderHistoryModal({ visible, onClose }: Props) {
                 ListHeaderComponent={
                   <>
                     {/* Customer Summary */}
-                    <View className="mx-5 bg-white rounded-xl p-4 border border-gray-100 mb-4">
-                      <Text className="text-sm font-semibold text-gray-700 mb-3">
+                    <View className="mx-5 bg-white rounded-xl p-4 border border-white/80 mb-4">
+                      <Text className="text-sm font-sans-semibold text-gray-700 mb-3">
                         Loyalty Summary
                       </Text>
                       <View className="flex-row justify-between mb-2">
                         <Text className="text-sm text-gray-500">Total Coins</Text>
-                        <Text className="text-sm font-bold text-amber-600">
+                        <Text className="text-sm font-sans-bold text-amber-600">
                           🪙 {data.customer.totalCoins}
                         </Text>
                       </View>
                       <View className="flex-row justify-between mb-2">
                         <Text className="text-sm text-gray-500">Total Orders</Text>
-                        <Text className="text-sm font-bold text-gray-900">
+                        <Text className="text-sm font-sans-bold text-gray-900">
                           {data.customer.totalOrders}
                         </Text>
                       </View>
                       <View className="flex-row justify-between">
                         <Text className="text-sm text-gray-500">Lifetime Spent</Text>
-                        <Text className="text-sm font-bold text-green-600">
+                        <Text className="text-sm font-sans-bold text-green-600">
                           ₹{data.customer.lifetimeSpent}
                         </Text>
                       </View>
                     </View>
 
                     <View className="px-5 mb-2">
-                      <Text className="text-sm font-semibold text-gray-700">
+                      <Text className="text-sm font-sans-semibold text-gray-700">
                         Order History ({data.orders.length})
                       </Text>
                     </View>
@@ -214,7 +214,7 @@ export default function OrderHistoryModal({ visible, onClose }: Props) {
                   </View>
                 }
                 renderItem={({ item }) => (
-                  <View className="mx-5 bg-white rounded-xl p-4 mb-3 border border-gray-100">
+                  <View className="mx-5 bg-white rounded-xl p-4 mb-3 border border-white/80">
                     <View className="flex-row justify-between items-start mb-2">
                       <View>
                         <Text className="text-xs text-gray-400">
@@ -227,7 +227,7 @@ export default function OrderHistoryModal({ visible, onClose }: Props) {
                       <View
                         className="bg-green-100 rounded-full px-2.5 py-0.5"
                       >
-                        <Text className="text-green-700 text-[10px] font-medium capitalize">
+                        <Text className="text-green-700 text-[10px] font-sans-medium capitalize">
                           {item.orderStatus}
                         </Text>
                       </View>
@@ -241,7 +241,7 @@ export default function OrderHistoryModal({ visible, onClose }: Props) {
                       ))}
                     </View>
 
-                    <View className="border-t border-gray-100 pt-2">
+                    <View className="border-t border-white/80 pt-2">
                       <View className="flex-row justify-between mb-1">
                         <Text className="text-xs text-gray-500">Original</Text>
                         <Text className="text-xs text-gray-500">₹{item.totalAmount}</Text>
@@ -261,8 +261,8 @@ export default function OrderHistoryModal({ visible, onClose }: Props) {
                         </Text>
                       </View>
                       <View className="flex-row justify-between">
-                        <Text className="text-sm font-bold text-gray-900">Final</Text>
-                        <Text className="text-sm font-bold text-blue-600">
+                        <Text className="text-sm font-sans-bold text-gray-900">Final</Text>
+                        <Text className="text-sm font-sans-bold text-blue-600">
                           ₹{item.finalAmount}
                         </Text>
                       </View>
@@ -289,7 +289,7 @@ export default function OrderHistoryModal({ visible, onClose }: Props) {
                               />
                             ))}
                           </View>
-                          <Text className="text-amber-700 text-[10px] font-semibold">
+                          <Text className="text-amber-700 text-[10px] font-sans-semibold">
                             Your Feedback
                           </Text>
                         </View>
@@ -324,7 +324,7 @@ export default function OrderHistoryModal({ visible, onClose }: Props) {
                         color={item.feedbackGiven ? "#16A34A" : "#FFFFFF"}
                       />
                       <Text
-                        className={`text-sm font-semibold ${
+                        className={`text-sm font-sans-semibold ${
                           item.feedbackGiven
                             ? "text-green-700"
                             : "text-white"

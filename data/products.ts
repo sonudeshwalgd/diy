@@ -1,631 +1,947 @@
-export interface Subcategory {
+import type { ImageSourcePropType } from "react-native";
+
+export interface Variant {
   id: string;
   name: string;
   price: number;
-  image?: string;
+}
+
+export interface Subcategory {
+  id: string;
+  name: string;
+  price?: number;
+  image?: ImageSourcePropType;
+  variants?: Variant[];
+}
+
+export function getItemPrice(sub: Subcategory): number {
+  return sub.price ?? sub.variants?.[0]?.price ?? 0;
 }
 
 export interface Category {
   id: string;
   name: string;
-  image?: string;
+  image?: ImageSourcePropType;
   description: string;
   subcategories: Subcategory[];
 }
 
-export interface ComboItem {
+export interface ComboFixedItem {
   id: string;
   name: string;
-  image?: string;
+  categoryId: string;
+  price: number;
+  variantId?: string;
+  image?: ImageSourcePropType;
+}
+
+export interface ComboOption {
+  id: string;
+  name: string;
+  categoryId: string;
+  price: number;
+  itemId?: string;
+}
+
+export interface ComboSelectionGroup {
+  id: string;
+  name: string;
+  required: boolean;
+  minSelections: number;
+  maxSelections: number;
+  options: ComboOption[];
+}
+
+export interface ComboPricing {
+  type: "sum-of-selected-items";
+  basePrice: number | null;
+  currency: string;
 }
 
 export interface Combo {
   id: string;
   name: string;
   description: string;
-  totalPrice: number;
-  image?: string;
-  subItems: ComboItem[];
+  image?: ImageSourcePropType;
+  items: ComboFixedItem[];
+  selectionGroups: ComboSelectionGroup[];
+  pricing: ComboPricing;
+  discountRuleId?: string;
+}
+
+export interface CustomComboRule {
+  id: string;
+  name: string;
+  appliesTo: string;
+  eligibility: {
+    subtotal: { operator: string; amount: number; currency: string };
+  };
+  discount: { type: string; amount: number; currency: string };
+  calculation: string;
+  stackable: boolean;
+}
+
+export function getComboStartingPrice(combo: Combo): number {
+  const fixed = combo.items.reduce((sum, item) => sum + item.price, 0);
+  const optionFloor = combo.selectionGroups.reduce((sum, group) => {
+    if (group.options.length === 0) return sum;
+    const cheapest = Math.min(...group.options.map((o) => o.price));
+    return sum + cheapest * Math.max(group.minSelections, 1);
+  }, 0);
+  const base = combo.pricing.basePrice ?? 0;
+  const total = fixed + optionFloor;
+  return total > 0 ? total : base;
+}
+
+export function getComboItemCount(combo: Combo): number {
+  const groupSelections = combo.selectionGroups.reduce(
+    (sum, group) => sum + Math.max(group.minSelections, 0),
+    0
+  );
+  return combo.items.length + groupSelections;
+}
+
+export function isCustomCombo(combo: Combo): boolean {
+  return combo.discountRuleId === customComboRule.id;
 }
 
 export const categories: Category[] = [
-  {
-    id: "waffles",
-    name: "Waffles",
-    image: "https://loremflickr.com/400/300/waffle,food",
-    description: "Crispy waffles with delicious toppings",
-    subcategories: [
-      {
-        id: "single-chocolate",
-        name: "Single Chocolate",
-        price: 79,
-        image: "https://loremflickr.com/400/300/waffle,chocolate",
-      },
-      {
-        id: "triple-chocolate",
-        name: "Triple Chocolate",
-        price: 89,
-        image: "https://loremflickr.com/400/300/waffle,chocolate",
-      },
-      {
-        id: "strawberry-chocolate",
-        name: "Strawberry Chocolate",
-        price: 99,
-        image: "https://loremflickr.com/400/300/waffle,strawberry",
-      },
-      {
-        id: "ice-cream-chocolate",
-        name: "Ice Cream Chocolate",
-        price: 110,
-        image: "https://loremflickr.com/400/300/waffle,icecream",
-      },
-      {
-        id: "oreo-crush-chocolate",
-        name: "Oreo Crush Chocolate",
-        price: 110,
-        image: "https://loremflickr.com/400/300/waffle,oreo",
-      },
-    ],
-  },
-  {
-    id: "mini-pancakes",
-    name: "Mini Pancakes",
-    image: "https://loremflickr.com/400/300/pancake,food",
-    description: "Soft mini pancakes with chocolate toppings",
-    subcategories: [
-      {
-        id: "chocolate-8pcs",
-        name: "Chocolate (8 pcs)",
-        price: 79,
-        image: "https://loremflickr.com/400/300/pancake,chocolate",
-      },
-      {
-        id: "chocolate-11pcs",
-        name: "Chocolate (11 pcs)",
-        price: 99,
-        image: "https://loremflickr.com/400/300/pancake,chocolate",
-      },
-      {
-        id: "chocolate-strawberry-11pcs",
-        name: "Chocolate Strawberry (11 pcs)",
-        price: 110,
-        image: "https://loremflickr.com/400/300/pancake,strawberry",
-      },
-      {
-        id: "oreo-crush-11pcs",
-        name: "Oreo Crush (11 pcs)",
-        price: 110,
-        image: "https://loremflickr.com/400/300/pancake,oreo",
-      },
-      {
-        id: "ice-cream-chocolate-11pcs",
-        name: "Ice Cream Chocolate (11 pcs)",
-        price: 119,
-        image: "https://loremflickr.com/400/300/pancake,icecream",
-      },
-    ],
-  },
-  {
-    id: "churros",
-    name: "Churros",
-    image: "https://loremflickr.com/400/300/churros,food",
-    description: "Fresh churros with chocolate dip",
-    subcategories: [
-      {
-        id: "single-chocolate-dip",
-        name: "Single Chocolate Dip",
-        price: 49,
-        image: "https://loremflickr.com/400/300/churros,chocolate",
-      },
-      {
-        id: "double-chocolate-dip",
-        name: "Double Chocolate Dip",
-        price: 59,
-        image: "https://loremflickr.com/400/300/churros,chocolate",
-      },
-    ],
-  },
-  {
-    id: "chocolate-strawberry",
-    name: "Chocolate Strawberry",
-    image: "https://loremflickr.com/400/300/strawberry,chocolate",
-    description: "Fresh strawberries dipped in chocolate",
-    subcategories: [
-      {
-        id: "chocolate-strawberry-stick",
-        name: "Chocolate Strawberry Stick (4 Fresh Strawberries)",
-        price: 49,
-        image: "https://loremflickr.com/400/300/strawberry,chocolate",
-      },
-      {
-        id: "chocolate-strawberry-glass",
-        name: "Chocolate Strawberry Glass",
-        price: 79,
-        image: "https://loremflickr.com/400/300/strawberry,glass",
-      },
-      {
-        id: "chocolate-strawberry-bowl",
-        name: "Chocolate Strawberry Bowl",
-        price: 110,
-        image: "https://loremflickr.com/400/300/strawberry,bowl",
-      },
-    ],
-  },
-  {
-    id: "burgers",
-    name: "Burgers",
-    image: "https://loremflickr.com/400/300/burger,food",
-    description: "Juicy grilled burgers",
-    subcategories: [
-      {
-        id: "basic-burger",
-        name: "Basic Burger",
-        price: 39,
-        image: "https://loremflickr.com/400/300/burger",
-      },
-      {
-        id: "cheese-burger",
-        name: "Cheese Burger",
-        price: 59,
-        image: "https://loremflickr.com/400/300/cheeseburger",
-      },
-    ],
-  },
-  {
-    id: "sandwiches",
-    name: "Sandwiches",
-    image: "https://loremflickr.com/400/300/sandwich,food",
-    description: "Fresh grilled sandwiches",
-    subcategories: [
-      {
-        id: "veg-grilled-sandwich",
-        name: "Veg Grilled Sandwich",
-        price: 49,
-        image: "https://loremflickr.com/400/300/sandwich,veg",
-      },
-      {
-        id: "cheese-grilled-sandwich",
-        name: "Cheese Grilled Sandwich",
-        price: 69,
-        image: "https://loremflickr.com/400/300/grilled,sandwich",
-      },
-    ],
-  },
-  {
-    id: "corn",
-    name: "Corn",
-    image: "https://loremflickr.com/400/300/corn,food",
-    description: "Hot and flavorful corn",
-    subcategories: [
-      {
-        id: "classic-corn",
-        name: "Classic Corn",
-        price: 49,
-        image: "https://loremflickr.com/400/300/corn",
-      },
-      {
-        id: "masala-corn",
-        name: "Masala Corn",
-        price: 59,
-        image: "https://loremflickr.com/400/300/corn,masala",
-      },
-      {
-        id: "corn-chaat",
-        name: "Corn Chaat",
-        price: 79,
-        image: "https://loremflickr.com/400/300/corn,chaat",
-      },
-    ],
-  },
-  {
-    id: "cheese-balls",
-    name: "Cheese Balls",
-    image: "https://loremflickr.com/400/300/cheese,ball",
-    description: "Crispy cheese balls",
-    subcategories: [
-      {
-        id: "5-cheese-balls",
-        name: "5 Cheese Balls",
-        price: 59,
-        image: "https://loremflickr.com/400/300/cheese,ball",
-      },
-      {
-        id: "8-cheese-balls",
-        name: "8 Cheese Balls",
-        price: 89,
-        image: "https://loremflickr.com/400/300/cheese,ball",
-      },
-    ],
-  },
-  {
-    id: "french-fries",
-    name: "French Fries",
-    image: "https://loremflickr.com/400/300/fries,food",
-    description: "Crispy golden fries",
-    subcategories: [
-      {
-        id: "regular-fries",
-        name: "Regular Fries",
-        price: 39,
-        image: "https://loremflickr.com/400/300/fries",
-      },
-      {
-        id: "peri-peri-fries",
-        name: "Peri-Peri Fries",
-        price: 49,
-        image: "https://loremflickr.com/400/300/fries,spicy",
-      },
-    ],
-  },
 
-  {
-    id: "cold-coffee",
-    name: "Cold Coffee",
-    image: "https://loremflickr.com/400/300/cold,coffee",
-    description: "Refreshing cold drinks",
-    subcategories: [
-      {
-        id: "classic-cold-coffee",
-        name: "Classic Cold Coffee",
-        price: 69,
-        image: "https://loremflickr.com/400/300/cold,coffee",
-      },
-    ],
-  },
-  {
-    id: "mohitos",
-    name: "Mojitos",
-    image: "https://loremflickr.com/400/300/mojito,drink",
-    description: "Mojito drinks",
-    subcategories: [
-      {
-        id: "hazelnut-mojito",
-        name: "Hazelnut Mojito",
-        price: 69,
-        image: "https://loremflickr.com/400/300/mojito",
-      },
-      {
-        id: "spicy-mango-mojito",
-        name: "Spicy Mango Mojito",
-        price: 69,
-        image: "https://loremflickr.com/400/300/mojito,mango",
-      },
-      {
-        id: "green-apple-mojito",
-        name: "Green Apple Mojito",
-        price: 69,
-        image: "https://loremflickr.com/400/300/mojito,apple",
-      },
-      {
-        id: "watermelon-mojito",
-        name: "Watermelon Mojito",
-        price: 69,
-        image: "https://loremflickr.com/400/300/mojito,watermelon",
-      },
-      {
-        id: "lemon-iced-tea-mojito",
-        name: "Lemon Iced Tea Mojito",
-        price: 69,
-        image: "https://loremflickr.com/400/300/mojito,lemon",
-      },
-      {
-        id: "blue-curacao-mojito",
-        name: "Blue Curacao Mojito",
-        price: 69,
-        image: "https://loremflickr.com/400/300/mojito,blue",
-      },
-    ],
-  },
-  {
-    id: "hot-beverages",
-    name: "Hot Beverages",
-    image: "https://loremflickr.com/400/300/tea,food",
-    description: "Freshly brewed hot drinks",
-    subcategories: [
-      {
-        id: "hot-coffee",
-        name: "Hot Coffee",
-        price: 29,
-        image: "https://loremflickr.com/400/300/coffee,hot",
-      },
-      {
-        id: "kulhad-chai",
-        name: "Kulhad Chai",
-        price: 20,
-        image: "https://loremflickr.com/400/300/chai,tea",
-      },
-      {
-        id: "regular-tea",
-        name: "Regular Tea",
-        price: 15,
-        image: "https://loremflickr.com/400/300/tea",
-      },
-    ],
-  },
+{
+  id: "waffles",
+  name: "Waffles",
+  image: require("../assets/DIY_Drinks_All_Item_Images/existing-grouped-photos/chocolate-and-oreo-waffles.webp"),
+  description: "Crispy waffles with delicious toppings",
+  subcategories: [
+    {
+      id: "single-chocolate",
+      name: "Single Chocolate Waffle",
+      price: 79,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/single-chocolate-waffle.webp"),
+    },
+    {
+      id: "double-chocolate",
+      name: "Double Chocolate Waffle",
+      price: 89,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/double-chocolate-waffle.webp"),
+    },
+    {
+      id: "triple-chocolate",
+      name: "Triple Chocolate Waffle",
+      price: 99,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/triple-chocolate-waffle.webp"),
+    },
+    {
+      id: "ice-cream-chocolate-inside",
+      name: "Ice Cream Chocolate Waffle - Ice Cream Inside",
+      price: 120,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/ice-cream-chocolate-waffle-ice-cream-inside.webp"),
+    },
+    {
+      id: "ice-cream-chocolate-outside",
+      name: "Ice Cream Chocolate Waffle - Ice Cream Outside",
+      price: 130,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/ice-cream-chocolate-waffle-ice-cream-outside.webp"),
+    },
+    {
+      id: "oreo-crush",
+      name: "Oreo Crush",
+      price: 119,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/oreo-crush-waffle.webp"),
+    },
+    {
+      id: "strawberry-filling",
+      name: "Strawberry Filling Waffle",
+      price: 119,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/strawberry-filling-waffle.webp"),
+    },
+    {
+      id: "nutella",
+      name: "Nutella Waffle",
+      price: 169,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/nutella-waffle.webp"),
+    },
+    {
+      id: "kunafa",
+      name: "Kunafa Waffle",
+      price: 169,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/kunafa-waffle.webp"),
+    },
+    {
+      id: "peanut-butter",
+      name: "Peanut Butter Waffle",
+      price: 169,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/peanut-butter-waffle.webp"),
+    },
+    {
+      id: "biscoff",
+      name: "Biscoff Waffle",
+      price: 169,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/biscoff-waffle.webp"),
+    },
+    {
+      id: "kitkat",
+      name: "KitKat Waffle",
+      price: 119,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/kitkat-waffle.webp"),
+    },
+  ],
+}
+,
+
+{
+  id: "corn",
+  name: "Corn",
+  image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/corn/corn-chaat.webp"),
+  description: "Delicious corn snacks with flavorful toppings",
+  subcategories: [
+    {
+      id: "salty-corn",
+      name: "Salty Corn",
+      price: 70,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/corn/salty-corn.webp"),
+    },
+    {
+      id: "masala-corn",
+      name: "Masala Corn",
+      price: 70,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/corn/masala-corn.webp"),
+    },
+    {
+      id: "corn-chaat",
+      name: "Corn Chaat",
+      price: 80,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/corn/corn-chaat.webp"),
+    },
+  ],
+},
+
+{
+  id: "burgers",
+  name: "Burgers",
+  image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/burgers/cheese-burger.webp"),
+  description: "Juicy and delicious burgers with tasty fillings",
+  subcategories: [
+    {
+      id: "grilled-burger",
+      name: "Grilled Burger",
+      price: 39,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/burgers/grilled-burger.webp"),
+    },
+    {
+      id: "tandoori-burger",
+      name: "Tandoori Burger",
+      price: 49,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/burgers/tandoori-burger.webp"),
+    },
+    {
+      id: "cheese-burger",
+      name: "Cheese Burger",
+      price: 69,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/burgers/cheese-burger.webp"),
+    },
+    {
+      id: "paneer-burger",
+      name: "Paneer Burger",
+      price: 69,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/burgers/paneer-burger.webp"),
+    },
+    {
+      id: "cheesy-paneer-burger",
+      name: "Cheesy Paneer Burger",
+      price: 89,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/burgers/cheesy-paneer-burger.webp"),
+    },
+  ],
+},
+
+{
+  id: "sandwiches",
+  name: "Sandwiches",
+  image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/sandwiches/grilled-sandwich.webp"),
+  description: "Freshly grilled sandwiches with delicious fillings",
+  subcategories: [
+    {
+      id: "grilled-sandwich",
+      name: "Grilled Sandwich",
+      price: 59,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/sandwiches/grilled-sandwich.webp"),
+    },
+    {
+      id: "cheese-sandwich",
+      name: "Cheese Sandwich",
+      price: 79,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/sandwiches/cheese-sandwich.webp"),
+    },
+    {
+      id: "paneer-sandwich",
+      name: "Paneer Sandwich",
+      price: 79,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/sandwiches/paneer-sandwich.webp"),
+    },
+    {
+      id: "cheesy-paneer-sandwich",
+      name: "Cheesy Paneer Sandwich",
+      price: 89,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/sandwiches/cheesy-paneer-sandwich.webp"),
+    },
+  ],
+},
+
+
+{
+  "id": "pancakes",
+  "name": "Pancakes",
+  "image": require("../assets/DIY_Drinks_All_Item_Images/individual-items/pancakes/choco-chips-pancake.webp"),
+  "description": "Soft and delicious pancakes with tasty toppings",
+  "subcategories": [
+    {
+      "id": "choco-chips",
+      "name": "Choco Chips Pancake",
+      "image": require("../assets/DIY_Drinks_All_Item_Images/individual-items/pancakes/choco-chips-pancake.webp"),
+      "variants": [
+        {
+          "id": "8-pcs",
+          "name": "8 Pcs",
+          "price": 89
+        },
+        {
+          "id": "14-pcs",
+          "name": "14 Pcs",
+          "price": 119
+        }
+      ]
+    },
+    {
+      "id": "oreo",
+      "name": "Oreo Pancake",
+      "image": require("../assets/DIY_Drinks_All_Item_Images/individual-items/pancakes/oreo-pancake.webp"),
+      "variants": [
+        {
+          "id": "8-pcs",
+          "name": "8 Pcs",
+          "price": 99
+        },
+        {
+          "id": "14-pcs",
+          "name": "14 Pcs",
+          "price": 129
+        }
+      ]
+    },
+    {
+      "id": "dry-fruit",
+      "name": "Dry Fruit Pancake",
+      "image": require("../assets/DIY_Drinks_All_Item_Images/individual-items/pancakes/dry-fruit-pancake.webp"),
+      "variants": [
+        {
+          "id": "8-pcs",
+          "name": "8 Pcs",
+          "price": 119
+        },
+        {
+          "id": "14-pcs",
+          "name": "14 Pcs",
+          "price": 149
+        }
+      ]
+    },
+    {
+      "id": "strawberry-filling",
+      "name": "Strawberry Filling Pancake",
+      "image": require("../assets/DIY_Drinks_All_Item_Images/individual-items/pancakes/strawberry-filling-pancake.webp"),
+      "variants": [
+        {
+          "id": "8-pcs",
+          "name": "8 Pcs",
+          "price": 119
+        },
+        {
+          "id": "14-pcs",
+          "name": "14 Pcs",
+          "price": 139
+        }
+      ]
+    },
+    {
+      "id": "biscoff",
+      "name": "Biscoff Pancake",
+      "image": require("../assets/DIY_Drinks_All_Item_Images/individual-items/pancakes/biscoff-pancake.webp"),
+      "variants": [
+        {
+          "id": "8-pcs",
+          "name": "8 Pcs",
+          "price": 119
+        },
+        {
+          "id": "14-pcs",
+          "name": "14 Pcs",
+          "price": 139
+        }
+      ]
+    },
+    {
+      "id": "ice-cream",
+      "name": "Ice Cream Pancake",
+      "image": require("../assets/DIY_Drinks_All_Item_Images/individual-items/pancakes/ice-cream-pancake.webp"),
+      "variants": [
+        {
+          "id": "8-pcs",
+          "name": "8 Pcs",
+          "price": 119
+        },
+        {
+          "id": "14-pcs",
+          "name": "14 Pcs",
+          "price": 149
+        }
+      ]
+    }
+  ]
+},
+
+{
+  id: "churros",
+  name: "Churros",
+  image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/churros/double-dip-churros.webp"),
+  description: "Crispy churros with delicious chocolate dips",
+  subcategories: [
+    {
+      id: "single-dip-churros",
+      name: "Single Dip Churros",
+      price: 59,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/churros/single-dip-churros.webp"),
+    },
+    {
+      id: "double-dip-churros",
+      name: "Double Dip Churros",
+      price: 69,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/churros/double-dip-churros.webp"),
+    },
+  ],
+},
+
+{
+  id: "french-fries",
+  name: "French Fries",
+  image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/french-fries/peri-peri-french-fries.webp"),
+  description: "Crispy and delicious French fries",
+  subcategories: [
+    {
+      id: "salty-french-fries",
+      name: "Salty French Fries",
+      price: 49,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/french-fries/salty-french-fries.webp"),
+    },
+    {
+      id: "peri-peri-french-fries",
+      name: "Peri Peri French Fries",
+      price: 59,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/french-fries/peri-peri-french-fries.webp"),
+    },
+  ],
+},
+
+{
+  id: "cold-coffee",
+  name: "Cold Coffee",
+  image: require("../assets/DIY_Drinks_All_Item_Images/existing-grouped-photos/cold-coffee-options.webp"),
+  description: "Refreshing and creamy cold coffee",
+  subcategories: [
+    {
+      id: "basic-cold-coffee",
+      name: "Basic Cold Coffee",
+      price: 79,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/cold-coffee/basic-cold-coffee.webp"),
+    },
+    {
+      id: "ice-cream-cold-coffee",
+      name: "Ice Cream Cold Coffee",
+      price: 99,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/cold-coffee/ice-cream-cold-coffee.webp"),
+    },
+  ],
+},
+
+{
+  id: "hot-coffee",
+  name: "Hot Coffee",
+  image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/hot-chocolate/hot-chocolate.webp"),
+  description: "Hot and comforting coffee",
+  subcategories: [
+    {
+      id: "hot-chocolate-coffee",
+      name: "Hot Chocolate Coffee",
+      price: 79,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/hot-chocolate/hot-chocolate.webp"),
+    },
+  ],
+},
+
+{
+  id: "mojitos",
+  name: "Mojitos",
+  image: require("../assets/DIY_Drinks_All_Item_Images/existing-grouped-photos/mojito-options.webp"),
+  description: "Refreshing fruity and flavorful mojitos",
+  subcategories: [
+    {
+      id: "green-apple",
+      name: "Green Apple Mojito",
+      price: 69,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/mojitos/green-apple-mojito.webp"),
+    },
+    {
+      id: "lemon-ice",
+      name: "Lemon Ice Mojito",
+      price: 69,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/mojitos/lemon-ice-mojito.webp"),
+    },
+    {
+      id: "watermelon",
+      name: "Watermelon Mojito",
+      price: 69,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/mojitos/watermelon-mojito.webp"),
+    },
+    {
+      id: "kiwi",
+      name: "Kiwi Mojito",
+      price: 69,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/mojitos/kiwi-mojito.webp"),
+    },
+    {
+      id: "blue-cocoa-cone",
+      name: "Blue Cocoa Cone Mojito",
+      price: 69,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/mojitos/blue-cocoa-cone-mojito.webp"),
+    },
+    {
+      id: "chili-guava",
+      name: "Chili Guava Mojito",
+      price: 69,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/mojitos/chili-guava-mojito.webp"),
+    },
+    {
+      id: "peach",
+      name: "Peach Mojito",
+      price: 69,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/mojitos/peach-mojito.webp"),
+    },
+  ],
+},
+
+
+
 ];
 
 export const combos: Combo[] = [
   {
-    id: "burger-feast-combo",
-    name: "Burger Feast",
-    description: "Most Loved Combo",
-    totalPrice: 167,
-    image: "https://loremflickr.com/400/300/combo,burger",
-    subItems: [
+    id: "dessert-treat",
+    name: "Dessert Treat",
+    description: "Chocolate waffle & pancake with a drink",
+    image: require("../assets/DIY_Drinks_All_Item_Images/combos/dessert-treat.webp"),
+    items: [
+      {
+        id: "triple-chocolate",
+        name: "Triple Chocolate Waffle",
+        categoryId: "waffles",
+        price: 99,
+      },
+      {
+        id: "choco-chips",
+        name: "Choco Chips Pancake - 14 Pcs",
+        categoryId: "pancakes",
+        price: 119,
+        variantId: "14-pcs",
+      },
+    ],
+    selectionGroups: [
+      {
+        id: "drink-choice",
+        name: "Choose 1 Drink",
+        required: true,
+        minSelections: 1,
+        maxSelections: 1,
+        options: [
+          {
+            id: "basic-cold-coffee",
+            name: "Basic Cold Coffee",
+            categoryId: "cold-coffee",
+            price: 79,
+          },
+          {
+            id: "hot-chocolate-drink",
+            name: "Hot Chocolate",
+            categoryId: "hot-chocolate",
+            price: 79,
+          },
+        ],
+      },
+    ],
+    pricing: {
+      type: "sum-of-selected-items",
+      basePrice: null,
+      currency: "INR",
+    },
+  },
+  {
+    id: "student-treat-favorite",
+    name: "Student Treat Favorite",
+    description: "Pancake & burger with a drink",
+    image: require("../assets/DIY_Drinks_All_Item_Images/combos/student-treat-favorite.webp"),
+    items: [
+      {
+        id: "choco-chips",
+        name: "Choco Chips Pancake - 8 Pcs",
+        categoryId: "pancakes",
+        price: 89,
+        variantId: "8-pcs",
+      },
       {
         id: "cheese-burger",
         name: "Cheese Burger",
-        image: "https://loremflickr.com/400/300/cheeseburger",
-      },
-      {
-        id: "peri-peri-fries",
-        name: "Peri-Peri Fries",
-        image: "https://loremflickr.com/400/300/fries,spicy",
-      },
-      {
-        id: "cold-coffee",
-        name: "Cold Coffee",
-        image: "https://loremflickr.com/400/300/cold,coffee",
+        categoryId: "burgers",
+        price: 69,
       },
     ],
-  },
-  {
-    id: "ultimate-waffle-combo",
-    name: "Ultimate Waffle Combo",
-    description: "Most Loved Combo",
-    totalPrice: 208,
-    image: "https://loremflickr.com/400/300/combo,waffle",
-    subItems: [
+    selectionGroups: [
       {
-        id: "oreo-crush-chocolate-waffle",
-        name: "Oreo Crush Chocolate Waffle",
-        image: "https://loremflickr.com/400/300/waffle,oreo",
-      },
-      {
-        id: "regular-fries",
-        name: "Regular Fries",
-        image: "https://loremflickr.com/400/300/fries",
-      },
-      {
-        id: "cold-coffee",
-        name: "Cold Coffee",
-        image: "https://loremflickr.com/400/300/cold,coffee",
+        id: "drink-choice",
+        name: "Choose 1 Drink",
+        required: true,
+        minSelections: 1,
+        maxSelections: 1,
+        options: [
+          {
+            id: "basic-cold-coffee",
+            name: "Basic Cold Coffee",
+            categoryId: "cold-coffee",
+            price: 79,
+          },
+          {
+            id: "hot-chocolate-drink",
+            name: "Hot Chocolate",
+            categoryId: "hot-chocolate",
+            price: 79,
+          },
+        ],
       },
     ],
+    pricing: {
+      type: "sum-of-selected-items",
+      basePrice: null,
+      currency: "INR",
+    },
   },
   {
-    id: "power-combo",
-    name: "Power Combo",
-    description: "Customer Favorite",
-    totalPrice: 177,
-    image: "https://loremflickr.com/400/300/combo,power",
-    subItems: [
+    id: "burger-fest",
+    name: "Burger Fest",
+    description: "Burger & fries with a drink",
+    image: require("../assets/DIY_Drinks_All_Item_Images/combos/burger-fest.webp"),
+    items: [
       {
         id: "cheese-burger",
         name: "Cheese Burger",
-        image: "https://loremflickr.com/400/300/cheeseburger",
+        categoryId: "burgers",
+        price: 69,
       },
       {
-        id: "5-cheese-balls",
-        name: "5 Cheese Balls",
-        image: "https://loremflickr.com/400/300/cheese,ball",
-      },
-      {
-        id: "cold-coffee",
-        name: "Cold Coffee",
-        image: "https://loremflickr.com/400/300/cold,coffee",
+        id: "peri-peri-french-fries",
+        name: "Peri Peri French Fries",
+        categoryId: "french-fries",
+        price: 59,
       },
     ],
+    selectionGroups: [
+      {
+        id: "drink-choice",
+        name: "Choose 1 Drink",
+        required: true,
+        minSelections: 1,
+        maxSelections: 1,
+        options: [
+          {
+            id: "basic-cold-coffee",
+            name: "Basic Cold Coffee",
+            categoryId: "cold-coffee",
+            price: 79,
+          },
+          {
+            id: "hot-chocolate-drink",
+            name: "Hot Chocolate",
+            categoryId: "hot-chocolate",
+            price: 79,
+          },
+        ],
+      },
+    ],
+    pricing: {
+      type: "sum-of-selected-items",
+      basePrice: null,
+      currency: "INR",
+    },
   },
   {
-    id: "chocolate-strawberry-combo",
-    name: "Chocolate Strawberry Combo",
-    description: "Customer Favorite",
-    totalPrice: 208,
-    image: "https://loremflickr.com/400/300/combo,strawberry",
-    subItems: [
+    id: "full-meal",
+    name: "Full Meal",
+    description: "Burger, sandwich & waffle with a drink",
+    image: require("../assets/DIY_Drinks_All_Item_Images/combos/full-meal.webp"),
+    items: [
       {
-        id: "chocolate-strawberry-bowl",
-        name: "Chocolate Strawberry Bowl",
-        image: "https://loremflickr.com/400/300/strawberry,bowl",
+        id: "cheese-burger",
+        name: "Cheese Burger",
+        categoryId: "burgers",
+        price: 69,
       },
       {
-        id: "regular-fries",
-        name: "Regular Fries",
-        image: "https://loremflickr.com/400/300/fries",
+        id: "grilled-sandwich",
+        name: "Grilled Sandwich",
+        categoryId: "sandwiches",
+        price: 59,
       },
       {
-        id: "cold-coffee",
-        name: "Cold Coffee",
-        image: "https://loremflickr.com/400/300/cold,coffee",
+        id: "single-chocolate",
+        name: "Single Chocolate Waffle",
+        categoryId: "waffles",
+        price: 79,
       },
     ],
+    selectionGroups: [
+      {
+        id: "drink-choice",
+        name: "Choose 1 Drink",
+        required: true,
+        minSelections: 1,
+        maxSelections: 1,
+        options: [
+          {
+            id: "basic-cold-coffee",
+            name: "Basic Cold Coffee",
+            categoryId: "cold-coffee",
+            price: 79,
+          },
+          {
+            id: "hot-chocolate-drink",
+            name: "Hot Chocolate",
+            categoryId: "hot-chocolate",
+            price: 79,
+          },
+        ],
+      },
+    ],
+    pricing: {
+      type: "sum-of-selected-items",
+      basePrice: null,
+      currency: "INR",
+    },
   },
   {
     id: "sandwich-meal",
     name: "Sandwich Meal",
-    description: "Best Value Meal",
-    totalPrice: 157,
-    image: "https://loremflickr.com/400/300/combo,sandwich",
-    subItems: [
+    description: "Cheesy paneer sandwich & fries with a drink",
+    image: require("../assets/DIY_Drinks_All_Item_Images/combos/sandwich-meal.webp"),
+    items: [
       {
-        id: "cheese-grilled-sandwich",
-        name: "Cheese Grilled Sandwich",
-        image: "https://loremflickr.com/400/300/grilled,sandwich",
+        id: "cheesy-paneer-sandwich",
+        name: "Cheesy Paneer Sandwich",
+        categoryId: "sandwiches",
+        price: 89,
       },
       {
-        id: "regular-fries",
-        name: "Regular Fries",
-        image: "https://loremflickr.com/400/300/fries",
-      },
-      {
-        id: "cold-coffee",
-        name: "Cold Coffee",
-        image: "https://loremflickr.com/400/300/cold,coffee",
+        id: "peri-peri-french-fries",
+        name: "Peri Peri French Fries",
+        categoryId: "french-fries",
+        price: 59,
       },
     ],
+    selectionGroups: [
+      {
+        id: "drink-choice",
+        name: "Choose 1 Drink",
+        required: true,
+        minSelections: 1,
+        maxSelections: 1,
+        options: [
+          {
+            id: "basic-cold-coffee",
+            name: "Basic Cold Coffee",
+            categoryId: "cold-coffee",
+            price: 79,
+          },
+          {
+            id: "hot-chocolate-drink",
+            name: "Hot Chocolate",
+            categoryId: "hot-chocolate",
+            price: 79,
+          },
+        ],
+      },
+    ],
+    pricing: {
+      type: "sum-of-selected-items",
+      basePrice: null,
+      currency: "INR",
+    },
   },
   {
-    id: "cheese-ball-meal",
-    name: "Cheese Ball Meal",
-    description: "Best Value Meal",
-    totalPrice: 187,
-    image: "https://loremflickr.com/400/300/combo,cheese",
-    subItems: [
+    id: "triple-chocolate-combo",
+    name: "Triple Chocolate Combo",
+    description: "Chocolate waffle & fries with a drink",
+    image: require("../assets/DIY_Drinks_All_Item_Images/combos/triple-chocolate-combo.webp"),
+    items: [
       {
-        id: "8-cheese-balls",
-        name: "8 Cheese Balls",
-        image: "https://loremflickr.com/400/300/cheese,ball",
+        id: "triple-chocolate",
+        name: "Triple Chocolate Waffle",
+        categoryId: "waffles",
+        price: 99,
       },
       {
-        id: "peri-peri-fries",
-        name: "Peri-Peri Fries",
-        image: "https://loremflickr.com/400/300/fries,spicy",
-      },
-      {
-        id: "cold-coffee",
-        name: "Cold Coffee",
-        image: "https://loremflickr.com/400/300/cold,coffee",
+        id: "peri-peri-french-fries",
+        name: "Peri Peri French Fries",
+        categoryId: "french-fries",
+        price: 59,
       },
     ],
+    selectionGroups: [
+      {
+        id: "drink-choice",
+        name: "Choose 1 Drink",
+        required: true,
+        minSelections: 1,
+        maxSelections: 1,
+        options: [
+          {
+            id: "basic-cold-coffee",
+            name: "Basic Cold Coffee",
+            categoryId: "cold-coffee",
+            price: 79,
+          },
+          {
+            id: "hot-chocolate-drink",
+            name: "Hot Chocolate",
+            categoryId: "hot-chocolate",
+            price: 79,
+          },
+        ],
+      },
+    ],
+    pricing: {
+      type: "sum-of-selected-items",
+      basePrice: null,
+      currency: "INR",
+    },
   },
   {
-    id: "corn-snack-combo",
-    name: "Corn Snack Combo",
-    description: "Best Value Meal",
-    totalPrice: 157,
-    image: "https://loremflickr.com/400/300/combo,corn",
-    subItems: [
+    id: "oreo-combo",
+    name: "Oreo Combo",
+    description: "Oreo waffle & Oreo pancake with a drink",
+    image: require("../assets/DIY_Drinks_All_Item_Images/combos/oreo-combo.webp"),
+    items: [
       {
-        id: "masala-corn",
-        name: "Masala Corn",
-        image: "https://loremflickr.com/400/300/corn,masala",
-      },
-      {
-        id: "regular-fries",
-        name: "Regular Fries",
-        image: "https://loremflickr.com/400/300/fries",
-      },
-      {
-        id: "mojito",
-        name: "Mojito",
-        image: "https://loremflickr.com/400/300/mojito",
+        id: "oreo-crush",
+        name: "Oreo Crush Waffle",
+        categoryId: "waffles",
+        price: 119,
       },
     ],
+    selectionGroups: [
+      {
+        id: "pancake-size",
+        name: "Choose Oreo Pancake Size",
+        required: true,
+        minSelections: 1,
+        maxSelections: 1,
+        options: [
+          {
+            id: "8-pcs",
+            name: "Oreo Pancake - 8 Pcs",
+            categoryId: "pancakes",
+            itemId: "oreo",
+            price: 99,
+          },
+          {
+            id: "14-pcs",
+            name: "Oreo Pancake - 14 Pcs",
+            categoryId: "pancakes",
+            itemId: "oreo",
+            price: 129,
+          },
+        ],
+      },
+      {
+        id: "drink-choice",
+        name: "Choose 1 Drink",
+        required: true,
+        minSelections: 1,
+        maxSelections: 1,
+        options: [
+          {
+            id: "basic-cold-coffee",
+            name: "Basic Cold Coffee",
+            categoryId: "cold-coffee",
+            price: 79,
+          },
+          {
+            id: "hot-chocolate-drink",
+            name: "Hot Chocolate",
+            categoryId: "hot-chocolate",
+            price: 79,
+          },
+        ],
+      },
+    ],
+    pricing: {
+      type: "sum-of-selected-items",
+      basePrice: null,
+      currency: "INR",
+    },
+  },
+  {
+    id: "custom-combo",
+    name: "Custom Combo",
+    description: "Choose eligible items to build your own combo",
+    image: require("../assets/DIY_Drinks_All_Item_Images/combos/full-meal.webp"),
+    items: [],
+    selectionGroups: [],
+    pricing: {
+      type: "sum-of-selected-items",
+      basePrice: 0,
+      currency: "INR",
+    },
+    discountRuleId: "custom-combo-discount",
   },
 ];
+
+export const customComboRule: CustomComboRule = {
+  id: "custom-combo-discount",
+  name: "Custom Combo Discount",
+  appliesTo: "custom-combo",
+  eligibility: {
+    subtotal: {
+      operator: "greater-than-or-equal",
+      amount: 220,
+      currency: "INR",
+    },
+  },
+  discount: {
+    type: "fixed-amount",
+    amount: 20,
+    currency: "INR",
+  },
+  calculation: "finalPrice = subtotal >= 220 ? subtotal - 20 : subtotal",
+  stackable: false,
+};
 
 export const combosCategory: Category = {
   id: "combos",
   name: "Combos",
-  image: "https://loremflickr.com/400/300/combo,meal",
+  image: require("../assets/DIY_Drinks_All_Item_Images/combos/full-meal.webp"),
   description: "Value combos & meals",
   subcategories: combos.map((c) => ({
     id: c.id,
     name: c.name,
-    price: c.totalPrice,
+    price: getComboStartingPrice(c),
     image: c.image,
   })),
 };
 
-export interface IceCreamFlavour {
-  id: string;
-  name: string;
-  image?: string;
-}
 
-export interface IceCreamItem {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  image?: string;
-  scoopLimit: number;
-  flavours: IceCreamFlavour[];
-}
-
-const iceCreamFlavourOptions: IceCreamFlavour[] = [
-  {
-    id: "chocolate",
-    name: "Chocolate",
-    image: "https://loremflickr.com/400/300/icecream,chocolate",
-  },
-  {
-    id: "vanilla",
-    name: "Vanilla",
-    image: "https://loremflickr.com/400/300/icecream,vanilla",
-  },
-  {
-    id: "mango",
-    name: "Mango",
-    image: "https://loremflickr.com/400/300/icecream,mango",
-  },
-  {
-    id: "strawberry",
-    name: "Strawberry",
-    image: "https://loremflickr.com/400/300/icecream,strawberry",
-  },
-  {
-    id: "black-currant",
-    name: "Black Currant",
-    image: "https://loremflickr.com/400/300/icecream,blackcurrant",
-  },
-  {
-    id: "kesar-pista",
-    name: "Kesar Pista",
-    image: "https://loremflickr.com/400/300/icecream,pistachio",
-  },
-  {
-    id: "tutti-frutti",
-    name: "Tutti Frutti",
-    image: "https://loremflickr.com/400/300/icecream,tuttifrutti",
-  },
-  {
-    id: "fruit-nut",
-    name: "Fruit & Nut",
-    image: "https://loremflickr.com/400/300/icecream,fruitnut",
-  },
-  {
-    id: "cassata",
-    name: "Cassata",
-    image: "https://loremflickr.com/400/300/icecream,cassata",
-  },
-];
-
-export const iceCreams: IceCreamItem[] = [
-  {
-    id: "cone-classic",
-    name: "Cone Classic (1 Scoop)",
-    description: "Choose any flavour",
-    price: 30,
-    scoopLimit: 1,
-    image: "https://loremflickr.com/400/300/icecream,cone",
-    flavours: iceCreamFlavourOptions,
-  },
-  {
-    id: "double-delight",
-    name: "Double Delight (2 Scoops)",
-    description: "Choose any 2 flavours",
-    price: 60,
-    scoopLimit: 2,
-    image: "https://loremflickr.com/400/300/icecream,scoop",
-    flavours: iceCreamFlavourOptions,
-  },
-  {
-    id: "triple-treat",
-    name: "Triple Treat (3 Scoops)",
-    description: "Choose any 3 flavours",
-    price: 80,
-    scoopLimit: 3,
-    image: "https://loremflickr.com/400/300/icecream,triple",
-    flavours: iceCreamFlavourOptions,
-  },
-];
-
-export const iceCreamCategory: Category = {
-  id: "ice-cream",
-  name: "Ice Cream",
-  image: "https://loremflickr.com/400/300/icecream,cone",
-  description: "Ice creams & scoops",
-  subcategories: [],
-};

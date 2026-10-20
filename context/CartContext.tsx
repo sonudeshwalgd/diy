@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback } from "react";
 import type { Subcategory, Category } from "../data/products";
+import { getItemPrice } from "../data/products";
 
 export interface CartItem {
   subcategory: Subcategory;
@@ -24,6 +25,7 @@ interface CartContextType {
   itemCount: number;
   getCategoryCount: (categoryId: string) => number;
   getItemQuantity: (subcategoryId: string) => number;
+  getComboQuantity: (comboId: string) => number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -94,7 +96,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const clearCart = useCallback(() => setItems([]), []);
 
   const total = items.reduce(
-    (sum, item) => sum + item.subcategory.price * item.quantity,
+    (sum, item) => sum + getItemPrice(item.subcategory) * item.quantity,
     0
   );
 
@@ -116,6 +118,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     [items]
   );
 
+  const getComboQuantity = useCallback(
+    (comboId: string) => {
+      const prefix = `combo:${comboId}`;
+      return items
+        .filter((i) => i.subcategory.id.startsWith(prefix))
+        .reduce((sum, i) => sum + i.quantity, 0);
+    },
+    [items]
+  );
+
   return (
     <CartContext.Provider
       value={{
@@ -130,6 +142,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         itemCount,
         getCategoryCount,
         getItemQuantity,
+        getComboQuantity,
       }}
     >
       {children}

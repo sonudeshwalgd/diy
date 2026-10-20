@@ -1,17 +1,16 @@
 import { useEffect, useRef, useState } from "react";
+import { Dimensions, Image, Pressable, ScrollView, Text, View } from "react-native";
+import { BlurView } from "expo-blur";
 import {
-  Dimensions,
-  Image,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from "react-native";
-import { combos, type Combo } from "../data/products";
+  combos,
+  getComboItemCount,
+  getComboStartingPrice,
+  type Combo,
+} from "../data/products";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const BANNER_WIDTH = SCREEN_WIDTH - 32;
-const BANNER_HEIGHT = 300;
+const BANNER_HEIGHT = 190;
 
 const BANNER_COLORS = [
   "#DC2626",
@@ -70,35 +69,61 @@ export default function BannerCarousel({ onComboPress }: Props) {
           <Pressable
             key={combo.id}
             onPress={() => onComboPress?.(combo)}
+            className="mr-3"
             style={{
               width: BANNER_WIDTH,
               height: BANNER_HEIGHT,
-              marginRight: 12,
-              borderRadius: 16,
+              borderRadius: 24,
               overflow: "hidden",
             }}
           >
             <Image
-              source={{ uri: combo.image }}
+              source={combo.image}
               style={{ width: BANNER_WIDTH, height: BANNER_HEIGHT }}
               resizeMode="cover"
             />
+            <View
+              className="absolute top-3 right-3 overflow-hidden rounded-full"
+              style={{ borderRadius: 999 }}
+            >
+              <BlurView
+                intensity={50}
+                tint="light"
+                experimentalBlurMethod="dimezisBlurView"
+              >
+                <Text
+                  className="text-orange-600 text-base font-sans-extrabold px-3.5 py-1.5"
+                  style={{ backgroundColor: "rgba(255,255,255,0.55)" }}
+                >
+                  ₹{getComboStartingPrice(combo)}
+                </Text>
+              </BlurView>
+            </View>
             <View
               style={{
                 position: "absolute",
                 bottom: 0,
                 left: 0,
                 right: 0,
-                padding: 16,
-                backgroundColor: BANNER_COLORS[index % BANNER_COLORS.length] + "CC",
+                paddingVertical: 10,
+                paddingHorizontal: 14,
+                backgroundColor: BANNER_COLORS[index % BANNER_COLORS.length] + "D9",
               }}
             >
-              <Text style={{ color: "white", fontSize: 20, fontWeight: "bold" }}>
+              <Text
+                className="text-white text-lg font-sans-extrabold"
+                numberOfLines={1}
+              >
                 {combo.name}
               </Text>
-              <Text style={{ color: "white", fontSize: 14, marginTop: 4, opacity: 0.9 }}>
-                {combo.description} · {combo.subItems.length} items · ₹
-                {combo.totalPrice}
+              <Text
+                className="text-white/90 text-xs mt-0.5 font-sans-medium"
+                numberOfLines={1}
+              >
+                {combo.description}
+                {getComboItemCount(combo) > 0
+                  ? ` · ${getComboItemCount(combo)} items`
+                  : ""}
               </Text>
             </View>
           </Pressable>
@@ -106,16 +131,13 @@ export default function BannerCarousel({ onComboPress }: Props) {
       </ScrollView>
 
       {/* Dots */}
-      <View style={{ flexDirection: "row", justifyContent: "center", marginTop: 12, gap: 6 }}>
+      <View className="flex-row justify-center mt-3 gap-1.5">
         {combos.map((_, i) => (
           <View
             key={i}
-            style={{
-              width: i === activeIndex ? 20 : 8,
-              height: 8,
-              borderRadius: 4,
-              backgroundColor: i === activeIndex ? "#2563EB" : "#D1D5DB",
-            }}
+            className={`h-1.5 rounded-full ${
+              i === activeIndex ? "w-5 bg-orange-600" : "w-1.5 bg-stone-300"
+            }`}
           />
         ))}
       </View>

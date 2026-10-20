@@ -2,12 +2,11 @@ import {
   Linking,
   Pressable,
   Text,
-  View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Sheet from "./Sheet";
 
-export const PHONE_NUMBER = "918445231980";
+export const PHONE_NUMBER = "919068222172";
 const WHATSAPP_MESSAGE = "Hi, I'd like to place an order.";
 
 interface Props {
@@ -29,15 +28,13 @@ export default function OrderBottomSheet({ visible, onClose }: Props) {
     <Sheet
       visible={visible}
       onClose={onClose}
-      sheetClassName="bg-white rounded-t-3xl px-6 pt-6 pb-10 items-center"
+      sheetClassName="px-6 pt-1 pb-10 items-center"
     >
-      <View className="w-10 h-1 bg-gray-300 rounded-full mb-5" />
-
-          <Text className="text-lg font-semibold text-gray-900 text-center">
+          <Text className="text-lg font-sans-semibold text-gray-900 text-center">
             To place an order, please call on this number
           </Text>
 
-          <Text className="text-2xl font-bold text-blue-600 mt-4">
+          <Text className="text-2xl font-sans-bold text-orange-600 mt-4">
             +{PHONE_NUMBER}
           </Text>
 
@@ -46,7 +43,7 @@ export default function OrderBottomSheet({ visible, onClose }: Props) {
             className="mt-6 bg-green-600 rounded-full px-8 py-3 flex-row items-center gap-2"
           >
             <Ionicons name="call" size={20} color="white" />
-            <Text className="text-white text-base font-semibold">Call Now</Text>
+            <Text className="text-white text-base font-sans-semibold">Call Now</Text>
           </Pressable>
 
           <Pressable
@@ -54,7 +51,7 @@ export default function OrderBottomSheet({ visible, onClose }: Props) {
             className="mt-4 bg-[#25D366] rounded-full px-8 py-3 flex-row items-center gap-2"
           >
             <Ionicons name="logo-whatsapp" size={22} color="white" />
-            <Text className="text-white text-base font-semibold">
+            <Text className="text-white text-base font-sans-semibold">
               Chat on WhatsApp
             </Text>
           </Pressable>
