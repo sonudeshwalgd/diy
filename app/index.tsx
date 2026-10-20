@@ -315,7 +315,7 @@ function Footer() {
 }
 
 export default function HomeScreen() {
-  const [headerHeight, setHeaderHeight] = useState(150);
+  const [headerHeight, setHeaderHeight] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [subcatVisible, setSubcatVisible] = useState(false);
   const [selectedCombo, setSelectedCombo] = useState<Combo | null>(null);
@@ -354,7 +354,7 @@ export default function HomeScreen() {
         intensity={100}
         tint="light"
         experimentalBlurMethod="dimezisBlurView"
-        onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
+        // onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
         className="absolute top-0 left-0 right-0 z-10 border-b border-white/60"
       >
         <SafeAreaView edges={["top"]} className="bg-white/50">
