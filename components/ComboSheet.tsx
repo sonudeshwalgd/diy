@@ -232,7 +232,7 @@ function ComboSheetContent({
       sheetStyle={{ maxHeight: "80%" }}
     >
       {/* Header */}
-      <View className="px-5 pt-5 pb-3 flex-row items-center justify-between">
+      <View className="px-5 pt-2 pb-3 flex-row items-center justify-between">
         <View className="flex-row items-center gap-3">
           <Image
             source={combo.image}

@@ -315,6 +315,7 @@ function Footer() {
 }
 
 export default function HomeScreen() {
+  const [headerHeight, setHeaderHeight] = useState(150);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [subcatVisible, setSubcatVisible] = useState(false);
   const [selectedCombo, setSelectedCombo] = useState<Combo | null>(null);
@@ -353,6 +354,7 @@ export default function HomeScreen() {
         intensity={100}
         tint="light"
         experimentalBlurMethod="dimezisBlurView"
+        onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
         className="absolute top-0 left-0 right-0 z-10 border-b border-white/60"
       >
         <SafeAreaView edges={["top"]} className="bg-white/50">
@@ -440,7 +442,7 @@ export default function HomeScreen() {
       </BlurView>
 
       {/* Spacer matching header height so content scrolls underneath */}
-      <View className="h-[190]" />
+      <View style={{ height: headerHeight }} />
 
       <FlatList
         data={categories}
@@ -464,7 +466,7 @@ export default function HomeScreen() {
                     <Text className="text-lg font-sans-extrabold text-stone-900 tracking-tight">
                       Combos & Meals
                     </Text>
-                    <Text className="text-xs text-stone-500 font-sans-medium">
+                    <Text className="text-[13px] text-stone-500 font-sans-medium">
                       Save more with our combos
                     </Text>
                   </View>
@@ -475,7 +477,7 @@ export default function HomeScreen() {
                   </Text>
                 </View>
               </View>
-              <View className="flex-row flex-wrap justify-between px-3">
+              <View className="flex-row flex-wrap justify-between px-4">
                 {combos.map((combo, index) => (
                   <ComboCard
                     key={combo.id}
@@ -504,7 +506,7 @@ export default function HomeScreen() {
                 <Text className="text-lg font-sans-extrabold text-stone-900 tracking-tight">
                   Our Menu
                 </Text>
-                <Text className="text-xs text-stone-500 font-sans-medium">
+                <Text className="text-[13px] text-stone-500 font-sans-medium">
                   Tap to add items to cart
                 </Text>
               </View>

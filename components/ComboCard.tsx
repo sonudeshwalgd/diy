@@ -79,14 +79,17 @@ export default function ComboCard({ combo, onPress, index = 0 }: Props) {
           <Text className="text-[15px] font-sans-bold text-stone-900" numberOfLines={1}>
             {combo.name}
           </Text>
-          <Text className="text-[11px] text-stone-500 mt-0.5" numberOfLines={1}>
+          <Text
+            className="text-[12px] text-stone-500 mt-0.5 font-sans-medium"
+            numberOfLines={1}
+          >
             {combo.description}
           </Text>
 
           <View className="flex-row items-end justify-between mt-2">
             <View className="flex-row items-center gap-1">
-              <Ionicons name="fast-food-outline" size={12} color="#A8A29E" />
-              <Text className="text-[10px] text-stone-400">
+              <Ionicons name="fast-food-outline" size={13} color="#A8A29E" />
+              <Text className="text-[11px] text-stone-400 font-sans-medium">
                 {itemCount > 0 ? `${itemCount} items` : "Build your own"}
               </Text>
             </View>

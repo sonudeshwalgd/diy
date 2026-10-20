@@ -78,7 +78,7 @@ export default function FeedbackSheet({
       sheetStyle={{ maxHeight: "85%" }}
     >
       {/* Header */}
-      <View className="px-5 pt-5 pb-3 flex-row items-center justify-between">
+      <View className="px-5 pt-2 pb-3 flex-row items-center justify-between">
         <View>
           <Text className="text-xl font-sans-bold text-gray-900">
             {isAnonymous ? "Anonymous Feedback" : "Order Feedback"}

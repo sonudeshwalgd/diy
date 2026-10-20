@@ -29,26 +29,26 @@ export default function Sheet({
   keyboardAvoiding = false,
 }: SheetProps) {
   const content = (
-    <Pressable onPress={onClose} className="flex-1 justify-end bg-black/40">
+    <Pressable onPress={onClose} className="flex-1 justify-end bg-black/25">
       <Pressable
         onPress={() => {}}
         className="overflow-hidden"
         style={[{ borderTopLeftRadius: 28, borderTopRightRadius: 28 }, sheetStyle]}
       >
         <BlurView
-          intensity={80}
+          intensity={70}
           tint="light"
           experimentalBlurMethod="dimezisBlurView"
           style={StyleSheet.absoluteFill}
         />
         <LinearGradient
-          colors={["rgba(255,255,255,0.94)", "rgba(255,255,255,0.80)"]}
+          colors={["rgba(255,255,255,0.72)", "rgba(255,255,255,0.55)"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
           style={StyleSheet.absoluteFill}
         />
-        <View className="items-center pt-3 pb-1">
-          <View className="w-10 h-1.5 bg-gray-900/15 rounded-full" />
+        <View className="items-center pt-2 pb-0.5">
+          <View className="w-9 h-1 bg-gray-900/20 rounded-full" />
         </View>
         <View className={sheetClassName}>{children}</View>
       </Pressable>

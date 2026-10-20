@@ -211,7 +211,7 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
       sheetClassName=""
       sheetStyle={{ maxHeight: "85%" }}
     >
-      <View className="px-5 pt-5 pb-3 flex-row items-center justify-between">
+      <View className="px-5 pt-2 pb-3 flex-row items-center justify-between">
               <View>
                 <Text className="text-xl font-sans-bold text-gray-900">Your Cart</Text>
                 <Text className="text-sm text-gray-500 mt-0.5">
