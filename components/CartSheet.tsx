@@ -158,8 +158,13 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
     <View className="flex-row items-center bg-white/85 rounded-3xl p-3 mb-3 mx-4 border border-white/80">
       <Image
         source={item.subcategory.image || item.category.image}
-        className="w-16 h-16 rounded-xl bg-gray-100"
-        resizeMode="cover"
+        style={{
+          width: 64,
+          height: 64,
+          borderRadius: 12,
+          backgroundColor: "#F5F5F4",
+        }}
+        resizeMode="contain"
       />
       <View className="flex-1 ml-3">
         <Text className="text-xs text-gray-400">{item.category.name}</Text>

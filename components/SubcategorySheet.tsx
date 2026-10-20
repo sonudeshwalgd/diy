@@ -50,8 +50,13 @@ export default function SubcategorySheet({ visible, category, onClose }: Props) 
         <View className="flex-row items-center gap-3">
           <Image
             source={category.image}
-            className="w-14 h-14 rounded-2xl bg-stone-100"
-            resizeMode="cover"
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: 16,
+              backgroundColor: "#F5F5F4",
+            }}
+            resizeMode="contain"
           />
           <View className="flex-1">
             <Text className="text-xl font-sans-bold text-gray-900">
@@ -83,8 +88,13 @@ export default function SubcategorySheet({ visible, category, onClose }: Props) 
                 <View className="flex-row items-center gap-3 p-3">
                   <Image
                     source={sub.image}
-                    className="w-16 h-16 rounded-2xl bg-stone-100"
-                    resizeMode="cover"
+                    style={{
+                      width: 64,
+                      height: 64,
+                      borderRadius: 16,
+                      backgroundColor: "#F5F5F4",
+                    }}
+                    resizeMode="contain"
                   />
                   <View className="flex-1">
                     <Text className="text-base font-sans-bold text-gray-900">
@@ -152,8 +162,13 @@ export default function SubcategorySheet({ visible, category, onClose }: Props) 
               <View className="relative">
                 <Image
                   source={sub.image}
-                  className="w-16 h-16 rounded-2xl bg-stone-100"
-                  resizeMode="cover"
+                  style={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: 16,
+                    backgroundColor: "#F5F5F4",
+                  }}
+                  resizeMode="contain"
                 />
                 {inCart && (
                   <View className="absolute -top-1 -right-1 bg-green-500 rounded-full w-6 h-6 items-center justify-center border-2 border-white">

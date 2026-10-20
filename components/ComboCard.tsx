@@ -36,11 +36,18 @@ export default function ComboCard({ combo, onPress, index = 0 }: Props) {
           elevation: 2,
         }}
       >
-        <View style={{ position: "relative", overflow: "hidden" }}>
+        <View
+          style={{
+            position: "relative",
+            overflow: "hidden",
+            height: 132,
+            backgroundColor: "#F5F5F4",
+          }}
+        >
           <Image
             source={combo.image}
-            style={{ width: "100%", height: 112 }}
-            resizeMode="cover"
+            style={{ width: "100%", height: "100%" }}
+            resizeMode="contain"
           />
           <BlurView
             intensity={60}

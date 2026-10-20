@@ -77,6 +77,7 @@ export default function BannerCarousel({ onComboPress }: Props) {
               height: BANNER_HEIGHT,
               borderRadius: 24,
               overflow: "hidden",
+              backgroundColor: "#292524",
               shadowColor: "#78716C",
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.15,
@@ -87,7 +88,7 @@ export default function BannerCarousel({ onComboPress }: Props) {
             <Image
               source={combo.image}
               style={{ width: BANNER_WIDTH, height: BANNER_HEIGHT }}
-              resizeMode="cover"
+              resizeMode="contain"
             />
             <LinearGradient
               colors={["transparent", "rgba(0,0,0,0.72)"]}

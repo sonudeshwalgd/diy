@@ -236,8 +236,13 @@ function ComboSheetContent({
         <View className="flex-row items-center gap-3">
           <Image
             source={combo.image}
-            className="w-14 h-14 rounded-2xl bg-stone-100"
-            resizeMode="cover"
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: 16,
+              backgroundColor: "#F5F5F4",
+            }}
+            resizeMode="contain"
           />
           <View className="flex-1">
             <Text className="text-xl font-sans-bold text-gray-900">{combo.name}</Text>
@@ -287,8 +292,13 @@ function ComboSheetContent({
                       {image ? (
                         <Image
                           source={image}
-                          className="w-12 h-12 rounded-xl bg-gray-100"
-                          resizeMode="cover"
+                          style={{
+                            width: 48,
+                            height: 48,
+                            borderRadius: 12,
+                            backgroundColor: "#F5F5F4",
+                          }}
+                          resizeMode="contain"
                         />
                       ) : (
                         <View className="w-12 h-12 rounded-xl bg-gray-100 items-center justify-center">
@@ -356,8 +366,13 @@ function ComboSheetContent({
                       {image ? (
                         <Image
                           source={image}
-                          className="w-14 h-14 rounded-xl bg-gray-100"
-                          resizeMode="cover"
+                          style={{
+                            width: 56,
+                            height: 56,
+                            borderRadius: 12,
+                            backgroundColor: "#F5F5F4",
+                          }}
+                          resizeMode="contain"
                         />
                       ) : (
                         <View className="w-14 h-14 rounded-xl bg-gray-100 items-center justify-center">
@@ -432,8 +447,14 @@ function ComboSheetContent({
                         {image ? (
                           <Image
                             source={image}
-                            className="w-12 h-12 rounded-xl bg-gray-100 ml-3"
-                            resizeMode="cover"
+                            style={{
+                              width: 48,
+                              height: 48,
+                              borderRadius: 12,
+                              backgroundColor: "#F5F5F4",
+                              marginLeft: 12,
+                            }}
+                            resizeMode="contain"
                           />
                         ) : (
                           <View className="w-12 h-12 rounded-xl bg-gray-100 ml-3 items-center justify-center">

@@ -31,11 +31,18 @@ export default function CategoryCard({ category, onPress, index = 0 }: Props) {
           elevation: 2,
         }}
       >
-        <View style={{ position: "relative", overflow: "hidden" }}>
+        <View
+          style={{
+            position: "relative",
+            overflow: "hidden",
+            height: 132,
+            backgroundColor: "#F5F5F4",
+          }}
+        >
           <Image
             source={category.image}
-            style={{ width: "100%", height: 112 }}
-            resizeMode="cover"
+            style={{ width: "100%", height: "100%" }}
+            resizeMode="contain"
           />
         {count > 0 && (
           <View className="absolute top-2 right-2 bg-emerald-500 rounded-full w-6 h-6 items-center justify-center border-2 border-white">
