@@ -50,7 +50,12 @@ export default function Sheet({
         <View className="items-center pt-2 pb-0.5">
           <View className="w-9 h-1 bg-gray-900/20 rounded-full" />
         </View>
-        <View className={sheetClassName}>{children}</View>
+        <View
+          className={sheetClassName}
+          style={{ flexShrink: 1, minHeight: 0 }}
+        >
+          {children}
+        </View>
       </Pressable>
     </Pressable>
   );

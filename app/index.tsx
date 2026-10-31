@@ -23,9 +23,12 @@ import { useCart } from "../context/CartContext";
 const OUTLET_MAPS_URL =
   "https://www.google.com/maps/place/DIY+Drinks/data=!4m2!3m1!1s0x0:0xb1c683b845157dec?sa=X&ved=1t:2428&ictx=111";
 
-// Search fallbacks — open the platform's results for "DIY Drinks Dehradun".
-const ZOMATO_URL = "https://www.zomato.com/dehradun/restaurants?q=DIY%20Drinks";
-const SWIGGY_URL = "https://www.swiggy.com/search?query=DIY%20Drinks";
+const RATE_US_URL = "https://share.google/F9VSd84NFGWRilIeX";
+
+// Zomato outlet page; Swiggy opens search results for "DIY Drinks".
+const ZOMATO_URL = "https://www.zomato.com/dehradun/diy-drinks-subhash-nagar";
+const SWIGGY_URL =
+  "https://www.swiggy.com/city/dehradun/diy-drinks-deh-patel-nagar-rest1456621";
 
 const COMING_SOON = [
   {
@@ -414,7 +417,7 @@ export default function HomeScreen() {
                 icon={<Ionicons name="star" size={15} color="#D97706" />}
                 label="Rate us"
                 color="#D97706"
-                onPress={() => Linking.openURL(OUTLET_MAPS_URL)}
+                onPress={() => Linking.openURL(RATE_US_URL)}
               />
             </View>
             <View className="flex-row items-center gap-2 mt-2">
@@ -454,9 +457,34 @@ export default function HomeScreen() {
         }}
         ListHeaderComponent={
           <View>
-            {/* Combos first — top of everything */}
+            <Animated.View entering={FadeInDown.duration(450).delay(140)}>
+              <BannerCarousel onComboPress={handleComboPress} />
+            </Animated.View>
+
+            <ComingSoonSection />
+
+            <CODStrip />
+
+            <View className="px-4 mt-6 mb-2 flex-row items-center gap-2.5">
+              <LinearGradient
+                colors={["#FB923C", "#EA580C"]}
+                style={{ width: 6, height: 26, borderRadius: 3 }}
+              />
+              <View>
+                <Text className="text-lg font-sans-extrabold text-stone-900 tracking-tight">
+                  Our Menu
+                </Text>
+                <Text className="text-[13px] text-stone-500 font-sans-medium">
+                  Tap to add items to cart
+                </Text>
+              </View>
+            </View>
+          </View>
+        }
+        ListFooterComponent={
+          <View>
             <Animated.View entering={FadeInDown.duration(450).delay(60)}>
-              <View className="px-4 pt-2 mb-2 flex-row items-end justify-between">
+              <View className="px-4 mt-6 mb-2 flex-row items-end justify-between">
                 <View className="flex-row items-center gap-2.5">
                   <LinearGradient
                     colors={["#FB923C", "#EA580C"]}
@@ -488,32 +516,9 @@ export default function HomeScreen() {
                 ))}
               </View>
             </Animated.View>
-
-            <Animated.View entering={FadeInDown.duration(450).delay(140)}>
-              <BannerCarousel onComboPress={handleComboPress} />
-            </Animated.View>
-
-            <ComingSoonSection />
-
-            <CODStrip />
-
-            <View className="px-4 mt-6 mb-2 flex-row items-center gap-2.5">
-              <LinearGradient
-                colors={["#FB923C", "#EA580C"]}
-                style={{ width: 6, height: 26, borderRadius: 3 }}
-              />
-              <View>
-                <Text className="text-lg font-sans-extrabold text-stone-900 tracking-tight">
-                  Our Menu
-                </Text>
-                <Text className="text-[13px] text-stone-500 font-sans-medium">
-                  Tap to add items to cart
-                </Text>
-              </View>
-            </View>
+            <Footer />
           </View>
         }
-        ListFooterComponent={<Footer />}
         renderItem={({ item, index }) => (
           <CategoryCard
             category={item}
