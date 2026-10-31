@@ -1,6 +1,12 @@
+import { useMemo, useState } from "react";
 import { Image, Pressable, ScrollView, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { getItemPrice, type Category, type Subcategory } from "../data/products";
+import {
+  getItemPrice,
+  type Category,
+  type Subcategory,
+  type Variant,
+} from "../data/products";
 import { useCart } from "../context/CartContext";
 import Sheet from "./Sheet";
 
@@ -10,47 +16,138 @@ interface Props {
   onClose: () => void;
 }
 
-export default function SubcategorySheet({ visible, category, onClose }: Props) {
-  const { addItem, removeItem, getItemQuantity } = useCart();
+interface DraftSelection {
+  subcategory: Subcategory;
+  quantity: number;
+}
 
+export default function SubcategorySheet({ visible, category, onClose }: Props) {
   if (!category) return null;
 
-  const toggle = (
-    sub: Subcategory,
-    variant?: { id: string; name: string; price: number }
-  ) => {
-    const cartId = variant ? `${sub.id}:${variant.id}` : sub.id;
-    if (getItemQuantity(cartId) > 0) {
-      removeItem(cartId);
-    } else {
-      if (variant && sub.maxOneVariant) {
-        sub.variants?.forEach((v) => {
-          if (v.id !== variant.id) removeItem(`${sub.id}:${v.id}`);
-        });
+  return (
+    <SubcategorySheetContent
+      key={category.id}
+      visible={visible}
+      category={category}
+      onClose={onClose}
+    />
+  );
+}
+
+function SubcategorySheetContent({
+  visible,
+  category,
+  onClose,
+}: {
+  visible: boolean;
+  category: Category;
+  onClose: () => void;
+}) {
+  const { addMultiple, removeItem, getItemQuantity } = useCart();
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
+
+  const draftSelections = useMemo<DraftSelection[]>(() => {
+    const list: DraftSelection[] = [];
+    for (const sub of category.subcategories) {
+      if (sub.variants?.length) {
+        for (const variant of sub.variants) {
+          const key = `${sub.id}:${variant.id}`;
+          const quantity = quantities[key] ?? 0;
+          if (quantity > 0) {
+            list.push({
+              subcategory: {
+                ...sub,
+                id: key,
+                name: `${sub.name} · ${variant.name}`,
+                price: variant.price,
+              },
+              quantity,
+            });
+          }
+        }
+      } else {
+        const quantity = quantities[sub.id] ?? 0;
+        if (quantity > 0) list.push({ subcategory: sub, quantity });
       }
-      addItem(
-        variant
-          ? {
-              ...sub,
-              id: cartId,
-              name: `${sub.name} · ${variant.name}`,
-              price: variant.price,
-            }
-          : sub,
-        category,
-        1
-      );
     }
+    return list;
+  }, [category, quantities]);
+
+  const selectedCount = draftSelections.reduce(
+    (sum, selection) => sum + selection.quantity,
+    0
+  );
+  const selectedTotal = draftSelections.reduce(
+    (sum, selection) =>
+      sum + getItemPrice(selection.subcategory) * selection.quantity,
+    0
+  );
+
+  const changeQuantity = (key: string, delta: number) => {
+    setQuantities((prev) => {
+      const quantity = Math.max(0, (prev[key] ?? 0) + delta);
+      const next = { ...prev };
+      if (quantity === 0) {
+        delete next[key];
+      } else {
+        next[key] = quantity;
+      }
+      return next;
+    });
+  };
+
+  const changeVariantQuantity = (
+    sub: Subcategory,
+    variant: Variant,
+    delta: number
+  ) => {
+    const key = `${sub.id}:${variant.id}`;
+    setQuantities((prev) => {
+      const quantity = Math.max(0, (prev[key] ?? 0) + delta);
+      const next = { ...prev };
+      if (quantity === 0) {
+        delete next[key];
+      } else {
+        next[key] = quantity;
+        if (sub.maxOneVariant) {
+          sub.variants?.forEach((v) => {
+            if (v.id !== variant.id) delete next[`${sub.id}:${v.id}`];
+          });
+        }
+      }
+      return next;
+    });
+  };
+
+  const handleAdd = () => {
+    if (draftSelections.length === 0) return;
+
+    for (const { subcategory } of draftSelections) {
+      if (!subcategory.maxOneVariant) continue;
+      const baseId = subcategory.id.split(":")[0];
+      subcategory.variants?.forEach((variant) => {
+        const key = `${baseId}:${variant.id}`;
+        if (key !== subcategory.id) removeItem(key);
+      });
+    }
+
+    addMultiple(draftSelections, category);
+    setQuantities({});
+    onClose();
+  };
+
+  const handleClose = () => {
+    setQuantities({});
+    onClose();
   };
 
   return (
     <Sheet
       visible={visible}
-      onClose={onClose}
+      onClose={handleClose}
       sheetClassName=""
       sheetStyle={{ maxHeight: "85%" }}
     >
-      {/* Header */}
       <View className="px-5 pt-2 pb-3 flex-row items-center justify-between">
         <View className="flex-row items-center gap-3">
           <Image
@@ -68,17 +165,18 @@ export default function SubcategorySheet({ visible, category, onClose }: Props) 
               {category.name}
             </Text>
             <Text className="text-xs text-gray-500">
-              Tap the items you want to add
+              Pick quantities for one or more items
             </Text>
           </View>
         </View>
-        <Pressable onPress={onClose} className="p-1">
+        <Pressable onPress={handleClose} className="p-1">
           <Ionicons name="close" size={24} color="#6B7280" />
         </Pressable>
       </View>
 
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
+        style={{ flexShrink: 1 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16 }}
         showsVerticalScrollIndicator={false}
       >
         {category.subcategories.map((sub) => {
@@ -113,53 +211,57 @@ export default function SubcategorySheet({ visible, category, onClose }: Props) 
 
                 {variants.map((v, idx) => {
                   const cartId = `${sub.id}:${v.id}`;
-                  const inCart = getItemQuantity(cartId) > 0;
+                  const quantity = quantities[cartId] ?? 0;
+                  const inCart = getItemQuantity(cartId);
 
                   return (
-                    <Pressable
+                    <View
                       key={v.id}
-                      onPress={() => toggle(sub, v)}
-                      className={`flex-row items-center justify-between px-4 py-3 ${
+                      className={`flex-row items-center px-4 py-3 ${
                         idx > 0 ? "border-t border-gray-100" : ""
-                      } ${inCart ? "bg-green-50" : ""}`}
+                      } ${quantity > 0 ? "bg-green-50" : ""}`}
                     >
-                      <View className="flex-row items-center gap-3 flex-1">
-                        <Ionicons
-                          name={inCart ? "checkbox" : "square-outline"}
-                          size={24}
-                          color={inCart ? "#16A34A" : "#9CA3AF"}
-                        />
+                      <View className="flex-1">
                         <Text
                           className={`text-sm ${
-                            inCart
+                            quantity > 0
                               ? "text-gray-900 font-sans-semibold"
                               : "text-gray-600"
                           }`}
                         >
                           {v.name}
                         </Text>
+                        {inCart > 0 && (
+                          <Text className="text-[11px] text-green-600 mt-0.5">
+                            {inCart} in cart
+                          </Text>
+                        )}
                       </View>
-                      <Text
-                        className={`text-lg font-sans-extrabold ${
-                          inCart ? "text-green-600" : "text-orange-600"
-                        }`}
-                      >
+                      <Text className="text-base font-sans-extrabold text-orange-600 mr-3">
                         ₹{v.price}
                       </Text>
-                    </Pressable>
+                      <QuantityControl
+                        quantity={quantity}
+                        onDecrease={() =>
+                          changeVariantQuantity(sub, v, -1)
+                        }
+                        onIncrease={() => changeVariantQuantity(sub, v, 1)}
+                      />
+                    </View>
                   );
                 })}
               </View>
             );
           }
 
-          const inCart = getItemQuantity(sub.id) > 0;
+          const quantity = quantities[sub.id] ?? 0;
+          const inCart = getItemQuantity(sub.id);
+
           return (
-            <Pressable
+            <View
               key={sub.id}
-              onPress={() => toggle(sub)}
               className={`flex-row items-center p-3 rounded-3xl mb-3 border ${
-                inCart
+                quantity > 0
                   ? "bg-emerald-50 border-emerald-400"
                   : "bg-white/80 border-white/80"
               }`}
@@ -175,9 +277,11 @@ export default function SubcategorySheet({ visible, category, onClose }: Props) 
                   }}
                   resizeMode="contain"
                 />
-                {inCart && (
-                  <View className="absolute -top-1 -right-1 bg-green-500 rounded-full w-6 h-6 items-center justify-center border-2 border-white">
-                    <Ionicons name="checkmark" size={14} color="white" />
+                {quantity > 0 && (
+                  <View className="absolute -top-1 -right-1 bg-green-500 rounded-full min-w-6 h-6 px-1 items-center justify-center border-2 border-white">
+                    <Text className="text-white text-[10px] font-sans-bold">
+                      {quantity}
+                    </Text>
                   </View>
                 )}
               </View>
@@ -185,37 +289,101 @@ export default function SubcategorySheet({ visible, category, onClose }: Props) 
               <View className="flex-1 ml-3">
                 <Text
                   className={`text-base ${
-                    inCart ? "text-gray-900 font-sans-bold" : "text-gray-800 font-sans-semibold"
+                    quantity > 0
+                      ? "text-gray-900 font-sans-bold"
+                      : "text-gray-800 font-sans-semibold"
                   }`}
                   numberOfLines={2}
                 >
                   {sub.name}
                 </Text>
-                {inCart && (
+                {inCart > 0 && (
                   <Text className="text-xs text-green-600 mt-1 font-sans-medium">
-                    Added
+                    {inCart} in cart
                   </Text>
                 )}
               </View>
 
               <View className="items-end ml-2">
-                <Text
-                  className={`text-xl font-sans-extrabold ${
-                    inCart ? "text-green-600" : "text-orange-600"
-                  }`}
-                >
+                <Text className="text-lg font-sans-extrabold text-orange-600 mb-1.5">
                   ₹{getItemPrice(sub)}
                 </Text>
-                <Ionicons
-                  name={inCart ? "checkmark-circle" : "add-circle-outline"}
-                  size={22}
-                  color={inCart ? "#16A34A" : "#2563EB"}
+                <QuantityControl
+                  quantity={quantity}
+                  onDecrease={() => changeQuantity(sub.id, -1)}
+                  onIncrease={() => changeQuantity(sub.id, 1)}
                 />
               </View>
-            </Pressable>
+            </View>
           );
         })}
       </ScrollView>
+
+      <View className="px-4 pt-3 pb-6 border-t border-white/70 bg-white/70">
+        <View className="flex-row items-center justify-between">
+          <View>
+            <Text className="text-xs text-gray-500">
+              {selectedCount} {selectedCount === 1 ? "item" : "items"} selected
+            </Text>
+            <Text className="text-xl font-sans-extrabold text-orange-600">
+              ₹{selectedTotal}
+            </Text>
+          </View>
+          <Pressable
+            onPress={handleAdd}
+            disabled={selectedCount === 0}
+            className={`rounded-xl px-5 py-3 flex-row items-center gap-1.5 ${
+              selectedCount > 0 ? "bg-orange-600" : "bg-stone-300"
+            }`}
+          >
+            <Ionicons name="cart-outline" size={18} color="white" />
+            <Text className="text-white text-sm font-sans-bold">
+              Add to Cart
+            </Text>
+          </Pressable>
+        </View>
+      </View>
     </Sheet>
+  );
+}
+
+function QuantityControl({
+  quantity,
+  onDecrease,
+  onIncrease,
+}: {
+  quantity: number;
+  onDecrease: () => void;
+  onIncrease: () => void;
+}) {
+  if (quantity === 0) {
+    return (
+      <Pressable
+        onPress={onIncrease}
+        className="w-9 h-9 rounded-full border border-orange-500 items-center justify-center"
+      >
+        <Ionicons name="add" size={18} color="#EA580C" />
+      </Pressable>
+    );
+  }
+
+  return (
+    <View className="flex-row items-center gap-2">
+      <Pressable
+        onPress={onDecrease}
+        className="w-8 h-8 rounded-full bg-gray-200 items-center justify-center"
+      >
+        <Ionicons name="remove" size={16} color="#374151" />
+      </Pressable>
+      <Text className="text-sm font-sans-bold text-gray-900 w-5 text-center">
+        {quantity}
+      </Text>
+      <Pressable
+        onPress={onIncrease}
+        className="w-8 h-8 rounded-full bg-orange-600 items-center justify-center"
+      >
+        <Ionicons name="add" size={16} color="white" />
+      </Pressable>
+    </View>
   );
 }
