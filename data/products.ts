@@ -12,6 +12,8 @@ export interface Subcategory {
   price?: number;
   image?: ImageSourcePropType;
   variants?: Variant[];
+  variantLabel?: string;
+  maxOneVariant?: boolean;
 }
 
 export function getItemPrice(sub: Subcategory): number {
@@ -52,10 +54,17 @@ export interface ComboSelectionGroup {
   options: ComboOption[];
 }
 
+export interface ComboPromotion {
+  originalPrice: number;
+  discountAmount: number;
+  finalPrice: number;
+}
+
 export interface ComboPricing {
   type: "sum-of-selected-items";
   basePrice: number | null;
   currency: string;
+  promotion?: ComboPromotion;
 }
 
 export interface Combo {
@@ -81,7 +90,7 @@ export interface CustomComboRule {
   stackable: boolean;
 }
 
-export function getComboStartingPrice(combo: Combo): number {
+function calculateComboPrice(combo: Combo): number {
   const fixed = combo.items.reduce((sum, item) => sum + item.price, 0);
   const optionFloor = combo.selectionGroups.reduce((sum, group) => {
     if (group.options.length === 0) return sum;
@@ -91,6 +100,19 @@ export function getComboStartingPrice(combo: Combo): number {
   const base = combo.pricing.basePrice ?? 0;
   const total = fixed + optionFloor;
   return total > 0 ? total : base;
+}
+
+export function getComboOriginalPrice(combo: Combo): number {
+  return combo.pricing.promotion?.originalPrice ?? calculateComboPrice(combo);
+}
+
+export function getComboStartingPrice(combo: Combo): number {
+  return combo.pricing.promotion?.finalPrice ?? calculateComboPrice(combo);
+}
+
+export function getComboDiscountAmount(combo: Combo): number {
+  if (combo.pricing.promotion) return combo.pricing.promotion.discountAmount;
+  return Math.max(0, getComboOriginalPrice(combo) - getComboStartingPrice(combo));
 }
 
 export function getComboItemCount(combo: Combo): number {
@@ -105,7 +127,7 @@ export function isCustomCombo(combo: Combo): boolean {
   return combo.discountRuleId === customComboRule.id;
 }
 
-export const categories: Category[] = [
+const categoriesBase: Category[] = [
 
 {
   id: "waffles",
@@ -132,18 +154,6 @@ export const categories: Category[] = [
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/triple-chocolate-waffle.webp"),
     },
     {
-      id: "ice-cream-chocolate-inside",
-      name: "Ice Cream Chocolate Waffle - Ice Cream Inside",
-      price: 120,
-      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/ice-cream-chocolate-waffle-ice-cream-inside.webp"),
-    },
-    {
-      id: "ice-cream-chocolate-outside",
-      name: "Ice Cream Chocolate Waffle - Ice Cream Outside",
-      price: 130,
-      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/ice-cream-chocolate-waffle-ice-cream-outside.webp"),
-    },
-    {
       id: "oreo-crush",
       name: "Oreo Crush",
       price: 119,
@@ -164,7 +174,7 @@ export const categories: Category[] = [
     {
       id: "kunafa",
       name: "Kunafa Waffle",
-      price: 169,
+      price: 179,
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/kunafa-waffle.webp"),
     },
     {
@@ -184,6 +194,30 @@ export const categories: Category[] = [
       name: "KitKat Waffle",
       price: 119,
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/kitkat-waffle.webp"),
+    },
+    {
+      id: "ice-cream-chocolate-inside",
+      name: "Ice Cream Chocolate Waffle - Ice Cream Inside",
+      price: 120,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/ice-cream-chocolate-waffle-ice-cream-inside.webp"),
+      variantLabel: "Choose 1 ice cream",
+      maxOneVariant: true,
+      variants: [
+        { id: "vanilla", name: "Vanilla", price: 120 },
+        { id: "chocolate", name: "Chocolate", price: 120 },
+      ],
+    },
+    {
+      id: "ice-cream-chocolate-outside",
+      name: "Ice Cream Chocolate Waffle - Ice Cream Outside",
+      price: 130,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/ice-cream-chocolate-waffle-ice-cream-outside.webp"),
+      variantLabel: "Choose 1 ice cream",
+      maxOneVariant: true,
+      variants: [
+        { id: "vanilla", name: "Vanilla", price: 130 },
+        { id: "chocolate", name: "Chocolate", price: 130 },
+      ],
     },
   ],
 }
@@ -249,7 +283,7 @@ export const categories: Category[] = [
     {
       id: "cheesy-paneer-burger",
       name: "Cheesy Paneer Burger",
-      price: 89,
+      price: 79,
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/burgers/cheesy-paneer-burger.webp"),
     },
   ],
@@ -384,15 +418,27 @@ export const categories: Category[] = [
       "id": "ice-cream",
       "name": "Ice Cream Pancake",
       "image": require("../assets/DIY_Drinks_All_Item_Images/individual-items/pancakes/ice-cream-pancake.webp"),
+      "variantLabel": "Choose 1 ice cream & size",
+      "maxOneVariant": true,
       "variants": [
         {
-          "id": "8-pcs",
-          "name": "8 Pcs",
+          "id": "vanilla-8-pcs",
+          "name": "Vanilla · 8 Pcs",
           "price": 119
         },
         {
-          "id": "14-pcs",
-          "name": "14 Pcs",
+          "id": "vanilla-14-pcs",
+          "name": "Vanilla · 14 Pcs",
+          "price": 149
+        },
+        {
+          "id": "chocolate-8-pcs",
+          "name": "Chocolate · 8 Pcs",
+          "price": 119
+        },
+        {
+          "id": "chocolate-14-pcs",
+          "name": "Chocolate · 14 Pcs",
           "price": 149
         }
       ]
@@ -464,14 +510,14 @@ export const categories: Category[] = [
 },
 
 {
-  id: "hot-coffee",
-  name: "Hot Coffee",
+  id: "hot-chocolate",
+  name: "Hot Chocolate",
   image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/hot-chocolate/hot-chocolate.webp"),
-  description: "Hot and comforting coffee",
+  description: "Hot and comforting chocolate",
   subcategories: [
     {
       id: "hot-chocolate-coffee",
-      name: "Hot Chocolate Coffee",
+      name: "Hot Chocolate",
       price: 79,
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/hot-chocolate/hot-chocolate.webp"),
     },
@@ -510,7 +556,7 @@ export const categories: Category[] = [
     },
     {
       id: "blue-cocoa-cone",
-      name: "Blue Cocoa Cone Mojito",
+      name: "Blue Kurako",
       price: 69,
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/mojitos/blue-cocoa-cone-mojito.webp"),
     },
@@ -529,11 +575,56 @@ export const categories: Category[] = [
   ],
 },
 
+{
+  id: "ice-cream",
+  name: "DIY Ice Cream",
+  image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/ice-cream/double-delight.webp"),
+  description: "Cone, Double Delight & Dry Fruit",
+  subcategories: [
+    {
+      id: "ice-cream-cone",
+      name: "Cone",
+      price: 30,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/ice-cream/cone.webp"),
+    },
+    {
+      id: "ice-cream-double-delight",
+      name: "Double Delight",
+      price: 60,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/ice-cream/double-delight.webp"),
+    },
+    {
+      id: "ice-cream-dry-fruit",
+      name: "Dry Fruit",
+      price: 80,
+      image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/ice-cream/dry-fruit.webp"),
+    },
+  ],
+},
+
 
 
 ];
 
-export const combos: Combo[] = [
+const CATEGORY_ORDER = [
+  "waffles",
+  "pancakes",
+  "churros",
+  "burgers",
+  "sandwiches",
+  "french-fries",
+  "corn",
+  "cold-coffee",
+  "hot-chocolate",
+  "mojitos",
+  "ice-cream",
+];
+
+export const categories: Category[] = [...categoriesBase].sort(
+  (a, b) => CATEGORY_ORDER.indexOf(a.id) - CATEGORY_ORDER.indexOf(b.id)
+);
+
+const combosBase: Combo[] = [
   {
     id: "dessert-treat",
     name: "Dessert Treat",
@@ -585,7 +676,7 @@ export const combos: Combo[] = [
   },
   {
     id: "student-treat-favorite",
-    name: "Student Treat Favorite",
+    name: "Student Favorite",
     description: "Pancake & burger with a drink",
     image: require("../assets/DIY_Drinks_All_Item_Images/combos/student-treat-favorite.webp"),
     items: [
@@ -683,7 +774,7 @@ export const combos: Combo[] = [
   {
     id: "full-meal",
     name: "Full Meal",
-    description: "Burger, sandwich & waffle with a drink",
+    description: "Burger, sandwich & pancake with a drink",
     image: require("../assets/DIY_Drinks_All_Item_Images/combos/full-meal.webp"),
     items: [
       {
@@ -694,15 +785,16 @@ export const combos: Combo[] = [
       },
       {
         id: "grilled-sandwich",
-        name: "Grilled Sandwich",
+        name: "Grilled Sandwich - 4 Pcs",
         categoryId: "sandwiches",
         price: 59,
       },
       {
-        id: "single-chocolate",
-        name: "Single Chocolate Waffle",
-        categoryId: "waffles",
-        price: 79,
+        id: "choco-chips",
+        name: "Choco Chips Pancake - 14 Pcs",
+        categoryId: "pancakes",
+        price: 119,
+        variantId: "14-pcs",
       },
     ],
     selectionGroups: [
@@ -842,31 +934,15 @@ export const combos: Combo[] = [
         categoryId: "waffles",
         price: 119,
       },
+      {
+        id: "oreo",
+        name: "Oreo Pancake - 8 Pcs",
+        categoryId: "pancakes",
+        price: 99,
+        variantId: "8-pcs",
+      },
     ],
     selectionGroups: [
-      {
-        id: "pancake-size",
-        name: "Choose Oreo Pancake Size",
-        required: true,
-        minSelections: 1,
-        maxSelections: 1,
-        options: [
-          {
-            id: "8-pcs",
-            name: "Oreo Pancake - 8 Pcs",
-            categoryId: "pancakes",
-            itemId: "oreo",
-            price: 99,
-          },
-          {
-            id: "14-pcs",
-            name: "Oreo Pancake - 14 Pcs",
-            categoryId: "pancakes",
-            itemId: "oreo",
-            price: 129,
-          },
-        ],
-      },
       {
         id: "drink-choice",
         name: "Choose 1 Drink",
@@ -910,6 +986,63 @@ export const combos: Combo[] = [
   //   discountRuleId: "custom-combo-discount",
   // },
 ];
+
+const COMBO_PROMOTIONS: Record<string, ComboPromotion> = {
+  "dessert-treat": {
+    originalPrice: 297,
+    discountAmount: 20,
+    finalPrice: 277,
+  },
+  "oreo-combo": {
+    originalPrice: 297,
+    discountAmount: 20,
+    finalPrice: 277,
+  },
+  "full-meal": {
+    originalPrice: 326,
+    discountAmount: 25,
+    finalPrice: 301,
+  },
+  "burger-fest": {
+    originalPrice: 207,
+    discountAmount: 20,
+    finalPrice: 187,
+  },
+  "sandwich-meal": {
+    originalPrice: 227,
+    discountAmount: 20,
+    finalPrice: 207,
+  },
+  "student-treat-favorite": {
+    originalPrice: 237,
+    discountAmount: 20,
+    finalPrice: 217,
+  },
+  "triple-chocolate-combo": {
+    originalPrice: 237,
+    discountAmount: 20,
+    finalPrice: 217,
+  },
+};
+
+const COMBO_ORDER = [
+  "dessert-treat",
+  "oreo-combo",
+  "full-meal",
+  "burger-fest",
+  "sandwich-meal",
+  "student-treat-favorite",
+  "triple-chocolate-combo",
+];
+
+export const combos: Combo[] = combosBase
+  .map((combo) => {
+    const promotion = COMBO_PROMOTIONS[combo.id];
+    return promotion
+      ? { ...combo, pricing: { ...combo.pricing, promotion } }
+      : combo;
+  })
+  .sort((a, b) => COMBO_ORDER.indexOf(a.id) - COMBO_ORDER.indexOf(b.id));
 
 export const customComboRule: CustomComboRule = {
   id: "custom-combo-discount",

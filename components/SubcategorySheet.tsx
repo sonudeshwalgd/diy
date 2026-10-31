@@ -23,6 +23,11 @@ export default function SubcategorySheet({ visible, category, onClose }: Props) 
     if (getItemQuantity(cartId) > 0) {
       removeItem(cartId);
     } else {
+      if (variant && sub.maxOneVariant) {
+        sub.variants?.forEach((v) => {
+          if (v.id !== variant.id) removeItem(`${sub.id}:${v.id}`);
+        });
+      }
       addItem(
         variant
           ? {
@@ -101,7 +106,7 @@ export default function SubcategorySheet({ visible, category, onClose }: Props) 
                       {sub.name}
                     </Text>
                     <Text className="text-xs text-gray-500 mt-0.5">
-                      Choose a size
+                      {sub.variantLabel ?? "Choose a size"}
                     </Text>
                   </View>
                 </View>

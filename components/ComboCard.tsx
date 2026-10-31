@@ -3,7 +3,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import {
+  getComboDiscountAmount,
   getComboItemCount,
+  getComboOriginalPrice,
   getComboStartingPrice,
   type Combo,
 } from "../data/products";
@@ -19,6 +21,9 @@ export default function ComboCard({ combo, onPress, index = 0 }: Props) {
   const { getComboQuantity } = useCart();
   const count = getComboQuantity(combo.id);
   const itemCount = getComboItemCount(combo);
+  const price = getComboStartingPrice(combo);
+  const originalPrice = getComboOriginalPrice(combo);
+  const discount = getComboDiscountAmount(combo);
 
   return (
     <Animated.View
@@ -95,9 +100,21 @@ export default function ComboCard({ combo, onPress, index = 0 }: Props) {
             </View>
             <View className="items-end">
               <Text className="text-[9px] text-stone-400 leading-3">from</Text>
-              <Text className="text-lg font-sans-extrabold text-orange-600 leading-5">
-                ₹{getComboStartingPrice(combo)}
-              </Text>
+              <View className="flex-row items-baseline gap-1">
+                {originalPrice > price && (
+                  <Text className="text-[10px] text-stone-400 line-through leading-5">
+                    ₹{originalPrice}
+                  </Text>
+                )}
+                <Text className="text-lg font-sans-extrabold text-orange-600 leading-5">
+                  ₹{price}
+                </Text>
+              </View>
+              {discount > 0 && (
+                <Text className="text-[9px] text-emerald-600 font-sans-bold leading-3">
+                  ₹{discount} OFF
+                </Text>
+              )}
             </View>
           </View>
         </View>

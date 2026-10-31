@@ -5,6 +5,7 @@ import {
   categories,
   combosCategory,
   customComboRule,
+  getComboDiscountAmount,
   isCustomCombo,
   type Combo,
   type ComboOption,
@@ -122,7 +123,9 @@ function ComboSheetContent({
 
   const fixedTotal = combo.items.reduce((sum, item) => sum + item.price, 0);
   const optionsTotal = selectedOptions.reduce((sum, o) => sum + o.price, 0);
-  const comboTotal = fixedTotal + optionsTotal;
+  const comboSubtotal = fixedTotal + optionsTotal;
+  const comboDiscount = getComboDiscountAmount(combo);
+  const comboTotal = Math.max(0, comboSubtotal - comboDiscount);
 
   const customSelected = customItems.filter((i) => (customQty[i.key] ?? 0) > 0);
   const customSubtotal = customSelected.reduce(
@@ -522,15 +525,30 @@ function ComboSheetContent({
               )}
             </>
           ) : (
-            <View className="flex-row items-center justify-between">
-              <View>
+            <View>
+              <View className="flex-row items-center justify-between">
                 <Text className="text-xs text-gray-500">Combo Price</Text>
-                <Text className="text-2xl font-sans-extrabold text-orange-600">
-                  ₹{displayTotal}
-                </Text>
+                <View className="flex-row items-baseline gap-2">
+                  {comboSubtotal > displayTotal && (
+                    <Text className="text-sm text-gray-400 line-through">
+                      ₹{comboSubtotal}
+                    </Text>
+                  )}
+                  <Text className="text-2xl font-sans-extrabold text-orange-600">
+                    ₹{displayTotal}
+                  </Text>
+                </View>
               </View>
+              {comboDiscount > 0 && (
+                <View className="flex-row items-center justify-between mt-1">
+                  <Text className="text-xs text-green-600">Combo Discount</Text>
+                  <Text className="text-xs text-green-600 font-sans-semibold">
+                    −₹{comboDiscount}
+                  </Text>
+                </View>
+              )}
               {inCartQty > 0 && (
-                <Text className="text-xs text-green-600 font-sans-medium">
+                <Text className="text-xs text-green-600 font-sans-medium mt-1">
                   {inCartQty} in cart
                 </Text>
               )}

@@ -5,7 +5,9 @@ import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import {
   combos,
+  getComboDiscountAmount,
   getComboItemCount,
+  getComboOriginalPrice,
   getComboStartingPrice,
   type Combo,
 } from "../data/products";
@@ -112,12 +114,24 @@ export default function BannerCarousel({ onComboPress }: Props) {
                 overflow: "hidden",
               }}
             >
-              <Text
-                className="text-orange-600 text-base font-sans-extrabold px-3.5 py-1.5"
+              <View
+                className="items-end px-3.5 py-1.5"
                 style={{ backgroundColor: "rgba(255,255,255,0.6)" }}
               >
-                ₹{getComboStartingPrice(combo)}
-              </Text>
+                {getComboOriginalPrice(combo) > getComboStartingPrice(combo) && (
+                  <Text className="text-stone-500 text-[10px] font-sans-medium line-through">
+                    ₹{getComboOriginalPrice(combo)}
+                  </Text>
+                )}
+                <Text className="text-orange-600 text-base font-sans-extrabold">
+                  ₹{getComboStartingPrice(combo)}
+                </Text>
+                {getComboDiscountAmount(combo) > 0 && (
+                  <Text className="text-emerald-700 text-[9px] font-sans-bold">
+                    ₹{getComboDiscountAmount(combo)} OFF
+                  </Text>
+                )}
+              </View>
             </BlurView>
             <View
               style={{

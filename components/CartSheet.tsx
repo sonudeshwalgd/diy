@@ -244,9 +244,9 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
                   renderItem={renderItem}
                   contentContainerStyle={{ paddingVertical: 8 }}
                   showsVerticalScrollIndicator={false}
-                />
-
-                <View className="bg-white/85 rounded-t-3xl px-5 pt-4 pb-8 border-t border-white/60">
+                  style={{ flexShrink: 1 }}
+                  ListFooterComponent={
+                <View className="bg-white/85 rounded-t-3xl px-5 pt-4 pb-3 border-t border-white/60">
                   {/* Use Coins Button / Verified */}
                   {loyaltyAvailable && savedMobile && customer ? (
                     <View className="mb-4 bg-amber-50 rounded-xl px-4 py-3 border border-amber-200">
@@ -424,8 +424,12 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
                     <Text className="text-sm text-gray-500">Delivery</Text>
                     <Text className="text-sm text-gray-700">Free</Text>
                   </View>
+                </View>
+                  }
+                />
 
-                  <View className="flex-row justify-between items-center mb-1 border-t border-gray-100 pt-2">
+                <View className="bg-white/85 px-5 pt-3 pb-5 border-t border-white/60">
+                  <View className="flex-row justify-between items-center mb-1">
                     <Text className="text-lg font-sans-bold text-gray-900">Final Total</Text>
                     <Text className="text-2xl font-sans-extrabold text-orange-600">₹{finalTotal}</Text>
                   </View>

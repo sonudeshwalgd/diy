@@ -13,6 +13,7 @@ import ComboCard from "../components/ComboCard";
 import ComboSheet from "../components/ComboSheet";
 import FeedbackSheet from "../components/FeedbackSheet";
 import CartSheet from "../components/CartSheet";
+import IceCreamSheet from "../components/IceCreamSheet";
 import OrderBottomSheet, { PHONE_NUMBER } from "../components/OrderBottomSheet";
 import BannerCarousel from "../components/BannerCarousel";
 import FloatingCartBar from "../components/FloatingCartBar";
@@ -318,7 +319,6 @@ function Footer() {
 }
 
 export default function HomeScreen() {
-  const [headerHeight, setHeaderHeight] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [subcatVisible, setSubcatVisible] = useState(false);
   const [selectedCombo, setSelectedCombo] = useState<Combo | null>(null);
@@ -357,8 +357,7 @@ export default function HomeScreen() {
         intensity={100}
         tint="light"
         experimentalBlurMethod="dimezisBlurView"
-        // onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
-        className="absolute top-0 left-0 right-0 z-10 border-b border-white/60"
+        className="border-b border-white/60"
       >
         <SafeAreaView edges={["top"]} className="bg-white/50">
           <View className="px-4 pt-3 pb-2">
@@ -406,46 +405,9 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            <View className="flex-row items-center gap-2 mt-3">
-              <QuickPill
-                icon={<Ionicons name="receipt-outline" size={15} color="#7C3AED" />}
-                label="Order History"
-                color="#7C3AED"
-                onPress={() => setHistoryVisible(true)}
-              />
-              <QuickPill
-                icon={<Ionicons name="star" size={15} color="#D97706" />}
-                label="Rate us"
-                color="#D97706"
-                onPress={() => Linking.openURL(RATE_US_URL)}
-              />
-            </View>
-            <View className="flex-row items-center gap-2 mt-2">
-              <QuickPill
-                icon={<Ionicons name="wifi" size={15} color="#2563EB" />}
-                label="Wi-Fi"
-                color="#2563EB"
-                onPress={() => setWifiVisible(true)}
-              />
-              <QuickPill
-                icon={
-                  <Ionicons
-                    name="chatbubble-ellipses-outline"
-                    size={15}
-                    color="#4F46E5"
-                  />
-                }
-                label="Feedback"
-                color="#4F46E5"
-                onPress={() => setFeedbackVisible(true)}
-              />
-            </View>
           </View>
         </SafeAreaView>
       </BlurView>
-
-      {/* Spacer matching header height so content scrolls underneath */}
-      <View style={{ height: headerHeight }} />
 
       <FlatList
         data={categories}
@@ -457,11 +419,49 @@ export default function HomeScreen() {
         }}
         ListHeaderComponent={
           <View>
-            <Animated.View entering={FadeInDown.duration(450).delay(140)}>
+            <View className="px-4 pt-2">
+              <View className="flex-row items-center gap-2">
+                <QuickPill
+                  icon={<Ionicons name="receipt-outline" size={15} color="#7C3AED" />}
+                  label="Order History"
+                  color="#7C3AED"
+                  onPress={() => setHistoryVisible(true)}
+                />
+                <QuickPill
+                  icon={<Ionicons name="star" size={15} color="#D97706" />}
+                  label="Rate us"
+                  color="#D97706"
+                  onPress={() => Linking.openURL(RATE_US_URL)}
+                />
+              </View>
+              <View className="flex-row items-center gap-2 mt-2">
+                <QuickPill
+                  icon={<Ionicons name="wifi" size={15} color="#2563EB" />}
+                  label="Wi-Fi"
+                  color="#2563EB"
+                  onPress={() => setWifiVisible(true)}
+                />
+                <QuickPill
+                  icon={
+                    <Ionicons
+                      name="chatbubble-ellipses-outline"
+                      size={15}
+                      color="#4F46E5"
+                    />
+                  }
+                  label="Feedback"
+                  color="#4F46E5"
+                  onPress={() => setFeedbackVisible(true)}
+                />
+              </View>
+            </View>
+
+            <Animated.View
+              entering={FadeInDown.duration(450).delay(140)}
+              style={{ marginTop: 12 }}
+            >
               <BannerCarousel onComboPress={handleComboPress} />
             </Animated.View>
-
-            <ComingSoonSection />
 
             <CODStrip />
 
@@ -516,6 +516,7 @@ export default function HomeScreen() {
                 ))}
               </View>
             </Animated.View>
+            <ComingSoonSection />
             <Footer />
           </View>
         }
@@ -534,14 +535,25 @@ export default function HomeScreen() {
       <FloatingCartBar onPress={() => setCartVisible(true)} />
 
       {/* Bottom sheets */}
-      <SubcategorySheet
-        visible={subcatVisible}
-        category={selectedCategory}
-        onClose={() => {
-          setSubcatVisible(false);
-          setSelectedCategory(null);
-        }}
-      />
+      {selectedCategory?.id === "ice-cream" ? (
+        <IceCreamSheet
+          visible={subcatVisible}
+          category={selectedCategory}
+          onClose={() => {
+            setSubcatVisible(false);
+            setSelectedCategory(null);
+          }}
+        />
+      ) : (
+        <SubcategorySheet
+          visible={subcatVisible}
+          category={selectedCategory}
+          onClose={() => {
+            setSubcatVisible(false);
+            setSelectedCategory(null);
+          }}
+        />
+      )}
 
       <ComboSheet
         visible={comboVisible}
