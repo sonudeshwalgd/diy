@@ -43,8 +43,13 @@ function SubcategorySheetContent({
   category: Category;
   onClose: () => void;
 }) {
-  const { addMultiple, removeItem, getItemQuantity } = useCart();
+  const { addItem, addMultiple, removeItem, decrement, getItemQuantity } =
+    useCart();
   const [quantities, setQuantities] = useState<Record<string, number>>({});
+
+  const keepOpenAfterAdd = category.id === "pancakes";
+  const isAutoAdd = !keepOpenAfterAdd;
+  const showInCart = keepOpenAfterAdd;
 
   const draftSelections = useMemo<DraftSelection[]>(() => {
     const list: DraftSelection[] = [];
@@ -119,6 +124,31 @@ function SubcategorySheetContent({
     });
   };
 
+  const addDirectItem = (sub: Subcategory, variant?: Variant) => {
+    if (!variant) {
+      addItem(sub, category, 1);
+      return;
+    }
+
+    const key = `${sub.id}:${variant.id}`;
+    if (sub.maxOneVariant) {
+      sub.variants?.forEach((v) => {
+        if (v.id !== variant.id) removeItem(`${sub.id}:${v.id}`);
+      });
+    }
+
+    addItem(
+      {
+        ...sub,
+        id: key,
+        name: `${sub.name} · ${variant.name}`,
+        price: variant.price,
+      },
+      category,
+      1
+    );
+  };
+
   const handleAdd = () => {
     if (draftSelections.length === 0) return;
 
@@ -133,7 +163,7 @@ function SubcategorySheetContent({
 
     addMultiple(draftSelections, category);
     setQuantities({});
-    onClose();
+    if (!keepOpenAfterAdd) onClose();
   };
 
   const handleClose = () => {
@@ -165,7 +195,9 @@ function SubcategorySheetContent({
               {category.name}
             </Text>
             <Text className="text-xs text-gray-500">
-              Pick quantities for one or more items
+              {isAutoAdd
+                ? "Tap + to add items directly to the cart"
+                : "Pick quantities for one or more items"}
             </Text>
           </View>
         </View>
@@ -211,8 +243,10 @@ function SubcategorySheetContent({
 
                 {variants.map((v, idx) => {
                   const cartId = `${sub.id}:${v.id}`;
-                  const quantity = quantities[cartId] ?? 0;
                   const inCart = getItemQuantity(cartId);
+                  const quantity = isAutoAdd
+                    ? inCart
+                    : quantities[cartId] ?? 0;
 
                   return (
                     <View
@@ -231,7 +265,7 @@ function SubcategorySheetContent({
                         >
                           {v.name}
                         </Text>
-                        {inCart > 0 && (
+                        {showInCart && inCart > 0 && (
                           <Text className="text-[11px] text-green-600 mt-0.5">
                             {inCart} in cart
                           </Text>
@@ -243,9 +277,15 @@ function SubcategorySheetContent({
                       <QuantityControl
                         quantity={quantity}
                         onDecrease={() =>
-                          changeVariantQuantity(sub, v, -1)
+                          isAutoAdd
+                            ? decrement(cartId)
+                            : changeVariantQuantity(sub, v, -1)
                         }
-                        onIncrease={() => changeVariantQuantity(sub, v, 1)}
+                        onIncrease={() =>
+                          isAutoAdd
+                            ? addDirectItem(sub, v)
+                            : changeVariantQuantity(sub, v, 1)
+                        }
                       />
                     </View>
                   );
@@ -254,7 +294,9 @@ function SubcategorySheetContent({
             );
           }
 
-          const quantity = quantities[sub.id] ?? 0;
+          const quantity = isAutoAdd
+            ? getItemQuantity(sub.id)
+            : quantities[sub.id] ?? 0;
           const inCart = getItemQuantity(sub.id);
 
           return (
@@ -297,7 +339,7 @@ function SubcategorySheetContent({
                 >
                   {sub.name}
                 </Text>
-                {inCart > 0 && (
+                {showInCart && inCart > 0 && (
                   <Text className="text-xs text-green-600 mt-1 font-sans-medium">
                     {inCart} in cart
                   </Text>
@@ -310,8 +352,16 @@ function SubcategorySheetContent({
                 </Text>
                 <QuantityControl
                   quantity={quantity}
-                  onDecrease={() => changeQuantity(sub.id, -1)}
-                  onIncrease={() => changeQuantity(sub.id, 1)}
+                  onDecrease={() =>
+                    isAutoAdd
+                      ? decrement(sub.id)
+                      : changeQuantity(sub.id, -1)
+                  }
+                  onIncrease={() =>
+                    isAutoAdd
+                      ? addDirectItem(sub)
+                      : changeQuantity(sub.id, 1)
+                  }
                 />
               </View>
             </View>
@@ -319,30 +369,29 @@ function SubcategorySheetContent({
         })}
       </ScrollView>
 
-      <View className="px-4 pt-3 pb-6 border-t border-white/70 bg-white/70">
-        <View className="flex-row items-center justify-between">
-          <View>
-            <Text className="text-xs text-gray-500">
-              {selectedCount} {selectedCount === 1 ? "item" : "items"} selected
-            </Text>
-            <Text className="text-xl font-sans-extrabold text-orange-600">
-              ₹{selectedTotal}
-            </Text>
+      {!isAutoAdd && selectedCount > 0 && (
+        <View className="px-4 pt-3 pb-6 border-t border-white/70 bg-white/70">
+          <View className="flex-row items-center justify-between">
+            <View>
+              <Text className="text-xs text-gray-500">
+                {selectedCount} {selectedCount === 1 ? "item" : "items"} selected
+              </Text>
+              <Text className="text-xl font-sans-extrabold text-orange-600">
+                ₹{selectedTotal}
+              </Text>
+            </View>
+            <Pressable
+              onPress={handleAdd}
+              className="rounded-xl px-5 py-3 flex-row items-center gap-1.5 bg-orange-600"
+            >
+              <Ionicons name="cart-outline" size={18} color="white" />
+              <Text className="text-white text-sm font-sans-bold">
+                Add to Cart
+              </Text>
+            </Pressable>
           </View>
-          <Pressable
-            onPress={handleAdd}
-            disabled={selectedCount === 0}
-            className={`rounded-xl px-5 py-3 flex-row items-center gap-1.5 ${
-              selectedCount > 0 ? "bg-orange-600" : "bg-stone-300"
-            }`}
-          >
-            <Ionicons name="cart-outline" size={18} color="white" />
-            <Text className="text-white text-sm font-sans-bold">
-              Add to Cart
-            </Text>
-          </Pressable>
         </View>
-      </View>
+      )}
     </Sheet>
   );
 }

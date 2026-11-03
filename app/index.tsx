@@ -6,8 +6,15 @@ import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { categories, combos, type Category, type Combo } from "../data/products";
+import {
+  categories,
+  combos,
+  type Category,
+  type Combo,
+  type Subcategory,
+} from "../data/products";
 import CategoryCard from "../components/CategoryCard";
+import ProductCard from "../components/ProductCard";
 import SubcategorySheet from "../components/SubcategorySheet";
 import ComboCard from "../components/ComboCard";
 import ComboSheet from "../components/ComboSheet";
@@ -19,6 +26,7 @@ import BannerCarousel from "../components/BannerCarousel";
 import FloatingCartBar from "../components/FloatingCartBar";
 import WifiBottomSheet from "../components/WifiBottomSheet";
 import OrderHistoryModal from "../components/OrderHistoryModal";
+import Sidebar from "../components/Sidebar";
 import { useCart } from "../context/CartContext";
 
 const OUTLET_MAPS_URL =
@@ -31,18 +39,43 @@ const ZOMATO_URL = "https://www.zomato.com/dehradun/diy-drinks-subhash-nagar";
 const SWIGGY_URL =
   "https://www.swiggy.com/city/dehradun/diy-drinks-deh-patel-nagar-rest1456621";
 
+type MenuItem =
+  | { kind: "category"; key: string; category: Category }
+  | {
+      kind: "product";
+      key: string;
+      product: Subcategory;
+      category: Category;
+    };
+
+const PRODUCT_MENU_CATEGORY_IDS = new Set(["tiramisu"]);
+
+const menuItems: MenuItem[] = [];
+for (const category of categories) {
+  if (PRODUCT_MENU_CATEGORY_IDS.has(category.id)) {
+    for (const product of category.subcategories) {
+      menuItems.push({
+        kind: "product",
+        key: `product:${product.id}`,
+        product,
+        category,
+      });
+    }
+  } else {
+    menuItems.push({
+      kind: "category",
+      key: `category:${category.id}`,
+      category,
+    });
+  }
+}
+
 const COMING_SOON = [
   {
     id: "brownie",
     name: "Brownie",
     emoji: "🍫",
     tagline: "Fudgy, loaded, worth the wait",
-  },
-  {
-    id: "tehra-meesu",
-    name: "Tehra Meesu",
-    emoji: "🍮",
-    tagline: "A sweet surprise coming up",
   },
   {
     id: "kunafa-pista",
@@ -328,12 +361,24 @@ export default function HomeScreen() {
   const [wifiVisible, setWifiVisible] = useState(false);
   const [historyVisible, setHistoryVisible] = useState(false);
   const [feedbackVisible, setFeedbackVisible] = useState(false);
+  const [sidebarVisible, setSidebarVisible] = useState(false);
   const { itemCount } = useCart();
 
   const handleCategoryPress = useCallback((category: Category) => {
     setSelectedCategory(category);
     setSubcatVisible(true);
   }, []);
+
+  const handleSidebarCategorySelect = useCallback(
+    (category: Category) => {
+      setSidebarVisible(false);
+      setTimeout(() => {
+        setSelectedCategory(category);
+        setSubcatVisible(true);
+      }, 260);
+    },
+    []
+  );
 
   const handleComboPress = useCallback((combo: Combo) => {
     setSelectedCombo(combo);
@@ -402,6 +447,13 @@ export default function HomeScreen() {
                     </View>
                   )}
                 </Pressable>
+                <Pressable
+                  onPress={() => setSidebarVisible(true)}
+                  className="p-2.5 bg-white/70 border border-white/80 rounded-full active:opacity-80"
+                  accessibilityLabel="Open category menu"
+                >
+                  <Ionicons name="menu" size={20} color="#EA580C" />
+                </Pressable>
               </View>
             </View>
 
@@ -410,8 +462,8 @@ export default function HomeScreen() {
       </BlurView>
 
       <FlatList
-        data={categories}
-        keyExtractor={(item) => item.id}
+        data={menuItems}
+        keyExtractor={(item) => item.key}
         numColumns={2}
         columnWrapperStyle={{
           paddingHorizontal: 16,
@@ -520,13 +572,22 @@ export default function HomeScreen() {
             <Footer />
           </View>
         }
-        renderItem={({ item, index }) => (
-          <CategoryCard
-            category={item}
-            index={index}
-            onPress={handleCategoryPress}
-          />
-        )}
+        renderItem={({ item, index }) =>
+          item.kind === "category" ? (
+            <CategoryCard
+              category={item.category}
+              index={index}
+              onPress={handleCategoryPress}
+            />
+          ) : (
+            <ProductCard
+              product={item.product}
+              category={item.category}
+              index={index}
+              onPress={handleCategoryPress}
+            />
+          )
+        }
         contentContainerStyle={{ paddingBottom: 120 }}
         showsVerticalScrollIndicator={false}
       />
@@ -584,6 +645,13 @@ export default function HomeScreen() {
       <OrderHistoryModal
         visible={historyVisible}
         onClose={() => setHistoryVisible(false)}
+      />
+
+      <Sidebar
+        visible={sidebarVisible}
+        categories={categories}
+        onClose={() => setSidebarVisible(false)}
+        onSelectCategory={handleSidebarCategorySelect}
       />
     </View>
   );

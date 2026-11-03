@@ -1,4 +1,10 @@
 import type { ImageSourcePropType } from "react-native";
+import strawberryGlass from "../assets/DIY_Drinks_All_Item_Images/individual-items/strawberry/strawberry-glass/product";
+import strawberryBowl from "../assets/DIY_Drinks_All_Item_Images/individual-items/strawberry/strawberry-bowl/product";
+import strawberryStick from "../assets/DIY_Drinks_All_Item_Images/individual-items/strawberry/strawberry-stick/product";
+import strawberryShake from "../assets/DIY_Drinks_All_Item_Images/individual-items/strawberry/strawberry-shake/product";
+import strawberryCrusher from "../assets/DIY_Drinks_All_Item_Images/individual-items/strawberry/strawberry-crusher/product";
+import tiramisu from "../assets/DIY_Drinks_All_Item_Images/individual-items/tiramisu/product";
 
 export interface Variant {
   id: string;
@@ -128,6 +134,22 @@ export function isCustomCombo(combo: Combo): boolean {
 }
 
 const categoriesBase: Category[] = [
+
+{
+  id: "strawberry-glass",
+  name: "Strawberry Chocolate Glass",
+  image: strawberryGlass.image,
+  description: "Chocolate strawberry glass, bowl and stick treats made with real strawberries",
+  subcategories: [strawberryGlass, strawberryBowl, strawberryStick],
+},
+
+{
+  id: "strawberry-crusher",
+  name: "Strawberry Chocolate Crusher",
+  image: strawberryCrusher.image,
+  description: "Chocolate strawberry shakes and crushers made with real strawberries",
+  subcategories: [strawberryShake, strawberryCrusher],
+},
 
 {
   id: "waffles",
@@ -447,6 +469,14 @@ const categoriesBase: Category[] = [
 },
 
 {
+  id: "tiramisu",
+  name: "Tiramisu",
+  image: tiramisu.image,
+  description: "Classic Italian coffee dessert",
+  subcategories: [tiramisu],
+},
+
+{
   id: "churros",
   name: "Churros",
   image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/churros/double-dip-churros.webp"),
@@ -607,8 +637,11 @@ const categoriesBase: Category[] = [
 ];
 
 const CATEGORY_ORDER = [
+  "strawberry-glass",
+  "strawberry-crusher",
   "waffles",
   "pancakes",
+  "tiramisu",
   "churros",
   "burgers",
   "sandwiches",
