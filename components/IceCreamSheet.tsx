@@ -39,7 +39,7 @@ const defaultFlavours = (id: string) => {
 };
 
 export default function IceCreamSheet({ visible, category, onClose }: Props) {
-  const { addItem, getItemQuantity } = useCart();
+  const { addItem, items } = useCart();
   const [selections, setSelections] = useState<Record<string, Selection>>({});
 
   if (!category) return null;
@@ -107,14 +107,10 @@ export default function IceCreamSheet({ visible, category, onClose }: Props) {
           const scoopCount = SCOOPS[sub.id] ?? 1;
           const selection = getSelection(sub.id);
           const price = getItemPrice(sub);
-          const cartKeys =
-            scoopCount >= 2
-              ? ["vanilla", "chocolate", "chocolate-vanilla"]
-              : ["vanilla", "chocolate"];
-          const inCart = cartKeys.reduce(
-            (sum, key) => sum + getItemQuantity(`${sub.id}:${key}`),
-            0
-          );
+          const cartPrefix = `${sub.id}:`;
+          const inCart = items
+            .filter((item) => item.subcategory.id.startsWith(cartPrefix))
+            .reduce((sum, item) => sum + item.quantity, 0);
 
           return (
             <View

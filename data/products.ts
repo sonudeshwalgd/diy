@@ -222,8 +222,7 @@ const categoriesBase: Category[] = [
       name: "Ice Cream Chocolate Waffle - Ice Cream Inside",
       price: 120,
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/ice-cream-chocolate-waffle-ice-cream-inside.webp"),
-      variantLabel: "Choose 1 ice cream",
-      maxOneVariant: true,
+      variantLabel: "Choose flavours & quantity",
       variants: [
         { id: "vanilla", name: "Vanilla", price: 120 },
         { id: "chocolate", name: "Chocolate", price: 120 },
@@ -234,8 +233,7 @@ const categoriesBase: Category[] = [
       name: "Ice Cream Chocolate Waffle - Ice Cream Outside",
       price: 130,
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/ice-cream-chocolate-waffle-ice-cream-outside.webp"),
-      variantLabel: "Choose 1 ice cream",
-      maxOneVariant: true,
+      variantLabel: "Choose flavours & quantity",
       variants: [
         { id: "vanilla", name: "Vanilla", price: 130 },
         { id: "chocolate", name: "Chocolate", price: 130 },
@@ -440,8 +438,7 @@ const categoriesBase: Category[] = [
       "id": "ice-cream",
       "name": "Ice Cream Pancake",
       "image": require("../assets/DIY_Drinks_All_Item_Images/individual-items/pancakes/ice-cream-pancake.webp"),
-      "variantLabel": "Choose 1 ice cream & size",
-      "maxOneVariant": true,
+      "variantLabel": "Choose flavours, sizes & quantity",
       "variants": [
         {
           "id": "vanilla-8-pcs",

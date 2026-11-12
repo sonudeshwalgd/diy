@@ -83,6 +83,24 @@ const COMING_SOON = [
     emoji: "🥥",
     tagline: "Crispy kunafa · pista cream",
   },
+  {
+    id: "pizza",
+    name: "Pizza",
+    emoji: "🍕",
+    tagline: "Cheesy, fresh from the oven",
+  },
+  {
+    id: "long-fries",
+    name: "Long Fries",
+    emoji: "🍟",
+    tagline: "Crispy, extra-long & loaded",
+  },
+  {
+    id: "vada-pao",
+    name: "Vada Pao",
+    emoji: "🥪",
+    tagline: "Mumbai style · spicy & soft",
+  },
 ] as const;
 
 function QuickPill({
