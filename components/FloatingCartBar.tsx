@@ -21,7 +21,7 @@ export default function FloatingCartBar({ onPress }: Props) {
   return (
     <Animated.View
       entering={FadeInDown.duration(350)}
-      className="absolute bottom-0 left-0 right-0 px-4 pb-5 pt-6"
+      className="absolute bottom-0 left-0 right-0 items-center px-4 pb-5 pt-6"
     >
       <BlurView
         intensity={60}
@@ -29,6 +29,8 @@ export default function FloatingCartBar({ onPress }: Props) {
         experimentalBlurMethod="dimezisBlurView"
         className="rounded-3xl overflow-hidden"
         style={{
+          width: "100%",
+          maxWidth: 640,
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 6 },
           shadowOpacity: 0.15,

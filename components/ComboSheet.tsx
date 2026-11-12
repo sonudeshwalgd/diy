@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Image, Pressable, ScrollView, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
+  buildComboCartItem,
   categories,
   combosCategory,
   customComboRule,
@@ -52,7 +53,7 @@ function ComboSheetContent({
   combo: Combo;
   onClose: () => void;
 }) {
-  const { addItem, getComboQuantity } = useCart();
+  const { addItem, decrement, getComboQuantity, getItemQuantity } = useCart();
 
   const [selections, setSelections] = useState<Record<string, string[]>>(() => {
     const init: Record<string, string[]> = {};
@@ -179,52 +180,40 @@ function ComboSheetContent({
     });
   };
 
-  const handleAdd = () => {
-    if (!canAdd) return;
+  const customSignature = customSelected
+    .map((i) => `${i.key}x${customQty[i.key]}`)
+    .sort()
+    .join(",");
 
-    if (customCombo) {
-      const signature = customSelected
-        .map((i) => `${i.key}x${customQty[i.key]}`)
-        .sort()
-        .join(",");
-      const name = `Custom Combo: ${customSelected
-        .map((i) =>
-          (customQty[i.key] ?? 1) > 1 ? `${i.name} ×${customQty[i.key]}` : i.name
-        )
-        .join(", ")}`;
-      addItem(
-        {
-          id: `combo:${combo.id}:${signature}`,
-          name,
+  const configuredItem = customCombo
+    ? canAdd
+      ? {
+          id: `combo:${combo.id}:${customSignature}`,
+          name: `Custom Combo: ${customSelected
+            .map((i) =>
+              (customQty[i.key] ?? 1) > 1
+                ? `${i.name} ×${customQty[i.key]}`
+                : i.name
+            )
+            .join(", ")}`,
           price: customTotal,
           image: combo.image,
-        },
-        combosCategory,
-        1
-      );
-    } else {
-      const selectedLabels = selectedOptions.map((o) => o.name);
-      const signature = selectedOptions
-        .map((o) => o.id)
-        .sort()
-        .join(",");
-      const name =
-        selectedLabels.length > 0
-          ? `${combo.name} (${selectedLabels.join(", ")})`
-          : combo.name;
-      addItem(
-        {
-          id: `combo:${combo.id}:${signature}`,
-          name,
-          price: comboTotal,
-          image: combo.image,
-        },
-        combosCategory,
-        1
-      );
-    }
+        }
+      : null
+    : canAdd
+    ? buildComboCartItem(combo, selections)
+    : null;
 
-    onClose();
+  const configuredQty = configuredItem ? getItemQuantity(configuredItem.id) : 0;
+
+  const handleIncrease = () => {
+    if (!configuredItem) return;
+    addItem(configuredItem, combosCategory, 1);
+  };
+
+  const handleDecrease = () => {
+    if (!configuredItem) return;
+    decrement(configuredItem.id);
   };
 
   return (
@@ -561,21 +550,42 @@ function ComboSheetContent({
             </Text>
           )}
 
-          <Pressable
-            onPress={handleAdd}
-            disabled={!canAdd}
-            className={`mt-3 rounded-xl py-3.5 flex-row items-center justify-center gap-1 ${
-              canAdd ? "bg-orange-600" : "bg-stone-300"
-            }`}
-          >
-            <Ionicons name="cart" size={18} color="white" />
-            <Text className="text-white text-base font-sans-bold">
-              Add to Cart
-              {customCombo && customSelected.length > 0
-                ? ` — ₹${displayTotal}`
-                : ""}
-            </Text>
-          </Pressable>
+          <View className="mt-3 rounded-xl bg-stone-100 px-4 py-2.5 flex-row items-center justify-between">
+            <View>
+              <Text className="text-[10px] text-gray-500">Quantity</Text>
+              <Text className="text-xs font-sans-semibold text-gray-700">
+                {customCombo ? "Custom combo" : "Ready to add"}
+              </Text>
+            </View>
+
+            {configuredItem ? (
+              <View className="flex-row items-center gap-2">
+                {configuredQty > 0 && (
+                  <>
+                    <Pressable
+                      onPress={handleDecrease}
+                      className="w-8 h-8 rounded-full bg-gray-200 items-center justify-center"
+                    >
+                      <Ionicons name="remove" size={16} color="#374151" />
+                    </Pressable>
+                    <Text className="text-sm font-sans-bold text-gray-900 w-5 text-center">
+                      {configuredQty}
+                    </Text>
+                  </>
+                )}
+                <Pressable
+                  onPress={handleIncrease}
+                  className="w-8 h-8 rounded-full bg-orange-600 items-center justify-center"
+                >
+                  <Ionicons name="add" size={16} color="white" />
+                </Pressable>
+              </View>
+            ) : (
+              <Text className="text-xs text-gray-400">
+                {customCombo ? "Select items" : "Select options"}
+              </Text>
+            )}
+          </View>
         </View>
       </ScrollView>
     </Sheet>

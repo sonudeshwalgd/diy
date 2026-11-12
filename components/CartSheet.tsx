@@ -1,4 +1,5 @@
 import {
+  ActivityIndicator,
   Alert,
   FlatList,
   Image,
@@ -40,13 +41,12 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
   const [coinsToUse, setCoinsToUse] = useState(0);
   const [placing, setPlacing] = useState(false);
   const [showMobileInput, setShowMobileInput] = useState(false);
-  const [loyaltyAvailable, setLoyaltyAvailable] = useState(true);
+  const [loyaltyError, setLoyaltyError] = useState<string | null>(null);
 
   useEffect(() => {
     if (visible) {
       AsyncStorage.getItem(MOBILE_KEY).then((m) => {
         if (m) {
-          setSavedMobile(m);
           setMobile(m);
           fetchCustomer(m);
           setShowMobileInput(false);
@@ -54,19 +54,41 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
       });
     } else {
       setShowMobileInput(false);
+      setLoyaltyError(null);
     }
   }, [visible]);
 
   const fetchCustomer = async (m: string) => {
     setLoadingCustomer(true);
+    setLoyaltyError(null);
     try {
       const data = await getCustomer(m);
       setCustomer(data);
-      setLoyaltyAvailable(true);
+      setSavedMobile(m);
+      setMobile(m);
+      setShowMobileInput(false);
       setCoinsToUse(0);
-    } catch {
+      await AsyncStorage.setItem(MOBILE_KEY, m);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "";
+      if (message.toLowerCase().includes("not found")) {
+        setCustomer({
+          mobileNumber: m,
+          totalCoins: 0,
+          totalOrders: 0,
+          lifetimeSpent: 0,
+        });
+        setSavedMobile(m);
+        setMobile(m);
+        setShowMobileInput(false);
+        setCoinsToUse(0);
+        await AsyncStorage.setItem(MOBILE_KEY, m);
+        return;
+      }
       setCustomer(null);
-      setLoyaltyAvailable(false);
+      setSavedMobile(null);
+      setShowMobileInput(true);
+      setLoyaltyError("Could not load loyalty points. Please try again.");
       setCoinsToUse(0);
     } finally {
       setLoadingCustomer(false);
@@ -79,17 +101,15 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
       Alert.alert("Invalid Number", "Please enter a valid 10-digit mobile number.");
       return;
     }
-    await AsyncStorage.setItem(MOBILE_KEY, cleaned);
-    setSavedMobile(cleaned);
     await fetchCustomer(cleaned);
   };
 
-  const maxRedeemable = Math.min(
-    Math.floor(total * 0.5),
-    customer?.totalCoins || 0
-  );
+  const maxRedeemable = customer
+    ? Math.min(customer.totalCoins, Math.floor(total))
+    : 0;
 
-  const coinsDiscount = coinsToUse;
+  const appliedCoins = Math.min(coinsToUse, maxRedeemable);
+  const coinsDiscount = appliedCoins;
   const finalTotal = Math.max(0, total - coinsDiscount);
   const coinsEarned = Math.floor(finalTotal * (COIN_EARN_RATE / 100));
 
@@ -104,7 +124,7 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
     msg += "━━━━━━━━━━━━━━━━\n";
     msg += `💰 *Original Total:* ₹${total}\n`;
     if (coinsDiscount > 0) {
-      msg += `🪙 *Coins Used:* ${coinsToUse} (−₹${coinsDiscount})\n`;
+      msg += `🪙 *Coins Used:* ${appliedCoins} (−₹${coinsDiscount})\n`;
     }
     msg += `🪙 *Coins Earned:* ${coinsEarned}\n`;
     msg += `💵 *Final Total:* ₹${finalTotal}\n`;
@@ -128,7 +148,7 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
         quantity: i.quantity,
       })),
       totalAmount: total,
-      coinsUsed: savedMobile ? coinsToUse : 0,
+      coinsUsed: savedMobile ? appliedCoins : 0,
       paymentMethod: "cod",
       whatsappMessage: message,
     };
@@ -154,11 +174,8 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
     try {
       await placeOrder(orderPayload);
     } catch {
-      // Loyalty backend is broken: hide all coin UI on the final step so we
-      // never show coins used/earned that were not actually recorded.
-      setLoyaltyAvailable(false);
+      // Loyalty recording is best-effort; never block the order flow.
       setCoinsToUse(0);
-      setCustomer(null);
     }
   };
 
@@ -222,9 +239,19 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
       <View className="px-5 pt-2 pb-3 flex-row items-center justify-between">
               <View>
                 <Text className="text-xl font-sans-bold text-gray-900">Your Cart</Text>
-                <Text className="text-sm text-gray-500 mt-0.5">
-                  {itemCount} {itemCount === 1 ? "item" : "items"}
-                </Text>
+                <View className="flex-row items-center gap-2 mt-0.5">
+                  <Text className="text-sm text-gray-500">
+                    {itemCount} {itemCount === 1 ? "item" : "items"}
+                  </Text>
+                  {customer && customer.totalCoins > 0 && (
+                    <View className="bg-amber-100 rounded-full px-2 py-0.5 flex-row items-center gap-1">
+                      <Ionicons name="wallet-outline" size={11} color="#B45309" />
+                      <Text className="text-[11px] font-sans-bold text-amber-700">
+                        ₹{customer.totalCoins}
+                      </Text>
+                    </View>
+                  )}
+                </View>
               </View>
               <Pressable onPress={onClose} className="p-1">
                 <Ionicons name="close" size={24} color="#6B7280" />
@@ -247,163 +274,190 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
                   style={{ flexShrink: 1 }}
                   ListFooterComponent={
                 <View className="bg-white/85 rounded-t-3xl px-5 pt-4 pb-3 border-t border-white/60">
-                  {/* Use Coins Button / Verified */}
-                  {loyaltyAvailable && savedMobile && customer ? (
-                    <View className="mb-4 bg-amber-50 rounded-xl px-4 py-3 border border-amber-200">
-                      <View className="flex-row items-center justify-between mb-1">
-                        <View className="flex-row items-center gap-2">
-                          <Ionicons name="wallet-outline" size={18} color="#D97706" />
-                          <Text className="text-sm font-sans-semibold text-amber-800">
-                            Loyalty Coins
-                          </Text>
-                        </View>
-                        <Pressable
-                          onPress={() => {
-                            setSavedMobile(null);
-                            setCustomer(null);
-                            setCoinsToUse(0);
-                            setShowMobileInput(false);
-                            AsyncStorage.removeItem(MOBILE_KEY);
-                          }}
-                        >
-                          <Text className="text-amber-600 text-xs font-sans-medium">Change</Text>
-                        </Pressable>
-                      </View>
-                      <View className="flex-row items-center justify-between">
-                        <Text className="text-xs text-amber-700">
-                          📱 {savedMobile}
-                        </Text>
-                        <Text className="text-sm font-sans-bold text-amber-800">
-                          🪙 {customer.totalCoins} coins = ₹{customer.totalCoins}
+                  {/* Loyalty */}
+                  <View className="mb-4">
+                    {loadingCustomer ? (
+                      <View className="bg-amber-50 rounded-2xl px-4 py-3.5 border border-amber-200 flex-row items-center gap-3">
+                        <ActivityIndicator size="small" color="#D97706" />
+                        <Text className="text-sm text-amber-800 font-sans-medium">
+                          Checking loyalty points…
                         </Text>
                       </View>
-                    </View>
-                  ) : loyaltyAvailable && !showMobileInput ? (
-                    <Pressable
-                      onPress={() => setShowMobileInput(true)}
-                      className="mb-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl px-4 py-3.5 border border-amber-200 flex-row items-center justify-between"
-                    >
-                      <View className="flex-row items-center gap-3">
-                        <View className="bg-amber-100 rounded-full w-10 h-10 items-center justify-center">
-                          <Ionicons name="wallet-outline" size={20} color="#D97706" />
-                        </View>
-                        <View>
-                          <Text className="text-sm font-sans-semibold text-gray-900">
-                            Have Loyalty Coins?
-                          </Text>
-                          <Text className="text-xs text-gray-500 mt-0.5">
-                            Tap to enter number & get discount
-                          </Text>
-                        </View>
-                      </View>
-                      <Ionicons name="chevron-forward" size={18} color="#D97706" />
-                    </Pressable>
-                  ) : null}
-
-                  {/* Mobile Input (shown when tapping Use Coins) */}
-                  {loyaltyAvailable && showMobileInput && !savedMobile && (
-                    <View className="mb-4">
-                      <View className="flex-row items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
-                        <Text className="text-gray-400 text-lg">+91</Text>
-                        <TextInput
-                          className="flex-1 text-sm text-gray-900"
-                          placeholder="Enter 10-digit mobile number"
-                          keyboardType="numeric"
-                          maxLength={10}
-                          value={mobile}
-                          onChangeText={setMobile}
-                          autoFocus
-                        />
-                        <Pressable
-                          onPress={handleMobileSubmit}
-                          className="bg-amber-500 rounded-lg px-3 py-1.5"
-                          disabled={loadingCustomer}
-                        >
-                          <Text className="text-white text-xs font-sans-semibold">
-                            {loadingCustomer ? "..." : "Apply"}
-                          </Text>
-                        </Pressable>
-                      </View>
-                      <Pressable
-                        onPress={() => {
-                          setShowMobileInput(false);
-                          setMobile("");
-                        }}
-                        className="mt-1.5 items-center"
-                      >
-                        <Text className="text-xs text-gray-400">Skip</Text>
-                      </Pressable>
-                    </View>
-                  )}
-
-                  {/* Coins Section */}
-                  {loyaltyAvailable && customer && (
-                    <View className="mb-4 bg-amber-50 rounded-lg px-3 py-3 border border-amber-200">
-                      <View className="flex-row items-center justify-between mb-2">
-                        <Text className="text-sm font-sans-semibold text-amber-800">
-                          🪙 Available Coins: {customer.totalCoins}
-                        </Text>
-                        <Text className="text-xs text-amber-600">
-                          = ₹{customer.totalCoins}
-                        </Text>
-                      </View>
-
-                      {maxRedeemable > 0 && (
-                        <View>
-                          <Text className="text-xs text-amber-700 mb-1.5">
-                            Max redeemable: {maxRedeemable} coins (50% of order)
-                          </Text>
+                    ) : savedMobile && customer ? (
+                      <View className="bg-amber-50 rounded-2xl px-4 py-3 border border-amber-200">
+                        <View className="flex-row items-center justify-between mb-2">
                           <View className="flex-row items-center gap-2">
-                            <Pressable
-                              onPress={() => setCoinsToUse(0)}
-                              className={`rounded-lg px-3 py-1.5 ${
-                                coinsToUse === 0
-                                  ? "bg-amber-600"
-                                  : "bg-white border border-amber-300"
-                              }`}
-                            >
-                              <Text
-                                className={`text-xs font-sans-medium ${
-                                  coinsToUse === 0 ? "text-white" : "text-amber-700"
+                            <Ionicons name="wallet-outline" size={18} color="#D97706" />
+                            <Text className="text-sm font-sans-semibold text-amber-800">
+                              Loyalty Points
+                            </Text>
+                          </View>
+                          <Pressable
+                            onPress={() => {
+                              setSavedMobile(null);
+                              setCustomer(null);
+                              setCoinsToUse(0);
+                              setShowMobileInput(false);
+                              setLoyaltyError(null);
+                              AsyncStorage.removeItem(MOBILE_KEY);
+                            }}
+                          >
+                            <Text className="text-amber-600 text-xs font-sans-medium">Change</Text>
+                          </Pressable>
+                        </View>
+
+                        <View className="flex-row items-end justify-between">
+                          <Text className="text-xs text-amber-700">
+                            📱 {savedMobile}
+                          </Text>
+                          <Text className="text-2xl font-sans-extrabold text-amber-800">
+                            ₹{customer.totalCoins}
+                          </Text>
+                        </View>
+
+                        {maxRedeemable > 0 ? (
+                          <View className="mt-2.5">
+                            <Text className="text-xs text-amber-700 mb-1.5">
+                              {appliedCoins > 0
+                                ? `Using ₹${appliedCoins} of ₹${maxRedeemable}`
+                                : `You can use up to ₹${maxRedeemable}`}
+                            </Text>
+                            <View className="flex-row items-center gap-2">
+                              <Pressable
+                                onPress={() => setCoinsToUse(0)}
+                                className={`flex-1 rounded-xl py-2 items-center ${
+                                  appliedCoins === 0
+                                    ? "bg-amber-600"
+                                    : "bg-white border border-amber-300"
                                 }`}
                               >
-                                None
-                              </Text>
-                            </Pressable>
-                            <Pressable
-                              onPress={() => setCoinsToUse(maxRedeemable)}
-                              className={`rounded-lg px-3 py-1.5 ${
-                                coinsToUse === maxRedeemable
-                                  ? "bg-amber-600"
-                                  : "bg-white border border-amber-300"
-                              }`}
-                            >
-                              <Text
-                                className={`text-xs font-sans-medium ${
-                                  coinsToUse === maxRedeemable
-                                    ? "text-white"
-                                    : "text-amber-700"
+                                <Text
+                                  className={`text-xs font-sans-semibold ${
+                                    appliedCoins === 0 ? "text-white" : "text-amber-700"
+                                  }`}
+                                >
+                                  Do not use
+                                </Text>
+                              </Pressable>
+                              <Pressable
+                                onPress={() => setCoinsToUse(maxRedeemable)}
+                                className={`flex-1 rounded-xl py-2 items-center ${
+                                  appliedCoins === maxRedeemable
+                                    ? "bg-amber-600"
+                                    : "bg-white border border-amber-300"
                                 }`}
                               >
-                                Max ({maxRedeemable})
-                              </Text>
-                            </Pressable>
+                                <Text
+                                  className={`text-xs font-sans-semibold ${
+                                    appliedCoins === maxRedeemable
+                                      ? "text-white"
+                                      : "text-amber-700"
+                                  }`}
+                                >
+                                  Use all ₹{maxRedeemable}
+                                </Text>
+                              </Pressable>
+                            </View>
+                          </View>
+                        ) : customer.totalCoins === 0 ? (
+                          <Text className="text-xs text-amber-600 mt-2">
+                            Place orders to earn coins ({COIN_EARN_RATE}% back)
+                          </Text>
+                        ) : null}
+                      </View>
+                    ) : showMobileInput ? (
+                      <View className="bg-white rounded-2xl px-4 py-3.5 border border-amber-200">
+                        <View className="flex-row items-center gap-2 mb-2.5">
+                          <View className="w-8 h-8 rounded-full bg-amber-100 items-center justify-center">
+                            <Ionicons name="wallet-outline" size={16} color="#D97706" />
+                          </View>
+                          <View className="flex-1">
+                            <Text className="text-sm font-sans-semibold text-gray-900">
+                              Check loyalty points
+                            </Text>
+                            <Text className="text-[11px] text-gray-500 mt-0.5">
+                              Enter your registered mobile number
+                            </Text>
                           </View>
                         </View>
-                      )}
 
-                      {maxRedeemable === 0 && customer.totalCoins > 0 && (
-                        <Text className="text-xs text-amber-600">
-                          Order total too low to redeem coins
-                        </Text>
-                      )}
-                      {customer.totalCoins === 0 && (
-                        <Text className="text-xs text-amber-600">
-                          Place orders to earn coins ({COIN_EARN_RATE}% back)
-                        </Text>
-                      )}
-                    </View>
-                  )}
+                        <View className="flex-row items-center gap-2">
+                          <View className="flex-row items-center gap-1.5 bg-stone-100 rounded-xl px-3 py-2.5">
+                            <Ionicons name="call-outline" size={15} color="#D97706" />
+                            <Text className="text-sm font-sans-semibold text-gray-700">
+                              +91
+                            </Text>
+                          </View>
+                          <TextInput
+                            className="flex-1 bg-stone-100 rounded-xl px-3 py-2.5 text-sm text-gray-900"
+                            placeholder="10-digit mobile number"
+                            placeholderTextColor="#9CA3AF"
+                            keyboardType="numeric"
+                            maxLength={10}
+                            value={mobile}
+                            onChangeText={setMobile}
+                            autoFocus
+                          />
+                        </View>
+
+                        <Pressable
+                          onPress={handleMobileSubmit}
+                          disabled={loadingCustomer}
+                          className={`mt-2.5 rounded-xl py-2.5 flex-row items-center justify-center gap-2 ${
+                            loadingCustomer
+                              ? "bg-amber-300"
+                              : "bg-amber-500 active:bg-amber-600"
+                          }`}
+                        >
+                          {loadingCustomer ? (
+                            <ActivityIndicator size="small" color="white" />
+                          ) : (
+                            <Ionicons name="search" size={16} color="white" />
+                          )}
+                          <Text className="text-white text-sm font-sans-bold">
+                            {loadingCustomer ? "Checking..." : "Check Points"}
+                          </Text>
+                        </Pressable>
+
+                        {loyaltyError && (
+                          <Text className="text-xs text-red-500 mt-2">
+                            {loyaltyError}
+                          </Text>
+                        )}
+
+                        <Pressable
+                          onPress={() => {
+                            setShowMobileInput(false);
+                            setMobile("");
+                            setLoyaltyError(null);
+                          }}
+                          className="mt-2 items-center"
+                        >
+                          <Text className="text-xs text-gray-400">Skip</Text>
+                        </Pressable>
+                      </View>
+                    ) : (
+                      <Pressable
+                        onPress={() => setShowMobileInput(true)}
+                        className="bg-amber-50 rounded-2xl px-4 py-3.5 border border-amber-200 flex-row items-center justify-between"
+                      >
+                        <View className="flex-row items-center gap-3">
+                          <View className="bg-amber-100 rounded-full w-10 h-10 items-center justify-center">
+                            <Ionicons name="wallet-outline" size={20} color="#D97706" />
+                          </View>
+                          <View>
+                            <Text className="text-sm font-sans-semibold text-gray-900">
+                              Have Loyalty Coins?
+                            </Text>
+                            <Text className="text-xs text-gray-500 mt-0.5">
+                              Tap to enter number & get discount
+                            </Text>
+                          </View>
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color="#D97706" />
+                      </Pressable>
+                    )}
+                  </View>
 
                   {/* Pricing */}
                   <View className="flex-row justify-between items-center mb-1">
@@ -434,9 +488,9 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
                     <Text className="text-2xl font-sans-extrabold text-orange-600">₹{finalTotal}</Text>
                   </View>
 
-                  {coinsToUse === 0 && maxRedeemable > 0 && (
+                  {appliedCoins === 0 && maxRedeemable > 0 && (
                     <View className="flex-row justify-between items-center mb-1">
-                      <Text className="text-xs text-gray-400">You'll earn</Text>
+                      <Text className="text-xs text-gray-400">You will earn</Text>
                       <Text className="text-xs text-green-600 font-sans-medium">
                         🪙 {Math.floor(total * (COIN_EARN_RATE / 100))} coins
                       </Text>
@@ -445,7 +499,7 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
 
                   {coinsDiscount > 0 && (
                     <View className="flex-row justify-between items-center mb-3">
-                      <Text className="text-xs text-gray-400">You'll earn</Text>
+                      <Text className="text-xs text-gray-400">You will earn</Text>
                       <Text className="text-xs text-green-600 font-sans-medium">
                         🪙 {coinsEarned} coins
                       </Text>

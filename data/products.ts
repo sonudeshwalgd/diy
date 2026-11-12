@@ -133,6 +133,52 @@ export function isCustomCombo(combo: Combo): boolean {
   return combo.discountRuleId === customComboRule.id;
 }
 
+export function getDefaultComboSelections(
+  combo: Combo
+): Record<string, string[]> {
+  const selections: Record<string, string[]> = {};
+  for (const group of combo.selectionGroups) {
+    selections[group.id] =
+      group.required && group.maxSelections === 1 && group.options.length
+        ? [group.options[0].id]
+        : [];
+  }
+  return selections;
+}
+
+export function buildComboCartItem(
+  combo: Combo,
+  selections: Record<string, string[]>
+): Subcategory | null {
+  if (isCustomCombo(combo)) return null;
+
+  const selectedOptions: ComboOption[] = [];
+  for (const group of combo.selectionGroups) {
+    for (const id of selections[group.id] ?? []) {
+      const option = group.options.find((o) => o.id === id);
+      if (option) selectedOptions.push(option);
+    }
+  }
+
+  const subtotal =
+    combo.items.reduce((sum, item) => sum + item.price, 0) +
+    selectedOptions.reduce((sum, o) => sum + o.price, 0);
+  const total = Math.max(0, subtotal - getComboDiscountAmount(combo));
+  const signature = selectedOptions.map((o) => o.id).sort().join(",");
+  const labels = selectedOptions.map((o) => o.name);
+  const name =
+    labels.length > 0
+      ? `${combo.name} (${labels.join(", ")})`
+      : combo.name;
+
+  return {
+    id: `combo:${combo.id}:${signature}`,
+    name,
+    price: total,
+    image: combo.image,
+  };
+}
+
 const categoriesBase: Category[] = [
 
 {

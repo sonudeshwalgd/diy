@@ -28,6 +28,12 @@ import WifiBottomSheet from "../components/WifiBottomSheet";
 import OrderHistoryModal from "../components/OrderHistoryModal";
 import Sidebar from "../components/Sidebar";
 import { useCart } from "../context/CartContext";
+import {
+  GRID_GAP,
+  MAX_CONTENT_WIDTH,
+  PAGE_PADDING,
+  useResponsiveLayout,
+} from "../utils/responsive";
 
 const OUTLET_MAPS_URL =
   "https://www.google.com/maps/place/DIY+Drinks/data=!4m2!3m1!1s0x0:0xb1c683b845157dec?sa=X&ved=1t:2428&ictx=111";
@@ -100,6 +106,12 @@ const COMING_SOON = [
     name: "Vada Pao",
     emoji: "🥪",
     tagline: "Mumbai style · spicy & soft",
+  },
+  {
+    id: "real-strawberry-sandwich",
+    name: "Real Strawberry Sandwich",
+    emoji: "🍓",
+    tagline: "Fresh strawberries · soft bread",
   },
 ] as const;
 
@@ -381,6 +393,7 @@ export default function HomeScreen() {
   const [feedbackVisible, setFeedbackVisible] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const { itemCount } = useCart();
+  const { columns } = useResponsiveLayout();
 
   const handleCategoryPress = useCallback((category: Category) => {
     setSelectedCategory(category);
@@ -423,7 +436,14 @@ export default function HomeScreen() {
         className="border-b border-white/60"
       >
         <SafeAreaView edges={["top"]} className="bg-white/50">
-          <View className="px-4 pt-3 pb-2">
+          <View
+            className="px-4 pt-3 pb-2"
+            style={{
+              width: "100%",
+              maxWidth: MAX_CONTENT_WIDTH,
+              alignSelf: "center",
+            }}
+          >
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center gap-3">
                 <View className="bg-orange-600 rounded-2xl w-10 h-10 items-center justify-center">
@@ -480,12 +500,18 @@ export default function HomeScreen() {
       </BlurView>
 
       <FlatList
+        key={`menu-${columns}`}
         data={menuItems}
         keyExtractor={(item) => item.key}
-        numColumns={2}
+        numColumns={columns}
         columnWrapperStyle={{
-          paddingHorizontal: 16,
-          justifyContent: "space-between",
+          paddingHorizontal: PAGE_PADDING,
+          gap: GRID_GAP,
+        }}
+        style={{
+          width: "100%",
+          maxWidth: MAX_CONTENT_WIDTH,
+          alignSelf: "center",
         }}
         ListHeaderComponent={
           <View>
@@ -575,7 +601,10 @@ export default function HomeScreen() {
                   </Text>
                 </View>
               </View>
-              <View className="flex-row flex-wrap justify-between px-4">
+              <View
+                className="flex-row flex-wrap px-4"
+                style={{ gap: GRID_GAP }}
+              >
                 {combos.map((combo, index) => (
                   <ComboCard
                     key={combo.id}

@@ -7,6 +7,7 @@ import {
   type Subcategory,
 } from "../data/products";
 import { useCart } from "../context/CartContext";
+import { useResponsiveLayout } from "../utils/responsive";
 
 interface Props {
   product: Subcategory;
@@ -22,6 +23,7 @@ export default function ProductCard({
   index = 0,
 }: Props) {
   const { getItemQuantity } = useCart();
+  const { cardWidth } = useResponsiveLayout();
   const quantity = getItemQuantity(product.id);
   const subtitle =
     product.name === category.name ? category.description : category.name;
@@ -29,7 +31,7 @@ export default function ProductCard({
   return (
     <Animated.View
       entering={FadeInDown.duration(450).delay(80 + (index % 4) * 70)}
-      style={{ width: "48%" }}
+      style={{ width: cardWidth }}
     >
       <Pressable
         onPress={() => onPress(category)}

@@ -4,6 +4,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import type { Category } from "../data/products";
 import { getItemPrice } from "../data/products";
 import { useCart } from "../context/CartContext";
+import { useResponsiveLayout } from "../utils/responsive";
 
 interface Props {
   category: Category;
@@ -13,12 +14,13 @@ interface Props {
 
 export default function CategoryCard({ category, onPress, index = 0 }: Props) {
   const { getCategoryCount } = useCart();
+  const { cardWidth } = useResponsiveLayout();
   const count = getCategoryCount(category.id);
 
   return (
     <Animated.View
       entering={FadeInDown.duration(450).delay(80 + (index % 4) * 70)}
-      style={{ width: "48%" }}
+      style={{ width: cardWidth }}
     >
       <Pressable
         onPress={() => onPress(category)}

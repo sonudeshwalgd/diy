@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { Dimensions, Image, Pressable, ScrollView, Text, View } from "react-native";
+import {
+  Image,
+  Pressable,
+  ScrollView,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInDown } from "react-native-reanimated";
@@ -11,9 +18,12 @@ import {
   getComboStartingPrice,
   type Combo,
 } from "../data/products";
+import {
+  MAX_CONTENT_WIDTH,
+  PAGE_PADDING,
+} from "../utils/responsive";
 
-const SCREEN_WIDTH = Dimensions.get("window").width;
-const BANNER_WIDTH = SCREEN_WIDTH - 32;
+const BANNER_MAX_WIDTH = 560;
 const BANNER_HEIGHT = 190;
 
 const BANNER_COLORS = [
@@ -33,24 +43,29 @@ interface Props {
 export default function BannerCarousel({ onComboPress }: Props) {
   const scrollRef = useRef<ScrollView>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const { width } = useWindowDimensions();
+  const bannerWidth = Math.min(
+    Math.min(width, MAX_CONTENT_WIDTH) - PAGE_PADDING * 2,
+    BANNER_MAX_WIDTH
+  );
 
   useEffect(() => {
     const interval = setInterval(() => {
       setActiveIndex((prev) => {
         const next = (prev + 1) % combos.length;
         scrollRef.current?.scrollTo({
-          x: next * (BANNER_WIDTH + 12),
+          x: next * (bannerWidth + 12),
           animated: true,
         });
         return next;
       });
     }, 3000);
     return () => clearInterval(interval);
-  }, []);
+  }, [bannerWidth]);
 
   const onScroll = (e: any) => {
     const offsetX = e.nativeEvent.contentOffset.x;
-    const idx = Math.round(offsetX / (BANNER_WIDTH + 12));
+    const idx = Math.round(offsetX / (bannerWidth + 12));
     if (idx >= 0 && idx < combos.length) {
       setActiveIndex(idx);
     }
@@ -63,11 +78,11 @@ export default function BannerCarousel({ onComboPress }: Props) {
         horizontal
         pagingEnabled={false}
         showsHorizontalScrollIndicator={false}
-        snapToInterval={BANNER_WIDTH + 12}
+        snapToInterval={bannerWidth + 12}
         decelerationRate="fast"
         onScroll={onScroll}
         scrollEventThrottle={16}
-        contentContainerStyle={{ paddingHorizontal: 16 }}
+        contentContainerStyle={{ paddingHorizontal: PAGE_PADDING }}
       >
         {combos.map((combo, index) => (
           <Pressable
@@ -75,7 +90,7 @@ export default function BannerCarousel({ onComboPress }: Props) {
             onPress={() => onComboPress?.(combo)}
             className="mr-3"
             style={{
-              width: BANNER_WIDTH,
+              width: bannerWidth,
               height: BANNER_HEIGHT,
               borderRadius: 24,
               overflow: "hidden",
@@ -89,7 +104,7 @@ export default function BannerCarousel({ onComboPress }: Props) {
           >
             <Image
               source={combo.image}
-              style={{ width: BANNER_WIDTH, height: BANNER_HEIGHT }}
+              style={{ width: bannerWidth, height: BANNER_HEIGHT }}
               resizeMode="contain"
             />
             <LinearGradient
