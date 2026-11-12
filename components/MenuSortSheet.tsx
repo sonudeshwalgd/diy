@@ -17,7 +17,7 @@ interface Props {
   onClose: () => void;
 }
 
-const GROUPS: MenuSortOption["group"][] = ["Show", "Sort", "Taste", "Time"];
+const GROUPS: MenuSortOption["group"][] = ["Sort", "Item category", "Time"];
 
 export default function MenuSortSheet({
   visible,
@@ -39,10 +39,10 @@ export default function MenuSortSheet({
           </View>
           <View>
             <Text className="text-lg font-sans-extrabold text-stone-900">
-              Sort & filter menu
+              Sort menu
             </Text>
             <Text className="text-[11px] text-stone-500 font-sans-medium">
-              Availability, popularity, price, taste and time
+              Availability, popularity, price, category and time
             </Text>
           </View>
         </View>

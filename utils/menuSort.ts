@@ -22,7 +22,7 @@ export interface MenuSortOption {
   id: MenuSortId;
   label: string;
   description: string;
-  group: "Show" | "Sort" | "Taste" | "Time";
+  group: "Sort" | "Item category" | "Time";
   icon: string;
   color: string;
 }
@@ -32,15 +32,15 @@ export const MENU_SORT_OPTIONS: MenuSortOption[] = [
     id: "all",
     label: "All items",
     description: "Default menu order",
-    group: "Show",
+    group: "Sort",
     icon: "apps-outline",
     color: "#57534E",
   },
   {
     id: "available",
-    label: "Available only",
-    description: "Hide categories with everything out of stock",
-    group: "Show",
+    label: "Available items",
+    description: "Move available items to the top",
+    group: "Sort",
     icon: "checkmark-circle-outline",
     color: "#059669",
   },
@@ -54,7 +54,7 @@ export const MENU_SORT_OPTIONS: MenuSortOption[] = [
   },
   {
     id: "cheap",
-    label: "Cheap first",
+    label: "Price: low to high",
     description: "Sort by lowest available price",
     group: "Sort",
     icon: "pricetag-outline",
@@ -63,39 +63,39 @@ export const MENU_SORT_OPTIONS: MenuSortOption[] = [
   {
     id: "spicy",
     label: "Spicy",
-    description: "Spicy burgers, fries, corn and sandwiches",
-    group: "Taste",
+    description: "Move spicy items to the top",
+    group: "Item category",
     icon: "flame-outline",
     color: "#DC2626",
   },
   {
     id: "chocolate",
     label: "Chocolate",
-    description: "Chocolate waffles, pancakes, drinks and desserts",
-    group: "Taste",
+    description: "Move chocolate items to the top",
+    group: "Item category",
     icon: "cafe-outline",
     color: "#92400E",
   },
   {
     id: "sweet",
     label: "Sweet",
-    description: "Desserts, ice cream and sweet treats",
-    group: "Taste",
+    description: "Move sweet items to the top",
+    group: "Item category",
     icon: "heart-outline",
     color: "#DB2777",
   },
   {
     id: "drink",
-    label: "Drinks",
-    description: "Shakes, coffee, hot chocolate and mojitos",
-    group: "Taste",
+    label: "Drink",
+    description: "Move drinks to the top",
+    group: "Item category",
     icon: "water-outline",
     color: "#0891B2",
   },
   {
     id: "breakfast",
     label: "Breakfast",
-    description: "Waffles, pancakes, sandwiches and coffee",
+    description: "Move breakfast items to the top",
     group: "Time",
     icon: "sunny-outline",
     color: "#D97706",
@@ -103,7 +103,7 @@ export const MENU_SORT_OPTIONS: MenuSortOption[] = [
   {
     id: "lunch",
     label: "Lunch",
-    description: "Burgers, sandwiches, fries and corn",
+    description: "Move lunch items to the top",
     group: "Time",
     icon: "restaurant-outline",
     color: "#16A34A",
@@ -111,7 +111,7 @@ export const MENU_SORT_OPTIONS: MenuSortOption[] = [
   {
     id: "dinner",
     label: "Dinner",
-    description: "Hearty burgers, sandwiches and sides",
+    description: "Move dinner items to the top",
     group: "Time",
     icon: "moon-outline",
     color: "#4F46E5",

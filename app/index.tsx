@@ -315,10 +315,10 @@ function Footer() {
             <Text className="text-stone-400 text-[11px] font-sans-bold uppercase tracking-widest mb-3">
               Get our app
             </Text>
-            <View className="flex-row gap-3">
-              <View className="flex-1 flex-row items-center gap-2.5 bg-white/5 rounded-2xl px-4 py-3.5 border border-dashed border-white/20">
+            <View className="flex-col sm:flex-row gap-3">
+              <View className="flex-row items-center gap-2.5 bg-white/5 rounded-2xl px-4 py-3.5 border border-dashed border-white/20 sm:flex-1">
                 <MaterialCommunityIcons name="google-play" size={20} color="#A8A29E" />
-                <View className="flex-1">
+                <View className="flex-1 min-w-0">
                   <Text className="text-stone-300 text-sm font-sans-semibold">
                     Play Store
                   </Text>
@@ -326,15 +326,15 @@ function Footer() {
                     Coming soon
                   </Text>
                 </View>
-                <View className="bg-amber-500/20 rounded-full px-2 py-0.5">
+                <View className="bg-amber-500/20 rounded-full px-2 py-0.5 shrink-0">
                   <Text className="text-amber-400 text-[9px] font-sans-bold">
                     SOON
                   </Text>
                 </View>
               </View>
-              <View className="flex-1 flex-row items-center gap-2.5 bg-white/5 rounded-2xl px-4 py-3.5 border border-dashed border-white/20">
+              <View className="flex-row items-center gap-2.5 bg-white/5 rounded-2xl px-4 py-3.5 border border-dashed border-white/20 sm:flex-1">
                 <Ionicons name="logo-apple" size={20} color="#A8A29E" />
-                <View className="flex-1">
+                <View className="flex-1 min-w-0">
                   <Text className="text-stone-300 text-sm font-sans-semibold">
                     App Store
                   </Text>
@@ -342,7 +342,7 @@ function Footer() {
                     Coming soon
                   </Text>
                 </View>
-                <View className="bg-amber-500/20 rounded-full px-2 py-0.5">
+                <View className="bg-amber-500/20 rounded-full px-2 py-0.5 shrink-0">
                   <Text className="text-amber-400 text-[9px] font-sans-bold">
                     SOON
                   </Text>
@@ -429,15 +429,21 @@ export default function HomeScreen() {
     let items = [...menuItems];
 
     if (menuSort === "available") {
-      items = items.filter((item) =>
+      const isAvailable = (item: MenuItem) =>
         item.kind === "product"
           ? !isItemDisabled(item.product.id)
-          : isCategoryAvailable(item.category, isItemDisabled)
-      );
+          : isCategoryAvailable(item.category, isItemDisabled);
+      items = [
+        ...items.filter(isAvailable),
+        ...items.filter((item) => !isAvailable(item)),
+      ];
     } else if (isMenuTagSort(menuSort)) {
-      items = items.filter((item) =>
-        categoryMatchesTag(item.category, menuSort)
-      );
+      const matches = (item: MenuItem) =>
+        categoryMatchesTag(item.category, menuSort);
+      items = [
+        ...items.filter(matches),
+        ...items.filter((item) => !matches(item)),
+      ];
     }
 
     if (menuSort === "cheap") {
@@ -572,6 +578,7 @@ export default function HomeScreen() {
         columnWrapperStyle={{
           paddingHorizontal: PAGE_PADDING,
           gap: GRID_GAP,
+          alignItems: "stretch",
         }}
         style={{
           width: "100%",
@@ -660,22 +667,6 @@ export default function HomeScreen() {
             </View>
           </View>
         }
-        ListEmptyComponent={
-          <View className="items-center px-6 py-8">
-            <Ionicons name="filter-outline" size={28} color="#A8A29E" />
-            <Text className="text-sm text-stone-500 font-sans-medium mt-2 text-center">
-              No categories match “{activeSort.label}”.
-            </Text>
-            <Pressable
-              onPress={() => setMenuSort("all")}
-              className="mt-3 bg-orange-100 rounded-full px-4 py-1.5"
-            >
-              <Text className="text-[11px] font-sans-bold text-orange-700">
-                Clear filter
-              </Text>
-            </Pressable>
-          </View>
-        }
         ListFooterComponent={
           <View>
             <Animated.View entering={FadeInDown.duration(450).delay(60)}>
@@ -701,7 +692,7 @@ export default function HomeScreen() {
                 </View>
               </View>
               <View
-                className="flex-row flex-wrap px-4"
+                className="flex-row flex-wrap items-stretch px-4"
                 style={{ gap: GRID_GAP }}
               >
                 {combos.map((combo, index) => (

@@ -51,7 +51,7 @@ export default function ComboCard({ combo, onPress, index = 0 }: Props) {
       style={{ width: cardWidth, marginBottom: 12 }}
     >
       <View
-        className="bg-white/90 rounded-3xl border border-white/80 overflow-hidden"
+        className="bg-white/90 rounded-3xl border border-white/80 overflow-hidden flex-1"
         style={{
           shadowColor: "#78716C",
           shadowOffset: { width: 0, height: 2 },
@@ -62,7 +62,7 @@ export default function ComboCard({ combo, onPress, index = 0 }: Props) {
       >
         <Pressable
           onPress={() => onPress(combo)}
-          className="active:opacity-90"
+          className="active:opacity-90 flex-1"
         >
           <View
             style={{

@@ -34,7 +34,7 @@ export default function CategoryCard({ category, onPress, index = 0 }: Props) {
     >
       <Pressable
         onPress={() => onPress(category)}
-        className="bg-white/90 rounded-3xl mb-3 border border-white/80 active:opacity-90 overflow-hidden"
+        className="bg-white/90 rounded-3xl mb-3 border border-white/80 active:opacity-90 overflow-hidden flex-1"
         style={{
           shadowColor: "#78716C",
           shadowOffset: { width: 0, height: 2 },
@@ -70,7 +70,7 @@ export default function CategoryCard({ category, onPress, index = 0 }: Props) {
         )}
       </View>
 
-      <View className="p-3">
+      <View className="p-3 flex-1">
         <Text className="text-[15px] font-sans-bold text-stone-900" numberOfLines={1}>
           {category.name}
         </Text>
@@ -81,7 +81,7 @@ export default function CategoryCard({ category, onPress, index = 0 }: Props) {
           {category.description}
         </Text>
 
-        <View className="flex-row items-end justify-between mt-2">
+        <View className="flex-row items-end justify-between mt-auto pt-2">
           <View className="flex-row items-center gap-1">
             <Ionicons
               name={allOutOfStock ? "close-circle-outline" : "fast-food-outline"}
