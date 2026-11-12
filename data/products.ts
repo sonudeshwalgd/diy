@@ -134,13 +134,17 @@ export function isCustomCombo(combo: Combo): boolean {
 }
 
 export function getDefaultComboSelections(
-  combo: Combo
+  combo: Combo,
+  unavailableOptionIds?: ReadonlySet<string>
 ): Record<string, string[]> {
   const selections: Record<string, string[]> = {};
   for (const group of combo.selectionGroups) {
+    const defaultOption =
+      group.options.find((option) => !unavailableOptionIds?.has(option.id)) ??
+      group.options[0];
     selections[group.id] =
-      group.required && group.maxSelections === 1 && group.options.length
-        ? [group.options[0].id]
+      group.required && group.maxSelections === 1 && defaultOption
+        ? [defaultOption.id]
         : [];
   }
   return selections;

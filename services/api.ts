@@ -1,5 +1,5 @@
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || "http://localhost:5001/api";
-const ADMIN_MOBILE = process.env.EXPO_PUBLIC_ADMIN_MOBILE || "";
+export const ADMIN_MOBILE = process.env.EXPO_PUBLIC_ADMIN_MOBILE || "";
 export const COIN_EARN_RATE = Number(process.env.EXPO_PUBLIC_COIN_EARN_RATE || 5);
 export const FEEDBACK_POINTS = Number(process.env.EXPO_PUBLIC_FEEDBACK_POINTS || 5);
 
@@ -104,6 +104,52 @@ export interface FeedbackListResponse {
   feedback: FeedbackRecord[];
 }
 
+export interface DisabledItemsResponse {
+  itemIds: string[];
+}
+
+export interface PopularItemsResponse {
+  items: { name: string; quantity: number }[];
+}
+
+export const getDisabledItems = async (): Promise<DisabledItemsResponse> => {
+  const res = await fetch(`${API_BASE}/items/disabled`);
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to fetch disabled items");
+  }
+  return res.json();
+};
+
+export const verifyStaffKey = async (staffKey: string): Promise<boolean> => {
+  const res = await fetch(`${API_BASE}/items/disabled/verify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ staffKey }),
+  });
+  if (!res.ok) {
+    throw new Error("Could not verify staff key");
+  }
+  const data = await res.json();
+  return Boolean(data.valid);
+};
+
+export const saveDisabledItems = async (
+  itemIds: string[],
+  staffKey: string
+): Promise<DisabledItemsResponse> => {
+  const res = await fetch(`${API_BASE}/items/disabled`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ itemIds, staffKey }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to save disabled items");
+  }
+  return res.json();
+};
+
 export const placeOrder = async (payload: PlaceOrderPayload): Promise<PlaceOrderResponse> => {
   const res = await fetch(`${API_BASE}/orders`, {
     method: "POST",
@@ -140,6 +186,15 @@ export const getOrderById = async (orderId: string): Promise<SingleOrderResponse
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.error || "Failed to fetch order");
+  }
+  return res.json();
+};
+
+export const getPopularItems = async (): Promise<PopularItemsResponse> => {
+  const res = await fetch(`${API_BASE}/orders/popular`);
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to fetch popular items");
   }
   return res.json();
 };

@@ -7,6 +7,7 @@ import {
   type Subcategory,
 } from "../data/products";
 import { useCart } from "../context/CartContext";
+import { useDisabledItems } from "../context/DisabledItemsContext";
 import { useResponsiveLayout } from "../utils/responsive";
 
 interface Props {
@@ -23,8 +24,10 @@ export default function ProductCard({
   index = 0,
 }: Props) {
   const { getItemQuantity } = useCart();
+  const { isItemDisabled } = useDisabledItems();
   const { cardWidth } = useResponsiveLayout();
   const quantity = getItemQuantity(product.id);
+  const outOfStock = isItemDisabled(product.id);
   const subtitle =
     product.name === category.name ? category.description : category.name;
 
@@ -64,6 +67,13 @@ export default function ProductCard({
               </Text>
             </View>
           )}
+          {outOfStock && (
+            <View className="absolute bottom-2 left-2 bg-red-600 rounded-full px-3 py-1">
+              <Text className="text-white text-[10px] font-sans-bold tracking-wide">
+                OUT OF STOCK
+              </Text>
+            </View>
+          )}
         </View>
 
         <View className="p-3">
@@ -82,12 +92,24 @@ export default function ProductCard({
 
           <View className="flex-row items-end justify-between mt-2">
             <View className="flex-row items-center gap-1">
-              <Ionicons name="add-circle-outline" size={13} color="#A8A29E" />
-              <Text className="text-[11px] text-stone-400 font-sans-medium">
-                Tap to add
+              <Ionicons
+                name={outOfStock ? "close-circle-outline" : "add-circle-outline"}
+                size={13}
+                color={outOfStock ? "#DC2626" : "#A8A29E"}
+              />
+              <Text
+                className={`text-[11px] font-sans-medium ${
+                  outOfStock ? "text-red-500" : "text-stone-400"
+                }`}
+              >
+                {outOfStock ? "Out of stock" : "Tap to add"}
               </Text>
             </View>
-            <Text className="text-lg font-sans-extrabold text-orange-600 leading-5">
+            <Text
+              className={`text-lg font-sans-extrabold leading-5 ${
+                outOfStock ? "text-stone-400" : "text-orange-600"
+              }`}
+            >
               ₹{getItemPrice(product)}
             </Text>
           </View>

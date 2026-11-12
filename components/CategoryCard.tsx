@@ -4,6 +4,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import type { Category } from "../data/products";
 import { getItemPrice } from "../data/products";
 import { useCart } from "../context/CartContext";
+import { useDisabledItems } from "../context/DisabledItemsContext";
 import { useResponsiveLayout } from "../utils/responsive";
 
 interface Props {
@@ -14,8 +15,17 @@ interface Props {
 
 export default function CategoryCard({ category, onPress, index = 0 }: Props) {
   const { getCategoryCount } = useCart();
+  const { isItemDisabled } = useDisabledItems();
   const { cardWidth } = useResponsiveLayout();
   const count = getCategoryCount(category.id);
+  const availableItems = category.subcategories.filter(
+    (sub) => !isItemDisabled(sub.id)
+  );
+  const allOutOfStock =
+    category.subcategories.length > 0 && availableItems.length === 0;
+  const lowestPrice = availableItems.length
+    ? Math.min(...availableItems.map((s) => getItemPrice(s)))
+    : Math.min(...category.subcategories.map((s) => getItemPrice(s)));
 
   return (
     <Animated.View
@@ -51,6 +61,13 @@ export default function CategoryCard({ category, onPress, index = 0 }: Props) {
             <Text className="text-white text-xs font-sans-bold">{count}</Text>
           </View>
         )}
+        {allOutOfStock && (
+          <View className="absolute bottom-2 left-2 bg-red-600 rounded-full px-3 py-1">
+            <Text className="text-white text-[10px] font-sans-bold tracking-wide">
+              OUT OF STOCK
+            </Text>
+          </View>
+        )}
       </View>
 
       <View className="p-3">
@@ -66,15 +83,29 @@ export default function CategoryCard({ category, onPress, index = 0 }: Props) {
 
         <View className="flex-row items-end justify-between mt-2">
           <View className="flex-row items-center gap-1">
-            <Ionicons name="fast-food-outline" size={13} color="#A8A29E" />
-            <Text className="text-[11px] text-stone-400 font-sans-medium">
-              {category.subcategories.length} items
+            <Ionicons
+              name={allOutOfStock ? "close-circle-outline" : "fast-food-outline"}
+              size={13}
+              color={allOutOfStock ? "#DC2626" : "#A8A29E"}
+            />
+            <Text
+              className={`text-[11px] font-sans-medium ${
+                allOutOfStock ? "text-red-500" : "text-stone-400"
+              }`}
+            >
+              {allOutOfStock ? "Out of stock" : `${availableItems.length} items`}
             </Text>
           </View>
           <View className="items-end">
-            <Text className="text-[9px] text-stone-400 leading-3">from</Text>
-            <Text className="text-lg font-sans-extrabold text-orange-600 leading-5">
-              ₹{Math.min(...category.subcategories.map((s) => getItemPrice(s)))}
+            <Text className="text-[9px] text-stone-400 leading-3">
+              {allOutOfStock ? "unavailable" : "from"}
+            </Text>
+            <Text
+              className={`text-lg font-sans-extrabold leading-5 ${
+                allOutOfStock ? "text-stone-400" : "text-orange-600"
+              }`}
+            >
+              ₹{lowestPrice}
             </Text>
           </View>
         </View>

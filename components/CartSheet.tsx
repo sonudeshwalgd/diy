@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCart, type CartItem } from "../context/CartContext";
 import { getItemPrice } from "../data/products";
+import { getDeliveryCharge } from "../utils/delivery";
 import { PHONE_NUMBER } from "./OrderBottomSheet";
 import {
   getCustomer,
@@ -110,7 +111,8 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
 
   const appliedCoins = Math.min(coinsToUse, maxRedeemable);
   const coinsDiscount = appliedCoins;
-  const finalTotal = Math.max(0, total - coinsDiscount);
+  const deliveryCharge = getDeliveryCharge(total);
+  const finalTotal = Math.max(0, total - coinsDiscount) + deliveryCharge;
   const coinsEarned = Math.floor(finalTotal * (COIN_EARN_RATE / 100));
 
   const buildWhatsAppMessage = () => {
@@ -126,6 +128,7 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
     if (coinsDiscount > 0) {
       msg += `🪙 *Coins Used:* ${appliedCoins} (−₹${coinsDiscount})\n`;
     }
+    msg += `🛵 *Delivery:* ${deliveryCharge === 0 ? "Free" : `₹${deliveryCharge}`}\n`;
     msg += `🪙 *Coins Earned:* ${coinsEarned}\n`;
     msg += `💵 *Final Total:* ₹${finalTotal}\n`;
     msg += `📦 Items: ${itemCount}\n`;
@@ -147,7 +150,7 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
         price: getItemPrice(i.subcategory),
         quantity: i.quantity,
       })),
-      totalAmount: total,
+      totalAmount: total + deliveryCharge,
       coinsUsed: savedMobile ? appliedCoins : 0,
       paymentMethod: "cod",
       whatsappMessage: message,
@@ -476,7 +479,15 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
 
                   <View className="flex-row justify-between items-center mb-1">
                     <Text className="text-sm text-gray-500">Delivery</Text>
-                    <Text className="text-sm text-gray-700">Free</Text>
+                    <Text
+                      className={`text-sm ${
+                        deliveryCharge === 0
+                          ? "text-green-600 font-sans-semibold"
+                          : "text-gray-700"
+                      }`}
+                    >
+                      {deliveryCharge === 0 ? "Free" : `₹${deliveryCharge}`}
+                    </Text>
                   </View>
                 </View>
                   }

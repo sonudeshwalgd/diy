@@ -14,6 +14,7 @@ import {
   type Combo,
 } from "../data/products";
 import { useCart } from "../context/CartContext";
+import { useDisabledItems } from "../context/DisabledItemsContext";
 import { useResponsiveLayout } from "../utils/responsive";
 
 interface Props {
@@ -24,16 +25,22 @@ interface Props {
 
 export default function ComboCard({ combo, onPress, index = 0 }: Props) {
   const { getComboQuantity, addItem, decrement, getItemQuantity } = useCart();
+  const { getComboAvailability } = useDisabledItems();
   const { cardWidth } = useResponsiveLayout();
   const itemCount = getComboItemCount(combo);
   const price = getComboStartingPrice(combo);
   const originalPrice = getComboOriginalPrice(combo);
   const discount = getComboDiscountAmount(combo);
+  const availability = getComboAvailability(combo);
+  const outOfStock = availability.outOfStock;
 
   const customCombo = isCustomCombo(combo);
   const defaultItem = customCombo
     ? null
-    : buildComboCartItem(combo, getDefaultComboSelections(combo));
+    : buildComboCartItem(
+        combo,
+        getDefaultComboSelections(combo, availability.unavailableOptionIds)
+      );
   const count = defaultItem
     ? getItemQuantity(defaultItem.id)
     : getComboQuantity(combo.id);
@@ -94,6 +101,13 @@ export default function ComboCard({ combo, onPress, index = 0 }: Props) {
                 <Text className="text-white text-xs font-sans-bold">{count}</Text>
               </View>
             )}
+            {outOfStock && (
+              <View className="absolute bottom-2 left-2 bg-red-600 rounded-full px-3 py-1">
+                <Text className="text-white text-[10px] font-sans-bold tracking-wide">
+                  OUT OF STOCK
+                </Text>
+              </View>
+            )}
           </View>
 
           <View className="p-3 pb-2">
@@ -137,7 +151,11 @@ export default function ComboCard({ combo, onPress, index = 0 }: Props) {
         </Pressable>
 
         <View className="flex-row items-center justify-between px-3 pb-3">
-          {defaultItem ? (
+          {outOfStock ? (
+            <Text className="text-[10px] text-red-500 font-sans-bold ml-auto">
+              Out of stock
+            </Text>
+          ) : defaultItem ? (
             <>
               <Text className="text-[10px] text-stone-400 font-sans-medium">
                 Tap for options

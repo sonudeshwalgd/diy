@@ -7,6 +7,7 @@ import {
   type Subcategory,
 } from "../data/products";
 import { useCart } from "../context/CartContext";
+import { useDisabledItems } from "../context/DisabledItemsContext";
 import Sheet from "./Sheet";
 
 const FLAVOURS = [
@@ -40,6 +41,7 @@ const defaultFlavours = (id: string) => {
 
 export default function IceCreamSheet({ visible, category, onClose }: Props) {
   const { addItem, items } = useCart();
+  const { isItemDisabled } = useDisabledItems();
   const [selections, setSelections] = useState<Record<string, Selection>>({});
 
   if (!category) return null;
@@ -58,6 +60,7 @@ export default function IceCreamSheet({ visible, category, onClose }: Props) {
   };
 
   const handleAdd = (sub: Subcategory) => {
+    if (isItemDisabled(sub.id)) return;
     const selection = getSelection(sub.id);
     const key = [...selection.flavours].sort().join("-");
     const unique = [...new Set(selection.flavours)];
@@ -107,6 +110,7 @@ export default function IceCreamSheet({ visible, category, onClose }: Props) {
           const scoopCount = SCOOPS[sub.id] ?? 1;
           const selection = getSelection(sub.id);
           const price = getItemPrice(sub);
+          const outOfStock = isItemDisabled(sub.id);
           const cartPrefix = `${sub.id}:`;
           const inCart = items
             .filter((item) => item.subcategory.id.startsWith(cartPrefix))
@@ -115,7 +119,11 @@ export default function IceCreamSheet({ visible, category, onClose }: Props) {
           return (
             <View
               key={sub.id}
-              className="bg-white/85 rounded-3xl mb-3 border border-amber-200 overflow-hidden"
+              className={`bg-white/85 rounded-3xl mb-3 border overflow-hidden ${
+                outOfStock
+                  ? "border-red-200 opacity-70"
+                  : "border-amber-200"
+              }`}
             >
               <View className="flex-row p-3">
                 <Image
@@ -136,11 +144,17 @@ export default function IceCreamSheet({ visible, category, onClose }: Props) {
                   <Text className="text-sm text-orange-600 font-sans-extrabold mt-0.5">
                     ₹{price}
                   </Text>
-                  <Text className="text-[11px] text-gray-500 mt-1">
-                    {scoopCount > 1
-                      ? `Choose ${scoopCount} scoops — both same or separate`
-                      : "Choose flavour"}
-                  </Text>
+                  {outOfStock ? (
+                    <Text className="text-[10px] text-red-500 font-sans-bold mt-1">
+                      OUT OF STOCK
+                    </Text>
+                  ) : (
+                    <Text className="text-[11px] text-gray-500 mt-1">
+                      {scoopCount > 1
+                        ? `Choose ${scoopCount} scoops — both same or separate`
+                        : "Choose flavour"}
+                    </Text>
+                  )}
 
                   {Array.from({ length: scoopCount }).map((_, slotIndex) => (
                     <View key={slotIndex} className="mt-1.5">
@@ -220,11 +234,20 @@ export default function IceCreamSheet({ visible, category, onClose }: Props) {
 
                 <Pressable
                   onPress={() => handleAdd(sub)}
-                  className="bg-[#25D366] active:bg-[#1ebe57] rounded-xl px-4 py-2.5 flex-row items-center gap-1.5"
+                  disabled={outOfStock}
+                  className={`rounded-xl px-4 py-2.5 flex-row items-center gap-1.5 ${
+                    outOfStock
+                      ? "bg-stone-300"
+                      : "bg-[#25D366] active:bg-[#1ebe57]"
+                  }`}
                 >
-                  <Ionicons name="cart-outline" size={16} color="white" />
+                  <Ionicons
+                    name={outOfStock ? "close-circle-outline" : "cart-outline"}
+                    size={16}
+                    color="white"
+                  />
                   <Text className="text-white text-sm font-sans-bold">
-                    Add ₹{price * selection.quantity}
+                    {outOfStock ? "Out of stock" : `Add ₹${price * selection.quantity}`}
                   </Text>
                 </Pressable>
               </View>

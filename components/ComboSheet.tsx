@@ -7,12 +7,14 @@ import {
   combosCategory,
   customComboRule,
   getComboDiscountAmount,
+  getDefaultComboSelections,
   isCustomCombo,
   type Combo,
   type ComboOption,
   type ComboSelectionGroup,
 } from "../data/products";
 import { useCart } from "../context/CartContext";
+import { useDisabledItems } from "../context/DisabledItemsContext";
 import Sheet from "./Sheet";
 
 interface Props {
@@ -54,18 +56,48 @@ function ComboSheetContent({
   onClose: () => void;
 }) {
   const { addItem, decrement, getComboQuantity, getItemQuantity } = useCart();
+  const { getComboAvailability, isItemDisabled } = useDisabledItems();
+  const availability = useMemo(
+    () => getComboAvailability(combo),
+    [combo, getComboAvailability]
+  );
+  const outOfStock = availability.outOfStock;
 
-  const [selections, setSelections] = useState<Record<string, string[]>>(() => {
-    const init: Record<string, string[]> = {};
-    for (const group of combo.selectionGroups) {
-      init[group.id] =
-        group.required && group.maxSelections === 1 && group.options.length
-          ? [group.options[0].id]
-          : [];
-    }
-    return init;
-  });
+  const [selections, setSelections] = useState<Record<string, string[]>>(() =>
+    getDefaultComboSelections(combo, availability.unavailableOptionIds)
+  );
   const [customQty, setCustomQty] = useState<Record<string, number>>({});
+
+  const effectiveSelections = useMemo(() => {
+    const next: Record<string, string[]> = {};
+    for (const group of combo.selectionGroups) {
+      const current = selections[group.id] ?? [];
+      const filtered = current.filter(
+        (id) => !availability.unavailableOptionIds.has(id)
+      );
+      const fallback =
+        current.length > 0 &&
+        filtered.length === 0 &&
+        group.required &&
+        group.maxSelections === 1
+          ? group.options.find(
+              (option) => !availability.unavailableOptionIds.has(option.id)
+            )
+          : undefined;
+      next[group.id] = fallback ? [fallback.id] : filtered;
+    }
+    return next;
+  }, [availability.unavailableOptionIds, combo.selectionGroups, selections]);
+
+  const effectiveCustomQty = useMemo(() => {
+    const next = { ...customQty };
+    for (const key of Object.keys(next)) {
+      if (isItemDisabled(key)) {
+        delete next[key];
+      }
+    }
+    return next;
+  }, [customQty, isItemDisabled]);
 
   const customCombo = isCustomCombo(combo);
 
@@ -116,7 +148,7 @@ function ComboSheetContent({
 
   const selectedOptions: ComboOption[] = [];
   for (const group of combo.selectionGroups) {
-    for (const id of selections[group.id] ?? []) {
+    for (const id of effectiveSelections[group.id] ?? []) {
       const option = group.options.find((o) => o.id === id);
       if (option) selectedOptions.push(option);
     }
@@ -128,9 +160,11 @@ function ComboSheetContent({
   const comboDiscount = getComboDiscountAmount(combo);
   const comboTotal = Math.max(0, comboSubtotal - comboDiscount);
 
-  const customSelected = customItems.filter((i) => (customQty[i.key] ?? 0) > 0);
+  const customSelected = customItems.filter(
+    (i) => (effectiveCustomQty[i.key] ?? 0) > 0
+  );
   const customSubtotal = customSelected.reduce(
-    (sum, i) => sum + i.price * (customQty[i.key] ?? 0),
+    (sum, i) => sum + i.price * (effectiveCustomQty[i.key] ?? 0),
     0
   );
   const customDiscount = customSubtotal >= CUSTOM_MIN ? CUSTOM_DISCOUNT : 0;
@@ -138,18 +172,19 @@ function ComboSheetContent({
 
   const unmetGroups = combo.selectionGroups.filter(
     (group) =>
-      (selections[group.id]?.length ?? 0) <
+      (effectiveSelections[group.id]?.length ?? 0) <
       (group.required ? group.minSelections : 0)
   );
 
-  const canAdd = customCombo
-    ? customSelected.length > 0
-    : unmetGroups.length === 0;
+  const canAdd =
+    !outOfStock &&
+    (customCombo ? customSelected.length > 0 : unmetGroups.length === 0);
 
   const displayTotal = customCombo ? customTotal : comboTotal;
   const inCartQty = getComboQuantity(combo.id);
 
   const toggleOption = (group: ComboSelectionGroup, optionId: string) => {
+    if (availability.unavailableOptionIds.has(optionId)) return;
     setSelections((prev) => {
       const current = prev[group.id] ?? [];
       const isSelected = current.includes(optionId);
@@ -181,7 +216,7 @@ function ComboSheetContent({
   };
 
   const customSignature = customSelected
-    .map((i) => `${i.key}x${customQty[i.key]}`)
+    .map((i) => `${i.key}x${effectiveCustomQty[i.key]}`)
     .sort()
     .join(",");
 
@@ -191,8 +226,8 @@ function ComboSheetContent({
           id: `combo:${combo.id}:${customSignature}`,
           name: `Custom Combo: ${customSelected
             .map((i) =>
-              (customQty[i.key] ?? 1) > 1
-                ? `${i.name} ×${customQty[i.key]}`
+              (effectiveCustomQty[i.key] ?? 1) > 1
+                ? `${i.name} ×${effectiveCustomQty[i.key]}`
                 : i.name
             )
             .join(", ")}`,
@@ -207,7 +242,7 @@ function ComboSheetContent({
   const configuredQty = configuredItem ? getItemQuantity(configuredItem.id) : 0;
 
   const handleIncrease = () => {
-    if (!configuredItem) return;
+    if (!configuredItem || outOfStock) return;
     addItem(configuredItem, combosCategory, 1);
   };
 
@@ -269,7 +304,8 @@ function ComboSheetContent({
                   {items[0].categoryName}
                 </Text>
                 {items.map((item, idx) => {
-                  const qty = customQty[item.key] ?? 0;
+                  const qty = effectiveCustomQty[item.key] ?? 0;
+                  const disabled = isItemDisabled(item.key);
                   const image = itemImage(
                     item.categoryId,
                     item.key.split(":")[0]
@@ -279,7 +315,7 @@ function ComboSheetContent({
                       key={item.key}
                       className={`flex-row items-center px-4 py-2.5 ${
                         idx > 0 ? "border-t border-gray-100" : ""
-                      }`}
+                      } ${disabled ? "opacity-50" : ""}`}
                     >
                       {image ? (
                         <Image
@@ -298,7 +334,11 @@ function ComboSheetContent({
                         </View>
                       )}
                       <Text
-                        className="flex-1 ml-3 text-sm text-gray-800"
+                        className={`flex-1 ml-3 text-sm ${
+                          disabled
+                            ? "text-gray-400 line-through"
+                            : "text-gray-800"
+                        }`}
                         numberOfLines={2}
                       >
                         {item.name}
@@ -306,7 +346,11 @@ function ComboSheetContent({
                       <Text className="text-base font-sans-extrabold text-orange-600 mr-3">
                         ₹{item.price}
                       </Text>
-                      {qty > 0 ? (
+                      {disabled ? (
+                        <Text className="text-[10px] text-red-500 font-sans-bold">
+                          OUT OF STOCK
+                        </Text>
+                      ) : qty > 0 ? (
                         <View className="flex-row items-center gap-2">
                           <Pressable
                             onPress={() => changeCustomQty(item.key, -1)}
@@ -348,12 +392,15 @@ function ComboSheetContent({
                 </Text>
                 {combo.items.map((item) => {
                   const image = itemImage(item.categoryId, item.id);
+                  const disabled = availability.fixedItemIds.includes(item.id);
                   return (
                     <View
                       key={
                         item.variantId ? `${item.id}:${item.variantId}` : item.id
                       }
-                      className="flex-row items-center gap-3 py-2"
+                      className={`flex-row items-center gap-3 py-2 ${
+                        disabled ? "opacity-50" : ""
+                      }`}
                     >
                       {image ? (
                         <Image
@@ -371,17 +418,29 @@ function ComboSheetContent({
                           <Ionicons name="fast-food" size={22} color="#9CA3AF" />
                         </View>
                       )}
-                      <Text className="flex-1 text-sm font-sans-medium text-gray-800">
+                      <Text
+                        className={`flex-1 text-sm font-sans-medium ${
+                          disabled
+                            ? "text-gray-400 line-through"
+                            : "text-gray-800"
+                        }`}
+                      >
                         {item.name}
                       </Text>
                       <Text className="text-base font-sans-extrabold text-orange-600">
                         ₹{item.price}
                       </Text>
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={20}
-                        color="#16A34A"
-                      />
+                      {disabled ? (
+                        <Text className="text-[10px] text-red-500 font-sans-bold">
+                          OUT OF STOCK
+                        </Text>
+                      ) : (
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={20}
+                          color="#16A34A"
+                        />
+                      )}
                     </View>
                   );
                 })}
@@ -390,7 +449,7 @@ function ComboSheetContent({
 
             {/* Selection groups */}
             {combo.selectionGroups.map((group) => {
-              const selected = selections[group.id] ?? [];
+              const selected = effectiveSelections[group.id] ?? [];
               const single = group.maxSelections === 1;
               return (
                 <View
@@ -401,16 +460,27 @@ function ComboSheetContent({
                     <Text className="text-sm font-sans-bold text-gray-900">
                       {group.name}
                     </Text>
-                    {group.required && (
+                    {availability.unavailableGroupIds.has(group.id) ? (
                       <View className="bg-red-50 rounded px-2 py-0.5">
-                        <Text className="text-[10px] font-sans-semibold text-red-500">
-                          Required
+                        <Text className="text-[10px] font-sans-bold text-red-500">
+                          ALL OUT OF STOCK
                         </Text>
                       </View>
+                    ) : (
+                      group.required && (
+                        <View className="bg-red-50 rounded px-2 py-0.5">
+                          <Text className="text-[10px] font-sans-semibold text-red-500">
+                            Required
+                          </Text>
+                        </View>
+                      )
                     )}
                   </View>
                   {group.options.map((option, idx) => {
-                    const isSelected = selected.includes(option.id);
+                    const disabled = availability.unavailableOptionIds.has(
+                      option.id
+                    );
+                    const isSelected = !disabled && selected.includes(option.id);
                     const image = itemImage(
                       option.categoryId,
                       option.itemId ?? option.id
@@ -419,9 +489,12 @@ function ComboSheetContent({
                       <Pressable
                         key={option.id}
                         onPress={() => toggleOption(group, option.id)}
+                        disabled={disabled}
                         className={`flex-row items-center px-4 py-3 ${
                           idx > 0 ? "border-t border-gray-100" : ""
-                        } ${isSelected ? "bg-green-50" : ""}`}
+                        } ${isSelected ? "bg-green-50" : ""} ${
+                          disabled ? "opacity-50" : ""
+                        }`}
                       >
                         <Ionicons
                           name={
@@ -434,7 +507,13 @@ function ComboSheetContent({
                               : "square-outline"
                           }
                           size={22}
-                          color={isSelected ? "#16A34A" : "#9CA3AF"}
+                          color={
+                            disabled
+                              ? "#D6D3D1"
+                              : isSelected
+                              ? "#16A34A"
+                              : "#9CA3AF"
+                          }
                         />
                         {image ? (
                           <Image
@@ -459,20 +538,28 @@ function ComboSheetContent({
                         )}
                         <Text
                           className={`flex-1 ml-3 text-sm ${
-                            isSelected
+                            disabled
+                              ? "text-gray-400 line-through"
+                              : isSelected
                               ? "text-gray-900 font-sans-semibold"
                               : "text-gray-600"
                           }`}
                         >
                           {option.name}
                         </Text>
-                        <Text
-                          className={`text-base font-sans-extrabold ${
-                            isSelected ? "text-green-600" : "text-orange-600"
-                          }`}
-                        >
-                          ₹{option.price}
-                        </Text>
+                        {disabled ? (
+                          <Text className="text-[10px] text-red-500 font-sans-bold">
+                            OUT OF STOCK
+                          </Text>
+                        ) : (
+                          <Text
+                            className={`text-base font-sans-extrabold ${
+                              isSelected ? "text-green-600" : "text-orange-600"
+                            }`}
+                          >
+                            ₹{option.price}
+                          </Text>
+                        )}
                       </Pressable>
                     );
                   })}
@@ -544,21 +631,40 @@ function ComboSheetContent({
             </View>
           )}
 
-          {!canAdd && (
+          {!canAdd && !outOfStock && (
             <Text className="text-xs text-red-500 mt-2">
               Select required options to continue
             </Text>
+          )}
+
+          {outOfStock && (
+            <View className="mt-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2 flex-row items-center gap-2">
+              <Ionicons name="close-circle" size={15} color="#DC2626" />
+              <Text className="text-xs text-red-600 font-sans-semibold flex-1">
+                This combo is currently out of stock.
+              </Text>
+            </View>
           )}
 
           <View className="mt-3 rounded-xl bg-stone-100 px-4 py-2.5 flex-row items-center justify-between">
             <View>
               <Text className="text-[10px] text-gray-500">Quantity</Text>
               <Text className="text-xs font-sans-semibold text-gray-700">
-                {customCombo ? "Custom combo" : "Ready to add"}
+                {outOfStock
+                  ? "Unavailable"
+                  : customCombo
+                  ? "Custom combo"
+                  : "Ready to add"}
               </Text>
             </View>
 
-            {configuredItem ? (
+            {outOfStock ? (
+              <View className="bg-red-50 border border-red-200 rounded-full px-3 py-1">
+                <Text className="text-[10px] font-sans-bold text-red-600">
+                  OUT OF STOCK
+                </Text>
+              </View>
+            ) : configuredItem ? (
               <View className="flex-row items-center gap-2">
                 {configuredQty > 0 && (
                   <>

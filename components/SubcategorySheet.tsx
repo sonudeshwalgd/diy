@@ -7,6 +7,7 @@ import {
   type Variant,
 } from "../data/products";
 import { useCart } from "../context/CartContext";
+import { useDisabledItems } from "../context/DisabledItemsContext";
 import Sheet from "./Sheet";
 
 interface Props {
@@ -38,8 +39,12 @@ function SubcategorySheetContent({
   onClose: () => void;
 }) {
   const { addItem, decrement, getItemQuantity } = useCart();
+  const { isItemDisabled } = useDisabledItems();
 
   const addDirectItem = (sub: Subcategory, variant?: Variant) => {
+    const cartId = variant ? `${sub.id}:${variant.id}` : sub.id;
+    if (isItemDisabled(cartId)) return;
+
     if (!variant) {
       addItem(sub, category, 1);
       return;
@@ -128,13 +133,16 @@ function SubcategorySheetContent({
                 {variants.map((v, idx) => {
                   const cartId = `${sub.id}:${v.id}`;
                   const quantity = getItemQuantity(cartId);
+                  const outOfStock = isItemDisabled(cartId);
 
                   return (
                     <View
                       key={v.id}
                       className={`flex-row items-center px-4 py-3 ${
                         idx > 0 ? "border-t border-gray-100" : ""
-                      } ${quantity > 0 ? "bg-green-50" : ""}`}
+                      } ${quantity > 0 ? "bg-green-50" : ""} ${
+                        outOfStock ? "opacity-70" : ""
+                      }`}
                     >
                       <View className="flex-1">
                         <Text
@@ -146,12 +154,18 @@ function SubcategorySheetContent({
                         >
                           {v.name}
                         </Text>
+                        {outOfStock && (
+                          <Text className="text-[10px] font-sans-bold text-red-500 mt-0.5">
+                            OUT OF STOCK
+                          </Text>
+                        )}
                       </View>
                       <Text className="text-base font-sans-extrabold text-orange-600 mr-3">
                         ₹{v.price}
                       </Text>
                       <QuantityControl
                         quantity={quantity}
+                        disabled={outOfStock}
                         onDecrease={() => decrement(cartId)}
                         onIncrease={() => addDirectItem(sub, v)}
                       />
@@ -163,6 +177,7 @@ function SubcategorySheetContent({
           }
 
           const quantity = getItemQuantity(sub.id);
+          const outOfStock = isItemDisabled(sub.id);
 
           return (
             <View
@@ -171,7 +186,7 @@ function SubcategorySheetContent({
                 quantity > 0
                   ? "bg-emerald-50 border-emerald-400"
                   : "bg-white/80 border-white/80"
-              }`}
+              } ${outOfStock ? "opacity-70" : ""}`}
             >
               <View className="relative">
                 <Image
@@ -204,6 +219,11 @@ function SubcategorySheetContent({
                 >
                   {sub.name}
                 </Text>
+                {outOfStock && (
+                  <Text className="text-[10px] font-sans-bold text-red-500 mt-0.5">
+                    OUT OF STOCK
+                  </Text>
+                )}
               </View>
 
               <View className="items-end ml-2">
@@ -212,6 +232,7 @@ function SubcategorySheetContent({
                 </Text>
                 <QuantityControl
                   quantity={quantity}
+                  disabled={outOfStock}
                   onDecrease={() => decrement(sub.id)}
                   onIncrease={() => addDirectItem(sub)}
                 />
@@ -228,12 +249,24 @@ function QuantityControl({
   quantity,
   onDecrease,
   onIncrease,
+  disabled = false,
 }: {
   quantity: number;
   onDecrease: () => void;
   onIncrease: () => void;
+  disabled?: boolean;
 }) {
   if (quantity === 0) {
+    if (disabled) {
+      return (
+        <View className="bg-red-50 border border-red-200 rounded-full px-2.5 py-1">
+          <Text className="text-[9px] font-sans-bold text-red-600">
+            OUT OF STOCK
+          </Text>
+        </View>
+      );
+    }
+
     return (
       <Pressable
         onPress={onIncrease}
@@ -257,7 +290,10 @@ function QuantityControl({
       </Text>
       <Pressable
         onPress={onIncrease}
-        className="w-8 h-8 rounded-full bg-orange-600 items-center justify-center"
+        disabled={disabled}
+        className={`w-8 h-8 rounded-full items-center justify-center ${
+          disabled ? "bg-stone-300" : "bg-orange-600"
+        }`}
       >
         <Ionicons name="add" size={16} color="white" />
       </Pressable>

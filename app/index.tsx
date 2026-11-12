@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { FlatList, Linking, Pressable, ScrollView, Text, View } from "react-native";
 import { Link } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -27,13 +27,25 @@ import FloatingCartBar from "../components/FloatingCartBar";
 import WifiBottomSheet from "../components/WifiBottomSheet";
 import OrderHistoryModal from "../components/OrderHistoryModal";
 import Sidebar from "../components/Sidebar";
+import MenuSortSheet from "../components/MenuSortSheet";
 import { useCart } from "../context/CartContext";
+import { useDisabledItems } from "../context/DisabledItemsContext";
+import { getPopularItems } from "../services/api";
 import {
   GRID_GAP,
   MAX_CONTENT_WIDTH,
   PAGE_PADDING,
   useResponsiveLayout,
 } from "../utils/responsive";
+import {
+  MENU_SORT_OPTIONS,
+  buildPopularityMap,
+  categoryMatchesTag,
+  getAvailableLowestPrice,
+  isCategoryAvailable,
+  isMenuTagSort,
+  type MenuSortId,
+} from "../utils/menuSort";
 
 const OUTLET_MAPS_URL =
   "https://www.google.com/maps/place/DIY+Drinks/data=!4m2!3m1!1s0x0:0xb1c683b845157dec?sa=X&ved=1t:2428&ictx=111";
@@ -392,8 +404,61 @@ export default function HomeScreen() {
   const [historyVisible, setHistoryVisible] = useState(false);
   const [feedbackVisible, setFeedbackVisible] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(false);
+  const [menuSort, setMenuSort] = useState<MenuSortId>("all");
+  const [sortVisible, setSortVisible] = useState(false);
+  const [popularity, setPopularity] = useState<Record<string, number>>({});
   const { itemCount } = useCart();
+  const { isItemDisabled } = useDisabledItems();
   const { columns } = useResponsiveLayout();
+
+  useEffect(() => {
+    let active = true;
+    getPopularItems()
+      .then((data) => {
+        if (active) {
+          setPopularity(buildPopularityMap(data.items, categories));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const orderedMenuItems = useMemo(() => {
+    let items = [...menuItems];
+
+    if (menuSort === "available") {
+      items = items.filter((item) =>
+        item.kind === "product"
+          ? !isItemDisabled(item.product.id)
+          : isCategoryAvailable(item.category, isItemDisabled)
+      );
+    } else if (isMenuTagSort(menuSort)) {
+      items = items.filter((item) =>
+        categoryMatchesTag(item.category, menuSort)
+      );
+    }
+
+    if (menuSort === "cheap") {
+      items.sort(
+        (a, b) =>
+          getAvailableLowestPrice(a.category, isItemDisabled) -
+          getAvailableLowestPrice(b.category, isItemDisabled)
+      );
+    } else if (menuSort === "popular") {
+      items.sort(
+        (a, b) =>
+          (popularity[b.category.id] ?? 0) - (popularity[a.category.id] ?? 0)
+      );
+    }
+
+    return items;
+  }, [isItemDisabled, menuSort, popularity]);
+
+  const activeSort =
+    MENU_SORT_OPTIONS.find((option) => option.id === menuSort) ??
+    MENU_SORT_OPTIONS[0];
 
   const handleCategoryPress = useCallback((category: Category) => {
     setSelectedCategory(category);
@@ -501,7 +566,7 @@ export default function HomeScreen() {
 
       <FlatList
         key={`menu-${columns}`}
-        data={menuItems}
+        data={orderedMenuItems}
         keyExtractor={(item) => item.key}
         numColumns={columns}
         columnWrapperStyle={{
@@ -561,20 +626,54 @@ export default function HomeScreen() {
 
             <CODStrip />
 
-            <View className="px-4 mt-6 mb-2 flex-row items-center gap-2.5">
-              <LinearGradient
-                colors={["#FB923C", "#EA580C"]}
-                style={{ width: 6, height: 26, borderRadius: 3 }}
-              />
-              <View>
-                <Text className="text-lg font-sans-extrabold text-stone-900 tracking-tight">
-                  Our Menu
-                </Text>
-                <Text className="text-[13px] text-stone-500 font-sans-medium">
-                  Tap to add items to cart
-                </Text>
+            <View className="px-4 mt-6 mb-2 flex-row items-center justify-between gap-3">
+              <View className="flex-row items-center gap-2.5 flex-1">
+                <LinearGradient
+                  colors={["#FB923C", "#EA580C"]}
+                  style={{ width: 6, height: 26, borderRadius: 3 }}
+                />
+                <View>
+                  <Text className="text-lg font-sans-extrabold text-stone-900 tracking-tight">
+                    Our Menu
+                  </Text>
+                  <Text className="text-[13px] text-stone-500 font-sans-medium">
+                    {menuSort === "all"
+                      ? "Tap to add items to cart"
+                      : activeSort.label}
+                  </Text>
+                </View>
               </View>
+
+              <Pressable
+                onPress={() => setSortVisible(true)}
+                className="flex-row items-center gap-1.5 bg-white/90 border border-white/80 rounded-full px-3 py-2 active:opacity-80"
+              >
+                <Ionicons name="options-outline" size={14} color="#EA580C" />
+                <Text
+                  className="text-[11px] font-sans-bold text-stone-700 max-w-[110px]"
+                  numberOfLines={1}
+                >
+                  {activeSort.label}
+                </Text>
+                <Ionicons name="chevron-down" size={12} color="#A8A29E" />
+              </Pressable>
             </View>
+          </View>
+        }
+        ListEmptyComponent={
+          <View className="items-center px-6 py-8">
+            <Ionicons name="filter-outline" size={28} color="#A8A29E" />
+            <Text className="text-sm text-stone-500 font-sans-medium mt-2 text-center">
+              No categories match “{activeSort.label}”.
+            </Text>
+            <Pressable
+              onPress={() => setMenuSort("all")}
+              className="mt-3 bg-orange-100 rounded-full px-4 py-1.5"
+            >
+              <Text className="text-[11px] font-sans-bold text-orange-700">
+                Clear filter
+              </Text>
+            </Pressable>
           </View>
         }
         ListFooterComponent={
@@ -692,6 +791,13 @@ export default function HomeScreen() {
       <OrderHistoryModal
         visible={historyVisible}
         onClose={() => setHistoryVisible(false)}
+      />
+
+      <MenuSortSheet
+        visible={sortVisible}
+        value={menuSort}
+        onChange={setMenuSort}
+        onClose={() => setSortVisible(false)}
       />
 
       <Sidebar

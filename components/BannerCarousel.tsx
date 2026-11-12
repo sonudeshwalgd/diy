@@ -22,6 +22,7 @@ import {
   MAX_CONTENT_WIDTH,
   PAGE_PADDING,
 } from "../utils/responsive";
+import { useDisabledItems } from "../context/DisabledItemsContext";
 
 const BANNER_MAX_WIDTH = 560;
 const BANNER_HEIGHT = 190;
@@ -43,6 +44,7 @@ interface Props {
 export default function BannerCarousel({ onComboPress }: Props) {
   const scrollRef = useRef<ScrollView>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const { getComboAvailability } = useDisabledItems();
   const { width } = useWindowDimensions();
   const bannerWidth = Math.min(
     Math.min(width, MAX_CONTENT_WIDTH) - PAGE_PADDING * 2,
@@ -84,7 +86,9 @@ export default function BannerCarousel({ onComboPress }: Props) {
         scrollEventThrottle={16}
         contentContainerStyle={{ paddingHorizontal: PAGE_PADDING }}
       >
-        {combos.map((combo, index) => (
+        {combos.map((combo, index) => {
+          const outOfStock = getComboAvailability(combo).outOfStock;
+          return (
           <Pressable
             key={combo.id}
             onPress={() => onComboPress?.(combo)}
@@ -107,6 +111,13 @@ export default function BannerCarousel({ onComboPress }: Props) {
               style={{ width: bannerWidth, height: BANNER_HEIGHT }}
               resizeMode="contain"
             />
+            {outOfStock && (
+              <View className="absolute top-3 left-3 bg-red-600 rounded-full px-3 py-1">
+                <Text className="text-white text-[10px] font-sans-bold tracking-wide">
+                  OUT OF STOCK
+                </Text>
+              </View>
+            )}
             <LinearGradient
               colors={["transparent", "rgba(0,0,0,0.72)"]}
               style={{
@@ -183,7 +194,8 @@ export default function BannerCarousel({ onComboPress }: Props) {
               </Text>
             </View>
           </Pressable>
-        ))}
+          );
+        })}
       </ScrollView>
 
       {/* Dots */}
