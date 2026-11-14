@@ -27,11 +27,18 @@ import Sheet from "./Sheet";
 interface CartSheetProps {
   visible: boolean;
   onClose: () => void;
+  tableNumber?: string;
+  queryParams?: Record<string, string>;
 }
 
 const MOBILE_KEY = "diy_customer_mobile";
 
-export default function CartSheet({ visible, onClose }: CartSheetProps) {
+export default function CartSheet({
+  visible,
+  onClose,
+  tableNumber,
+  queryParams,
+}: CartSheetProps) {
   const { items, total, itemCount, increment, decrement, removeItem, clearCart } =
     useCart();
 
@@ -111,12 +118,15 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
 
   const appliedCoins = Math.min(coinsToUse, maxRedeemable);
   const coinsDiscount = appliedCoins;
-  const deliveryCharge = getDeliveryCharge(total);
+  const deliveryCharge = tableNumber ? 0 : getDeliveryCharge(total);
   const finalTotal = Math.max(0, total - coinsDiscount) + deliveryCharge;
   const coinsEarned = Math.floor(finalTotal * (COIN_EARN_RATE / 100));
 
   const buildWhatsAppMessage = () => {
     let msg = "🛒 *New Order*\n\n";
+    if (tableNumber) {
+      msg += `🍽️ *Table No:* ${tableNumber}\n`;
+    }
     msg += `📱 *Customer Mobile:* ${savedMobile || "N/A"}\n\n`;
     msg += "━━━━━━━━━━━━━━━━\n";
     items.forEach((item, idx) => {
@@ -154,6 +164,8 @@ export default function CartSheet({ visible, onClose }: CartSheetProps) {
       coinsUsed: savedMobile ? appliedCoins : 0,
       paymentMethod: "cod",
       whatsappMessage: message,
+      tableNumber,
+      queryParams,
     };
     const url = `https://wa.me/${PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
 

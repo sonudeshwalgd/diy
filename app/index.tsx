@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FlatList, Linking, Pressable, ScrollView, Text, View } from "react-native";
-import { Link } from "expo-router";
+import { Link, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   categories,
   combos,
@@ -30,7 +31,7 @@ import Sidebar from "../components/Sidebar";
 import MenuSortSheet from "../components/MenuSortSheet";
 import { useCart } from "../context/CartContext";
 import { useDisabledItems } from "../context/DisabledItemsContext";
-import { getPopularItems } from "../services/api";
+import { getCustomer, getPopularItems } from "../services/api";
 import {
   GRID_GAP,
   MAX_CONTENT_WIDTH,
@@ -46,6 +47,8 @@ import {
   isMenuTagSort,
   type MenuSortId,
 } from "../utils/menuSort";
+
+const MOBILE_KEY = "diy_customer_mobile";
 
 const OUTLET_MAPS_URL =
   "https://www.google.com/maps/place/DIY+Drinks/data=!4m2!3m1!1s0x0:0xb1c683b845157dec?sa=X&ved=1t:2428&ictx=111";
@@ -407,6 +410,23 @@ export default function HomeScreen() {
   const [menuSort, setMenuSort] = useState<MenuSortId>("all");
   const [sortVisible, setSortVisible] = useState(false);
   const [popularity, setPopularity] = useState<Record<string, number>>({});
+  const [coins, setCoins] = useState<number | null>(null);
+  const params = useLocalSearchParams();
+  const t = params.t;
+  const tableNumber = useMemo(() => {
+    const raw = Array.isArray(t) ? t[0] : t;
+    const value = raw?.trim();
+    return value && /^\d+$/.test(value) ? value : undefined;
+  }, [t]);
+  const queryParams = useMemo(() => {
+    const extra: Record<string, string> = {};
+    for (const [key, value] of Object.entries(params)) {
+      if (key === "t") continue;
+      const raw = Array.isArray(value) ? value[0] : value;
+      if (raw !== undefined && raw !== "") extra[key] = raw;
+    }
+    return extra;
+  }, [params]);
   const { itemCount } = useCart();
   const { isItemDisabled } = useDisabledItems();
   const { columns } = useResponsiveLayout();
@@ -424,6 +444,29 @@ export default function HomeScreen() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    AsyncStorage.getItem(MOBILE_KEY)
+      .then(async (mobile) => {
+        if (!mobile) {
+          if (active) setCoins(null);
+          return;
+        }
+        try {
+          const customer = await getCustomer(mobile);
+          if (active) setCoins(customer.totalCoins);
+        } catch {
+          if (active) setCoins(null);
+        }
+      })
+      .catch(() => {
+        if (active) setCoins(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [cartVisible, historyVisible]);
 
   const orderedMenuItems = useMemo(() => {
     let items = [...menuItems];
@@ -492,8 +535,11 @@ export default function HomeScreen() {
   };
 
   const handleWhatsApp = () => {
+    const message = tableNumber
+      ? `Hi, I'd like to place an order.\n\n🍽️ *Table No:* ${tableNumber}`
+      : "Hi, I'd like to place an order.";
     Linking.openURL(
-      `https://wa.me/${PHONE_NUMBER}?text=${encodeURIComponent("Hi, I'd like to place an order.")}`
+      `https://wa.me/${PHONE_NUMBER}?text=${encodeURIComponent(message)}`
     );
   };
 
@@ -531,6 +577,17 @@ export default function HomeScreen() {
               </View>
 
               <View className="flex-row items-center gap-1.5">
+                {coins !== null && (
+                  <Pressable
+                    onPress={() => setHistoryVisible(true)}
+                    className="px-2.5 py-2 bg-amber-50 border border-amber-200 rounded-full active:opacity-80"
+                    accessibilityLabel={`Your coins: ${coins}`}
+                  >
+                    <Text className="text-amber-700 text-[13px] font-sans-extrabold">
+                      ₹{coins}
+                    </Text>
+                  </Pressable>
+                )}
                 <Pressable
                   onPress={handleCall}
                   className="p-2.5 bg-white/70 border border-white/80 rounded-full active:opacity-80"
@@ -762,11 +819,17 @@ export default function HomeScreen() {
         }}
       />
 
-      <CartSheet visible={cartVisible} onClose={() => setCartVisible(false)} />
+      <CartSheet
+        visible={cartVisible}
+        onClose={() => setCartVisible(false)}
+        tableNumber={tableNumber}
+        queryParams={queryParams}
+      />
 
       <OrderBottomSheet
         visible={orderVisible}
         onClose={() => setOrderVisible(false)}
+        tableNumber={tableNumber}
       />
 
       <WifiBottomSheet

@@ -22,6 +22,7 @@ export default function FloatingCartBar({ onPress }: Props) {
     <Animated.View
       entering={FadeInDown.duration(350)}
       className="absolute bottom-0 left-0 right-0 items-center px-4 pb-5 pt-6"
+      style={{ alignItems: "center" }}
     >
       <BlurView
         intensity={60}
@@ -31,6 +32,7 @@ export default function FloatingCartBar({ onPress }: Props) {
         style={{
           width: "100%",
           maxWidth: 640,
+          alignSelf: "center",
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 6 },
           shadowOpacity: 0.15,

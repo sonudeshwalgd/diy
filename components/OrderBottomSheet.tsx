@@ -7,20 +7,23 @@ import { Ionicons } from "@expo/vector-icons";
 import Sheet from "./Sheet";
 
 export const PHONE_NUMBER = "919068222172";
-const WHATSAPP_MESSAGE = "Hi, I'd like to place an order.";
 
 interface Props {
   visible: boolean;
   onClose: () => void;
+  tableNumber?: string;
 }
 
-export default function OrderBottomSheet({ visible, onClose }: Props) {
+export default function OrderBottomSheet({ visible, onClose, tableNumber }: Props) {
   const handleCall = () => {
     Linking.openURL(`tel:${PHONE_NUMBER}`);
   };
 
   const handleWhatsApp = () => {
-    const url = `https://wa.me/${PHONE_NUMBER}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`;
+    const message = tableNumber
+      ? `Hi, I'd like to place an order.\n\n🍽️ *Table No:* ${tableNumber}`
+      : "Hi, I'd like to place an order.";
+    const url = `https://wa.me/${PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
     Linking.openURL(url);
   };
 

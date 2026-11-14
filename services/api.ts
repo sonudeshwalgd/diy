@@ -17,6 +17,8 @@ export interface PlaceOrderPayload {
   coinsUsed: number;
   paymentMethod?: string;
   whatsappMessage?: string;
+  tableNumber?: string;
+  queryParams?: Record<string, string>;
   coinEarnRate?: number;
 }
 
