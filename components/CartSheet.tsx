@@ -532,7 +532,7 @@ export default function CartSheet({
                   <View className="flex-row items-center gap-2 mb-4 bg-amber-50 rounded-lg px-3 py-2">
                     <Ionicons name="cash-outline" size={18} color="#D97706" />
                     <Text className="text-sm text-amber-700 font-sans-medium">
-                      Cash on Delivery available everywhere
+                      Cash on Delivery & ₹0 delivery fee above ₹149 in Graphic Era
                     </Text>
                   </View>
 

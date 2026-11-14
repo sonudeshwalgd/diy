@@ -178,13 +178,22 @@ function CODStrip() {
           </View>
           <View className="flex-1">
             <Text className="text-[14px] font-sans-bold text-emerald-900">
-              Cash on Delivery available everywhere
+              Cash on Delivery & ₹0 delivery fee above ₹149 in Graphic Era
             </Text>
             <Text className="text-[11px] text-emerald-700 mt-0.5 font-sans-medium">
               Pay in cash when your order reaches you
             </Text>
           </View>
           <Ionicons name="checkmark-circle" size={22} color="#059669" />
+        </View>
+        <View className="flex-row items-center gap-2 border-t border-emerald-200/70 px-4 py-2.5">
+          <Ionicons name="gift" size={16} color="#059669" />
+          <Text className="text-[12px] font-sans-bold text-emerald-800 flex-1">
+            5% cash back on all orders
+          </Text>
+          <View className="bg-emerald-600 rounded-full px-2 py-0.5">
+            <Text className="text-[9px] font-sans-bold text-white">BONUS</Text>
+          </View>
         </View>
       </LinearGradient>
     </Animated.View>
@@ -358,7 +367,7 @@ function Footer() {
           <View className="flex-row items-center gap-2 bg-emerald-500/10 border border-emerald-400/20 rounded-2xl px-4 py-3 mb-6">
             <Ionicons name="cash-outline" size={18} color="#34D399" />
             <Text className="text-emerald-300 text-xs font-sans-semibold flex-1">
-              Cash on Delivery available everywhere
+              Cash on Delivery & ₹0 delivery fee above ₹149 in Graphic Era
             </Text>
           </View>
 
