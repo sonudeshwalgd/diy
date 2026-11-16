@@ -3,7 +3,7 @@ import type { Subcategory } from "../../../../../data/products";
 const strawberryShake: Subcategory = {
   id: "strawberry-shake",
   name: "Strawberry Chocolate Shake",
-  price: 99,
+  price: 169,
   image: require("./image.jpg"),
 };
 

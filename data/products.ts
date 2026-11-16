@@ -6,6 +6,9 @@ import strawberryShake from "../assets/DIY_Drinks_All_Item_Images/individual-ite
 import strawberryCrusher from "../assets/DIY_Drinks_All_Item_Images/individual-items/strawberry/strawberry-crusher/product";
 import tiramisu from "../assets/DIY_Drinks_All_Item_Images/individual-items/tiramisu/product";
 
+export const PRICE_MULTIPLIER = 1;
+export const p = (price: number) => Math.round(price * PRICE_MULTIPLIER);
+
 export interface Variant {
   id: string;
   name: string;
@@ -210,83 +213,83 @@ const categoriesBase: Category[] = [
     {
       id: "single-chocolate",
       name: "Single Chocolate Waffle",
-      price: 79,
+      price: p(79),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/single-chocolate-waffle.webp"),
     },
     {
       id: "double-chocolate",
       name: "Double Chocolate Waffle",
-      price: 89,
+      price: p(89),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/double-chocolate-waffle.webp"),
     },
     {
       id: "triple-chocolate",
       name: "Triple Chocolate Waffle",
-      price: 99,
+      price: p(99),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/triple-chocolate-waffle.webp"),
     },
     {
       id: "oreo-crush",
       name: "Oreo Crush",
-      price: 119,
+      price: p(119),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/oreo-crush-waffle.webp"),
     },
     {
       id: "strawberry-filling",
       name: "Strawberry Filling Waffle",
-      price: 119,
+      price: p(119),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/strawberry-filling-waffle.webp"),
     },
     {
       id: "nutella",
       name: "Nutella Waffle",
-      price: 169,
+      price: p(169),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/nutella-waffle.webp"),
     },
     {
       id: "kunafa",
       name: "Kunafa Waffle",
-      price: 179,
+      price: p(179),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/kunafa-waffle.webp"),
     },
     {
       id: "peanut-butter",
       name: "Peanut Butter Waffle",
-      price: 169,
+      price: p(169),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/peanut-butter-waffle.webp"),
     },
     {
       id: "biscoff",
       name: "Biscoff Waffle",
-      price: 169,
+      price: p(169),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/biscoff-waffle.webp"),
     },
     {
       id: "kitkat",
       name: "KitKat Waffle",
-      price: 119,
+      price: p(119),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/kitkat-waffle.webp"),
     },
     {
       id: "ice-cream-chocolate-inside",
       name: "Ice Cream Chocolate Waffle - Ice Cream Inside",
-      price: 120,
+      price: p(120),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/ice-cream-chocolate-waffle-ice-cream-inside.webp"),
       variantLabel: "Choose flavours & quantity",
       variants: [
-        { id: "vanilla", name: "Vanilla", price: 120 },
-        { id: "chocolate", name: "Chocolate", price: 120 },
+        { id: "vanilla", name: "Vanilla", price: p(120) },
+        { id: "chocolate", name: "Chocolate", price: p(120) },
       ],
     },
     {
       id: "ice-cream-chocolate-outside",
       name: "Ice Cream Chocolate Waffle - Ice Cream Outside",
-      price: 130,
+      price: p(130),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/ice-cream-chocolate-waffle-ice-cream-outside.webp"),
       variantLabel: "Choose flavours & quantity",
       variants: [
-        { id: "vanilla", name: "Vanilla", price: 130 },
-        { id: "chocolate", name: "Chocolate", price: 130 },
+        { id: "vanilla", name: "Vanilla", price: p(130) },
+        { id: "chocolate", name: "Chocolate", price: p(130) },
       ],
     },
   ],
@@ -302,19 +305,19 @@ const categoriesBase: Category[] = [
     {
       id: "salty-corn",
       name: "Salty Corn",
-      price: 70,
+      price: p(70),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/corn/salty-corn.webp"),
     },
     {
       id: "masala-corn",
       name: "Masala Corn",
-      price: 70,
+      price: p(70),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/corn/masala-corn.webp"),
     },
     {
       id: "corn-chaat",
       name: "Corn Chaat",
-      price: 80,
+      price: p(80),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/corn/corn-chaat.webp"),
     },
   ],
@@ -329,31 +332,31 @@ const categoriesBase: Category[] = [
     {
       id: "grilled-burger",
       name: "Grilled Burger",
-      price: 39,
+      price: p(39),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/burgers/grilled-burger.webp"),
     },
     {
       id: "tandoori-burger",
       name: "Tandoori Burger",
-      price: 49,
+      price: p(49),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/burgers/tandoori-burger.webp"),
     },
     {
       id: "cheese-burger",
       name: "Cheese Burger",
-      price: 69,
+      price: p(69),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/burgers/cheese-burger.webp"),
     },
     {
       id: "paneer-burger",
       name: "Paneer Burger",
-      price: 69,
+      price: p(69),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/burgers/paneer-burger.webp"),
     },
     {
       id: "cheesy-paneer-burger",
       name: "Cheesy Paneer Burger",
-      price: 79,
+      price: p(79),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/burgers/cheesy-paneer-burger.webp"),
     },
   ],
@@ -368,25 +371,25 @@ const categoriesBase: Category[] = [
     {
       id: "grilled-sandwich",
       name: "Grilled Sandwich",
-      price: 59,
+      price: p(59),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/sandwiches/grilled-sandwich.webp"),
     },
     {
       id: "cheese-sandwich",
       name: "Cheese Sandwich",
-      price: 79,
+      price: p(79),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/sandwiches/cheese-sandwich.webp"),
     },
     {
       id: "paneer-sandwich",
       name: "Paneer Sandwich",
-      price: 79,
+      price: p(79),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/sandwiches/paneer-sandwich.webp"),
     },
     {
       id: "cheesy-paneer-sandwich",
       name: "Cheesy Paneer Sandwich",
-      price: 89,
+      price: p(89),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/sandwiches/cheesy-paneer-sandwich.webp"),
     },
   ],
@@ -407,12 +410,12 @@ const categoriesBase: Category[] = [
         {
           "id": "8-pcs",
           "name": "8 Pcs",
-          "price": 89
+          "price": p(89)
         },
         {
-          "id": "14-pcs",
-          "name": "14 Pcs",
-          "price": 119
+          "id": "12-pcs",
+          "name": "12 Pcs",
+          "price": p(119)
         }
       ]
     },
@@ -424,12 +427,12 @@ const categoriesBase: Category[] = [
         {
           "id": "8-pcs",
           "name": "8 Pcs",
-          "price": 99
+          "price": p(99)
         },
         {
-          "id": "14-pcs",
-          "name": "14 Pcs",
-          "price": 129
+          "id": "12-pcs",
+          "name": "12 Pcs",
+          "price": p(129)
         }
       ]
     },
@@ -441,29 +444,29 @@ const categoriesBase: Category[] = [
         {
           "id": "8-pcs",
           "name": "8 Pcs",
-          "price": 119
+          "price": p(119)
         },
         {
-          "id": "14-pcs",
-          "name": "14 Pcs",
-          "price": 149
+          "id": "12-pcs",
+          "name": "12 Pcs",
+          "price": p(149)
         }
       ]
     },
     {
       "id": "strawberry-filling",
-      "name": "Strawberry Filling Pancake",
+      "name": "Strawberry (Real) Filling Pancake",
       "image": require("../assets/DIY_Drinks_All_Item_Images/individual-items/pancakes/strawberry-filling-pancake.webp"),
       "variants": [
         {
           "id": "8-pcs",
           "name": "8 Pcs",
-          "price": 119
+          "price": p(119)
         },
         {
-          "id": "14-pcs",
-          "name": "14 Pcs",
-          "price": 139
+          "id": "12-pcs",
+          "name": "12 Pcs",
+          "price": p(149)
         }
       ]
     },
@@ -475,12 +478,12 @@ const categoriesBase: Category[] = [
         {
           "id": "8-pcs",
           "name": "8 Pcs",
-          "price": 119
+          "price": p(119)
         },
         {
-          "id": "14-pcs",
-          "name": "14 Pcs",
-          "price": 139
+          "id": "12-pcs",
+          "name": "12 Pcs",
+          "price": p(149)
         }
       ]
     },
@@ -493,22 +496,22 @@ const categoriesBase: Category[] = [
         {
           "id": "vanilla-8-pcs",
           "name": "Vanilla · 8 Pcs",
-          "price": 119
+          "price": p(119)
         },
         {
-          "id": "vanilla-14-pcs",
-          "name": "Vanilla · 14 Pcs",
-          "price": 149
+          "id": "vanilla-12-pcs",
+          "name": "Vanilla · 12 Pcs",
+          "price": p(149)
         },
         {
           "id": "chocolate-8-pcs",
           "name": "Chocolate · 8 Pcs",
-          "price": 119
+          "price": p(119)
         },
         {
-          "id": "chocolate-14-pcs",
-          "name": "Chocolate · 14 Pcs",
-          "price": 149
+          "id": "chocolate-12-pcs",
+          "name": "Chocolate · 12 Pcs",
+          "price": p(149)
         }
       ]
     }
@@ -532,13 +535,13 @@ const categoriesBase: Category[] = [
     {
       id: "single-dip-churros",
       name: "Single Dip Churros",
-      price: 59,
+      price: p(59),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/churros/single-dip-churros.webp"),
     },
     {
       id: "double-dip-churros",
       name: "Double Dip Churros",
-      price: 69,
+      price: p(69),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/churros/double-dip-churros.webp"),
     },
   ],
@@ -553,13 +556,13 @@ const categoriesBase: Category[] = [
     {
       id: "salty-french-fries",
       name: "Salty French Fries",
-      price: 49,
+      price: p(49),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/french-fries/salty-french-fries.webp"),
     },
     {
       id: "peri-peri-french-fries",
       name: "Peri Peri French Fries",
-      price: 59,
+      price: p(59),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/french-fries/peri-peri-french-fries.webp"),
     },
   ],
@@ -574,13 +577,13 @@ const categoriesBase: Category[] = [
     {
       id: "basic-cold-coffee",
       name: "Basic Cold Coffee",
-      price: 79,
+      price: p(79),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/cold-coffee/basic-cold-coffee.webp"),
     },
     {
       id: "ice-cream-cold-coffee",
       name: "Ice Cream Cold Coffee",
-      price: 99,
+      price: p(99),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/cold-coffee/ice-cream-cold-coffee.webp"),
     },
   ],
@@ -595,7 +598,7 @@ const categoriesBase: Category[] = [
     {
       id: "hot-chocolate-coffee",
       name: "Hot Chocolate",
-      price: 79,
+      price: p(79),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/hot-chocolate/hot-chocolate.webp"),
     },
   ],
@@ -610,43 +613,43 @@ const categoriesBase: Category[] = [
     {
       id: "green-apple",
       name: "Green Apple Mojito",
-      price: 69,
+      price: p(69),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/mojitos/green-apple-mojito.webp"),
     },
     {
       id: "lemon-ice",
       name: "Lemon Ice Mojito",
-      price: 69,
+      price: p(69),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/mojitos/lemon-ice-mojito.webp"),
     },
     {
       id: "watermelon",
       name: "Watermelon Mojito",
-      price: 69,
+      price: p(69),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/mojitos/watermelon-mojito.webp"),
     },
     {
       id: "kiwi",
       name: "Kiwi Mojito",
-      price: 69,
+      price: p(69),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/mojitos/kiwi-mojito.webp"),
     },
     {
       id: "blue-cocoa-cone",
       name: "Blue Kurako",
-      price: 69,
+      price: p(69),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/mojitos/blue-cocoa-cone-mojito.webp"),
     },
     {
       id: "chili-guava",
       name: "Chili Guava Mojito",
-      price: 69,
+      price: p(69),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/mojitos/chili-guava-mojito.webp"),
     },
     {
       id: "peach",
       name: "Peach Mojito",
-      price: 69,
+      price: p(69),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/mojitos/peach-mojito.webp"),
     },
   ],
@@ -661,19 +664,19 @@ const categoriesBase: Category[] = [
     {
       id: "ice-cream-cone",
       name: "Cone",
-      price: 30,
+      price: p(30),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/ice-cream/cone.webp"),
     },
     {
       id: "ice-cream-double-delight",
       name: "Double Delight",
-      price: 60,
+      price: p(60),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/ice-cream/double-delight.webp"),
     },
     {
       id: "ice-cream-dry-fruit",
       name: "Dry Fruit",
-      price: 80,
+      price: p(80),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/ice-cream/dry-fruit.webp"),
     },
   ],
@@ -715,14 +718,14 @@ const combosBase: Combo[] = [
         id: "triple-chocolate",
         name: "Triple Chocolate Waffle",
         categoryId: "waffles",
-        price: 99,
+        price: p(99),
       },
       {
         id: "choco-chips",
-        name: "Choco Chips Pancake - 14 Pcs",
+        name: "Choco Chips Pancake - 12 Pcs",
         categoryId: "pancakes",
-        price: 119,
-        variantId: "14-pcs",
+        price: p(119),
+        variantId: "12-pcs",
       },
     ],
     selectionGroups: [
@@ -737,13 +740,13 @@ const combosBase: Combo[] = [
             id: "basic-cold-coffee",
             name: "Basic Cold Coffee",
             categoryId: "cold-coffee",
-            price: 79,
+            price: p(79),
           },
           {
             id: "hot-chocolate-drink",
             name: "Hot Chocolate",
             categoryId: "hot-chocolate",
-            price: 79,
+            price: p(79),
           },
         ],
       },
@@ -764,14 +767,14 @@ const combosBase: Combo[] = [
         id: "choco-chips",
         name: "Choco Chips Pancake - 8 Pcs",
         categoryId: "pancakes",
-        price: 89,
+        price: p(89),
         variantId: "8-pcs",
       },
       {
         id: "cheese-burger",
         name: "Cheese Burger",
         categoryId: "burgers",
-        price: 69,
+        price: p(69),
       },
     ],
     selectionGroups: [
@@ -786,13 +789,13 @@ const combosBase: Combo[] = [
             id: "basic-cold-coffee",
             name: "Basic Cold Coffee",
             categoryId: "cold-coffee",
-            price: 79,
+            price: p(79),
           },
           {
             id: "hot-chocolate-drink",
             name: "Hot Chocolate",
             categoryId: "hot-chocolate",
-            price: 79,
+            price: p(79),
           },
         ],
       },
@@ -813,13 +816,13 @@ const combosBase: Combo[] = [
         id: "cheese-burger",
         name: "Cheese Burger",
         categoryId: "burgers",
-        price: 69,
+        price: p(69),
       },
       {
         id: "peri-peri-french-fries",
         name: "Peri Peri French Fries",
         categoryId: "french-fries",
-        price: 59,
+        price: p(59),
       },
     ],
     selectionGroups: [
@@ -834,13 +837,13 @@ const combosBase: Combo[] = [
             id: "basic-cold-coffee",
             name: "Basic Cold Coffee",
             categoryId: "cold-coffee",
-            price: 79,
+            price: p(79),
           },
           {
             id: "hot-chocolate-drink",
             name: "Hot Chocolate",
             categoryId: "hot-chocolate",
-            price: 79,
+            price: p(79),
           },
         ],
       },
@@ -861,20 +864,20 @@ const combosBase: Combo[] = [
         id: "cheese-burger",
         name: "Cheese Burger",
         categoryId: "burgers",
-        price: 69,
+        price: p(69),
       },
       {
         id: "grilled-sandwich",
         name: "Grilled Sandwich - 4 Pcs",
         categoryId: "sandwiches",
-        price: 59,
+        price: p(59),
       },
       {
         id: "choco-chips",
-        name: "Choco Chips Pancake - 14 Pcs",
+        name: "Choco Chips Pancake - 12 Pcs",
         categoryId: "pancakes",
-        price: 119,
-        variantId: "14-pcs",
+        price: p(119),
+        variantId: "12-pcs",
       },
     ],
     selectionGroups: [
@@ -889,13 +892,13 @@ const combosBase: Combo[] = [
             id: "basic-cold-coffee",
             name: "Basic Cold Coffee",
             categoryId: "cold-coffee",
-            price: 79,
+            price: p(79),
           },
           {
             id: "hot-chocolate-drink",
             name: "Hot Chocolate",
             categoryId: "hot-chocolate",
-            price: 79,
+            price: p(79),
           },
         ],
       },
@@ -916,13 +919,13 @@ const combosBase: Combo[] = [
         id: "cheesy-paneer-sandwich",
         name: "Cheesy Paneer Sandwich",
         categoryId: "sandwiches",
-        price: 89,
+        price: p(89),
       },
       {
         id: "peri-peri-french-fries",
         name: "Peri Peri French Fries",
         categoryId: "french-fries",
-        price: 59,
+        price: p(59),
       },
     ],
     selectionGroups: [
@@ -937,13 +940,13 @@ const combosBase: Combo[] = [
             id: "basic-cold-coffee",
             name: "Basic Cold Coffee",
             categoryId: "cold-coffee",
-            price: 79,
+            price: p(79),
           },
           {
             id: "hot-chocolate-drink",
             name: "Hot Chocolate",
             categoryId: "hot-chocolate",
-            price: 79,
+            price: p(79),
           },
         ],
       },
@@ -964,13 +967,13 @@ const combosBase: Combo[] = [
         id: "triple-chocolate",
         name: "Triple Chocolate Waffle",
         categoryId: "waffles",
-        price: 99,
+        price: p(99),
       },
       {
         id: "peri-peri-french-fries",
         name: "Peri Peri French Fries",
         categoryId: "french-fries",
-        price: 59,
+        price: p(59),
       },
     ],
     selectionGroups: [
@@ -985,13 +988,13 @@ const combosBase: Combo[] = [
             id: "basic-cold-coffee",
             name: "Basic Cold Coffee",
             categoryId: "cold-coffee",
-            price: 79,
+            price: p(79),
           },
           {
             id: "hot-chocolate-drink",
             name: "Hot Chocolate",
             categoryId: "hot-chocolate",
-            price: 79,
+            price: p(79),
           },
         ],
       },
@@ -1012,13 +1015,13 @@ const combosBase: Combo[] = [
         id: "oreo-crush",
         name: "Oreo Crush Waffle",
         categoryId: "waffles",
-        price: 119,
+        price: p(119),
       },
       {
         id: "oreo",
         name: "Oreo Pancake - 8 Pcs",
         categoryId: "pancakes",
-        price: 99,
+        price: p(99),
         variantId: "8-pcs",
       },
     ],
@@ -1034,13 +1037,13 @@ const combosBase: Combo[] = [
             id: "basic-cold-coffee",
             name: "Basic Cold Coffee",
             categoryId: "cold-coffee",
-            price: 79,
+            price: p(79),
           },
           {
             id: "hot-chocolate-drink",
             name: "Hot Chocolate",
             categoryId: "hot-chocolate",
-            price: 79,
+            price: p(79),
           },
         ],
       },
@@ -1069,39 +1072,39 @@ const combosBase: Combo[] = [
 
 const COMBO_PROMOTIONS: Record<string, ComboPromotion> = {
   "dessert-treat": {
-    originalPrice: 297,
-    discountAmount: 20,
-    finalPrice: 277,
+    originalPrice: p(296),
+    discountAmount: p(20),
+    finalPrice: p(277),
   },
   "oreo-combo": {
-    originalPrice: 297,
-    discountAmount: 20,
-    finalPrice: 277,
+    originalPrice: p(296),
+    discountAmount: p(20),
+    finalPrice: p(277),
   },
   "full-meal": {
-    originalPrice: 326,
-    discountAmount: 25,
-    finalPrice: 301,
+    originalPrice: p(326),
+    discountAmount: p(25),
+    finalPrice: p(301),
   },
   "burger-fest": {
-    originalPrice: 207,
-    discountAmount: 20,
-    finalPrice: 187,
+    originalPrice: p(207),
+    discountAmount: p(20),
+    finalPrice: p(187),
   },
   "sandwich-meal": {
-    originalPrice: 227,
-    discountAmount: 20,
-    finalPrice: 207,
+    originalPrice: p(227),
+    discountAmount: p(20),
+    finalPrice: p(207),
   },
   "student-treat-favorite": {
-    originalPrice: 237,
-    discountAmount: 20,
-    finalPrice: 217,
+    originalPrice: p(237),
+    discountAmount: p(20),
+    finalPrice: p(217),
   },
   "triple-chocolate-combo": {
-    originalPrice: 237,
-    discountAmount: 20,
-    finalPrice: 217,
+    originalPrice: p(237),
+    discountAmount: p(20),
+    finalPrice: p(217),
   },
 };
 
@@ -1131,16 +1134,16 @@ export const customComboRule: CustomComboRule = {
   eligibility: {
     subtotal: {
       operator: "greater-than-or-equal",
-      amount: 220,
+      amount: p(220),
       currency: "INR",
     },
   },
   discount: {
     type: "fixed-amount",
-    amount: 20,
+    amount: p(20),
     currency: "INR",
   },
-  calculation: "finalPrice = subtotal >= 220 ? subtotal - 20 : subtotal",
+  calculation: "finalPrice = subtotal >= p(220) ? subtotal - p(20) : subtotal",
   stackable: false,
 };
 
