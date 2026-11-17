@@ -189,29 +189,29 @@ export default function CartSheet({
     };
     const url = `https://wa.me/${PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
 
-    // Open WhatsApp first so the order is never blocked by a backend failure.
     try {
-      await Linking.openURL(url);
+      await placeOrder(orderPayload);
     } catch {
       Alert.alert(
-        "WhatsApp not available",
-        "Could not open WhatsApp. Please make sure WhatsApp is installed and try again."
+        "Order not saved",
+        "We could not save your order. Please try again."
       );
       setPlacing(false);
       return;
     }
 
+    try {
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert(
+        "WhatsApp not available",
+        "Your order was saved. Please open WhatsApp and contact the outlet to confirm."
+      );
+    }
+
     clearCart();
     onClose();
     setPlacing(false);
-
-    // Record the order for loyalty coins (best effort, non-blocking).
-    try {
-      await placeOrder(orderPayload);
-    } catch {
-      // Loyalty recording is best-effort; never block the order flow.
-      setCoinsToUse(0);
-    }
   };
 
   const renderItem = ({ item }: { item: CartItem }) => (

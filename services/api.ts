@@ -212,11 +212,37 @@ export const getTodaysOrders = async (
   staffKey: string
 ): Promise<AdminOrdersResponse> => {
   const res = await fetch(`${API_BASE}/orders`, {
+    cache: "no-store",
     headers: { "x-staff-key": staffKey },
   });
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.error || "Failed to fetch orders");
+  }
+  return res.json();
+};
+
+export type OrderStatus = "placed" | "accepted" | "cancelled" | "delivered";
+
+export const updateOrderStatus = async (
+  orderId: string,
+  staffKey: string,
+  status: OrderStatus
+): Promise<{ order: AdminOrder }> => {
+  const res = await fetch(
+    `${API_BASE}/orders/${encodeURIComponent(orderId)}/status`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "x-staff-key": staffKey,
+      },
+      body: JSON.stringify({ status }),
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to update order");
   }
   return res.json();
 };

@@ -11,9 +11,40 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useDisabledItems } from "../context/DisabledItemsContext";
-import { getTodaysOrders, type AdminOrder } from "../services/api";
+import {
+  getTodaysOrders,
+  updateOrderStatus,
+  type AdminOrder,
+  type OrderStatus,
+} from "../services/api";
 
 const REFRESH_SECONDS = 60;
+
+const STATUS_ACTIONS: {
+  label: string;
+  status: OrderStatus;
+  className: string;
+  textClassName: string;
+}[] = [
+  {
+    label: "Accept",
+    status: "accepted",
+    className: "bg-emerald-50 border-emerald-100",
+    textClassName: "text-emerald-700",
+  },
+  {
+    label: "Delivered",
+    status: "delivered",
+    className: "bg-sky-50 border-sky-100",
+    textClassName: "text-sky-700",
+  },
+  {
+    label: "Cancel",
+    status: "cancelled",
+    className: "bg-red-50 border-red-100",
+    textClassName: "text-red-600",
+  },
+];
 
 function sourceLabel(order: AdminOrder): string {
   if (order.tableNumber) return `Table ${order.tableNumber}`;
@@ -30,6 +61,7 @@ export default function OrdersScreen() {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(REFRESH_SECONDS);
   const secondsRef = useRef(REFRESH_SECONDS);
   const refreshingRef = useRef(false);
@@ -109,6 +141,26 @@ export default function OrdersScreen() {
 
   const handleRefresh = async () => {
     await refreshOrders();
+  };
+
+  const handleStatusUpdate = async (order: AdminOrder, status: OrderStatus) => {
+    if (updatingId) return;
+    setUpdatingId(order._id);
+    setLoadError(null);
+    try {
+      await updateOrderStatus(order.orderId || order._id, staffKey, status);
+      setOrders((current) =>
+        current.map((item) =>
+          item._id === order._id ? { ...item, orderStatus: status } : item
+        )
+      );
+    } catch (err) {
+      setLoadError(
+        err instanceof Error ? err.message : "Could not update order"
+      );
+    } finally {
+      setUpdatingId(null);
+    }
   };
 
   const handleLock = () => {
@@ -351,6 +403,36 @@ export default function OrdersScreen() {
                       ₹{order.finalAmount}
                     </Text>
                   </View>
+                </View>
+
+                <View className="flex-row gap-2 mt-3 flex-wrap">
+                  {STATUS_ACTIONS.map((action) => {
+                    const isCurrent = order.orderStatus === action.status;
+                    const isUpdating = updatingId === order._id;
+                    return (
+                      <Pressable
+                        key={action.status}
+                        onPress={() =>
+                          void handleStatusUpdate(order, action.status)
+                        }
+                        disabled={isCurrent || isUpdating}
+                        className={`flex-row items-center gap-1.5 border rounded-full px-3 py-1.5 ${
+                          isCurrent || isUpdating
+                            ? "opacity-40"
+                            : "active:opacity-80"
+                        } ${action.className}`}
+                      >
+                        {isUpdating && (
+                          <ActivityIndicator size="small" color="#57534E" />
+                        )}
+                        <Text
+                          className={`text-[11px] font-sans-bold ${action.textClassName}`}
+                        >
+                          {action.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
                 </View>
               </View>
             ))

@@ -10,7 +10,7 @@ const CONTACT_NUMBER = `+${PHONE_NUMBER.slice(0, 2)} ${PHONE_NUMBER.slice(
   2,
   7
 )} ${PHONE_NUMBER.slice(7)}`;
-const APP_VERSION = Constants.expoConfig?.version ?? "1.0.1";
+const APP_VERSION = Constants.expoConfig?.version ?? "1.1.2";
 
 const SIDEBAR_ITEMS = [
   { id: "strawberry-glass", label: "Strawberry Chocolate Glass" },
