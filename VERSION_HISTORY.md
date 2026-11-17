@@ -9,6 +9,10 @@ Format: `MAJOR.MINOR.PATCH`
 
 The current version lives in `app.json` and is displayed at the bottom of the sidebar.
 
+## 1.2.3
+
+- Fixed `POST /api/orders` returning 500 for anonymous WhatsApp orders by making `customerMobile` optional in the Order schema.
+
 ## 1.1.2
 
 - Fixed new orders not appearing by saving the order before opening WhatsApp and disabling caching on the staff orders request.
