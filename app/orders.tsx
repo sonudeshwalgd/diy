@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -11,7 +11,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useDisabledItems } from "../context/DisabledItemsContext";
-import { getAllOrders, type AdminOrder } from "../services/api";
+import { getTodaysOrders, type AdminOrder } from "../services/api";
+
+const REFRESH_SECONDS = 60;
 
 function sourceLabel(order: AdminOrder): string {
   if (order.tableNumber) return `Table ${order.tableNumber}`;
@@ -28,18 +30,20 @@ export default function OrdersScreen() {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState(REFRESH_SECONDS);
+  const secondsRef = useRef(REFRESH_SECONDS);
+  const refreshingRef = useRef(false);
   const hasAccess = unlocked && staffKey.length > 0;
+  const refreshCountdown = `${String(Math.floor(secondsLeft / 60)).padStart(
+    2,
+    "0"
+  )}:${String(secondsLeft % 60).padStart(2, "0")}`;
 
   useEffect(() => {
     return () => {
       void lock();
     };
   }, [lock]);
-
-  const fetchOrders = useCallback(async (key: string) => {
-    const data = await getAllOrders(key);
-    return data.orders;
-  }, []);
 
   const handleLoadError = useCallback(
     (err: unknown) => {
@@ -56,27 +60,42 @@ export default function OrdersScreen() {
     [lock]
   );
 
+  const refreshOrders = useCallback(
+    async (silent = false) => {
+      if (refreshingRef.current) return;
+      refreshingRef.current = true;
+      if (!silent) setLoading(true);
+      try {
+        const data = await getTodaysOrders(staffKey);
+        setOrders(data.orders);
+        setLoadError(null);
+      } catch (err) {
+        handleLoadError(err);
+      } finally {
+        refreshingRef.current = false;
+        secondsRef.current = REFRESH_SECONDS;
+        setLoading(false);
+        setSecondsLeft(REFRESH_SECONDS);
+      }
+    },
+    [handleLoadError, staffKey]
+  );
+
   useEffect(() => {
     if (!unlocked || !staffKey) return;
 
-    let active = true;
-    fetchOrders(staffKey)
-      .then((data) => {
-        if (!active) return;
-        setOrders(data);
-        setLoadError(null);
-        setLoading(false);
-      })
-      .catch((err: unknown) => {
-        if (!active) return;
-        handleLoadError(err);
-        setLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [unlocked, staffKey, fetchOrders, handleLoadError]);
+    secondsRef.current = REFRESH_SECONDS;
+    void Promise.resolve().then(() => refreshOrders());
+    const interval = setInterval(() => {
+      secondsRef.current -= 1;
+      if (secondsRef.current <= 0) {
+        secondsRef.current = REFRESH_SECONDS;
+        void refreshOrders(true);
+      }
+      setSecondsLeft(secondsRef.current);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [unlocked, staffKey, refreshOrders]);
 
   const handleUnlock = async () => {
     const ok = await unlock(staffKey);
@@ -89,16 +108,7 @@ export default function OrdersScreen() {
   };
 
   const handleRefresh = async () => {
-    setLoading(true);
-    setLoadError(null);
-    try {
-      const data = await fetchOrders(staffKey);
-      setOrders(data);
-    } catch (err) {
-      handleLoadError(err);
-    } finally {
-      setLoading(false);
-    }
+    await refreshOrders();
   };
 
   const handleLock = () => {
@@ -246,6 +256,13 @@ export default function OrdersScreen() {
             {loading && <ActivityIndicator size="small" color="#EA580C" />}
           </View>
 
+          <View className="flex-row items-center gap-1.5 mb-3 px-1">
+            <Ionicons name="time-outline" size={13} color="#A8A29E" />
+            <Text className="text-[11px] text-stone-400 font-sans-medium">
+              Next refresh in {refreshCountdown}
+            </Text>
+          </View>
+
           {loadError && (
             <View className="flex-row items-center gap-2 mb-3 bg-red-50 border border-red-200 rounded-2xl px-4 py-3">
               <Ionicons name="alert-circle" size={16} color="#DC2626" />
@@ -270,7 +287,7 @@ export default function OrdersScreen() {
               >
                 <View className="flex-row items-center justify-between">
                   <Text className="text-sm font-sans-extrabold text-stone-900">
-                    #{order._id.slice(-6).toUpperCase()}
+                    {order.orderId || `#${order._id.slice(-6).toUpperCase()}`}
                   </Text>
                   <View className="bg-emerald-50 rounded-full px-2.5 py-1">
                     <Text className="text-[10px] font-sans-bold text-emerald-700">

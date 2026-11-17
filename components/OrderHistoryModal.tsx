@@ -221,7 +221,7 @@ export default function OrderHistoryModal({ visible, onClose }: Props) {
                           {formatDate(item.createdAt)}
                         </Text>
                         <Text className="text-xs text-gray-400 mt-0.5">
-                          #{item._id.slice(-8).toUpperCase()}
+                          {item.orderId || `#${item._id.slice(-8).toUpperCase()}`}
                         </Text>
                       </View>
                       <View

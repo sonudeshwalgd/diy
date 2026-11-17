@@ -2,7 +2,7 @@ import { Image, Modal, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { SlideInRight } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter, type Href } from "expo-router";
+import Constants from "expo-constants";
 import type { Category } from "../data/products";
 import { PHONE_NUMBER } from "./OrderBottomSheet";
 
@@ -10,6 +10,7 @@ const CONTACT_NUMBER = `+${PHONE_NUMBER.slice(0, 2)} ${PHONE_NUMBER.slice(
   2,
   7
 )} ${PHONE_NUMBER.slice(7)}`;
+const APP_VERSION = Constants.expoConfig?.version ?? "1.0.1";
 
 const SIDEBAR_ITEMS = [
   { id: "strawberry-glass", label: "Strawberry Chocolate Glass" },
@@ -41,7 +42,6 @@ export default function Sidebar({
   onClose,
   onSelectCategory,
 }: Props) {
-  const router = useRouter();
   const items = SIDEBAR_ITEMS.map((item) => ({
     ...item,
     category: categories.find((category) => category.id === item.id),
@@ -162,38 +162,11 @@ export default function Sidebar({
                   Number 2
                 </Text>
               </View>
-              <Pressable
-                onPress={() => {
-                  onClose();
-                  setTimeout(() => {
-                    router.push("/orders" as Href);
-                  }, 220);
-                }}
-                className="flex-row items-center gap-2 mt-4 py-2.5 px-3 rounded-xl bg-orange-50 border border-orange-100 active:opacity-80"
-                accessibilityLabel="Manage orders"
-              >
-                <Ionicons name="receipt-outline" size={14} color="#EA580C" />
-                <Text className="text-xs text-orange-700 font-sans-semibold flex-1">
-                  Staff · Orders
+              <View className="mt-4 items-center">
+                <Text className="text-[10px] text-stone-400 font-sans-medium">
+                  Version {APP_VERSION}
                 </Text>
-                <Ionicons name="chevron-forward" size={14} color="#EA580C" />
-              </Pressable>
-              <Pressable
-                onPress={() => {
-                  onClose();
-                  setTimeout(() => {
-                    router.push("/items/disabled" as Href);
-                  }, 220);
-                }}
-                className="flex-row items-center gap-2 mt-2 py-2.5 px-3 rounded-xl bg-orange-50 border border-orange-100 active:opacity-80"
-                accessibilityLabel="Manage item availability"
-              >
-                <Ionicons name="lock-closed-outline" size={14} color="#EA580C" />
-                <Text className="text-xs text-orange-700 font-sans-semibold flex-1">
-                  Staff · Item availability
-                </Text>
-                <Ionicons name="chevron-forward" size={14} color="#EA580C" />
-              </Pressable>
+              </View>
             </View>
           </SafeAreaView>
         </Animated.View>

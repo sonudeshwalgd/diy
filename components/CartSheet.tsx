@@ -15,6 +15,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCart, type CartItem } from "../context/CartContext";
 import { getItemPrice } from "../data/products";
 import { getDeliveryCharge } from "../utils/delivery";
+import { generateOrderId } from "../utils/orderId";
 import { PHONE_NUMBER } from "./OrderBottomSheet";
 import {
   getCustomer,
@@ -128,8 +129,9 @@ export default function CartSheet({
   const finalTotal = Math.max(0, total - coinsDiscount) + deliveryCharge;
   const coinsEarned = Math.floor(finalTotal * (COIN_EARN_RATE / 100));
 
-  const buildWhatsAppMessage = () => {
-    let msg = "🛒 *New Order*\n\n";
+  const buildWhatsAppMessage = (orderId: string) => {
+    let msg = "🛒 *New Order*\n";
+    msg += `🧾 *Order ID:* ${orderId}\n\n`;
     if (tableNumber) {
       msg += `🍽️ *Table No:* ${tableNumber}\n`;
     }
@@ -163,8 +165,10 @@ export default function CartSheet({
 
     setPlacing(true);
 
-    const message = buildWhatsAppMessage();
+    const orderId = generateOrderId();
+    const message = buildWhatsAppMessage(orderId);
     const orderPayload = {
+      orderId,
       customerMobile: savedMobile || undefined,
       items: items.map((i) => ({
         name: i.subcategory.name,

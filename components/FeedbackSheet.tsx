@@ -112,7 +112,7 @@ export default function FeedbackSheet({
             <View className="mx-5 mb-4 bg-white rounded-xl p-4 border border-gray-100">
               <View className="flex-row items-center justify-between mb-2">
                 <Text className="text-xs text-gray-400">
-                  #{order._id.slice(-8).toUpperCase()}
+                  {order.orderId || `#${order._id.slice(-8).toUpperCase()}`}
                 </Text>
                 <Text className="text-xs text-gray-400">
                   {formatDate(order.createdAt)}

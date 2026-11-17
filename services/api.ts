@@ -10,6 +10,7 @@ export interface BackendOrderItem {
 }
 
 export interface PlaceOrderPayload {
+  orderId: string;
   customerMobile?: string;
   customerName?: string;
   items: BackendOrderItem[];
@@ -30,6 +31,7 @@ export interface PlaceOrderPayload {
 export interface PlaceOrderResponse {
   order: {
     _id: string;
+    orderId?: string;
     customerMobile: string;
     items: BackendOrderItem[];
     totalAmount: number;
@@ -52,6 +54,7 @@ export interface CustomerInfo {
 
 export interface OrderHistoryOrder {
   _id: string;
+  orderId?: string;
   items: BackendOrderItem[];
   totalAmount: number;
   discountApplied: number;
@@ -205,7 +208,7 @@ export const getOrderHistory = async (mobile: string): Promise<OrderHistoryRespo
   return res.json();
 };
 
-export const getAllOrders = async (
+export const getTodaysOrders = async (
   staffKey: string
 ): Promise<AdminOrdersResponse> => {
   const res = await fetch(`${API_BASE}/orders`, {
