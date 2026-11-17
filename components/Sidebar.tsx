@@ -166,10 +166,26 @@ export default function Sidebar({
                 onPress={() => {
                   onClose();
                   setTimeout(() => {
-                    router.push("/items/disabled" as Href);
+                    router.push("/orders" as Href);
                   }, 220);
                 }}
                 className="flex-row items-center gap-2 mt-4 py-2.5 px-3 rounded-xl bg-orange-50 border border-orange-100 active:opacity-80"
+                accessibilityLabel="Manage orders"
+              >
+                <Ionicons name="receipt-outline" size={14} color="#EA580C" />
+                <Text className="text-xs text-orange-700 font-sans-semibold flex-1">
+                  Staff · Orders
+                </Text>
+                <Ionicons name="chevron-forward" size={14} color="#EA580C" />
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  onClose();
+                  setTimeout(() => {
+                    router.push("/items/disabled" as Href);
+                  }, 220);
+                }}
+                className="flex-row items-center gap-2 mt-2 py-2.5 px-3 rounded-xl bg-orange-50 border border-orange-100 active:opacity-80"
                 accessibilityLabel="Manage item availability"
               >
                 <Ionicons name="lock-closed-outline" size={14} color="#EA580C" />

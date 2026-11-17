@@ -74,6 +74,23 @@ export interface OrderHistoryResponse {
   orders: OrderHistoryOrder[];
 }
 
+export interface AdminOrder extends OrderHistoryOrder {
+  customerMobile?: string;
+  customerName?: string;
+  subtotal?: number;
+  deliveryFee?: number;
+  tableNumber?: string;
+  counterNumber?: string;
+  utmSource?: string;
+  insideRestaurant?: boolean;
+  orderSource?: string;
+  whatsappMessage?: string;
+}
+
+export interface AdminOrdersResponse {
+  orders: AdminOrder[];
+}
+
 export interface SingleOrderResponse {
   order: OrderHistoryOrder;
 }
@@ -181,6 +198,19 @@ export const getCustomer = async (mobile: string): Promise<CustomerInfo> => {
 
 export const getOrderHistory = async (mobile: string): Promise<OrderHistoryResponse> => {
   const res = await fetch(`${API_BASE}/orders/${mobile}`);
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to fetch orders");
+  }
+  return res.json();
+};
+
+export const getAllOrders = async (
+  staffKey: string
+): Promise<AdminOrdersResponse> => {
+  const res = await fetch(`${API_BASE}/orders`, {
+    headers: { "x-staff-key": staffKey },
+  });
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.error || "Failed to fetch orders");

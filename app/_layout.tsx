@@ -50,6 +50,7 @@ export default function RootLayout() {
             <Stack.Screen name="privacy" options={{ title: "Privacy Policy" }} />
             <Stack.Screen name="feedback" options={{ title: "Feedback", headerShown: false }} />
             <Stack.Screen name="items/disabled" options={{ headerShown: false }} />
+            <Stack.Screen name="orders" options={{ headerShown: false }} />
           </Stack>
         </DisabledItemsProvider>
       </CartProvider>
