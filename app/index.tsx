@@ -38,7 +38,7 @@ import {
   PAGE_PADDING,
   useResponsiveLayout,
 } from "../utils/responsive";
-import { isInsideRestaurant } from "../utils/delivery";
+import { parseOrderSource } from "../utils/delivery";
 import {
   MENU_SORT_OPTIONS,
   buildPopularityMap,
@@ -162,7 +162,13 @@ function QuickPill({
   );
 }
 
-function CODStrip({ insideRestaurant }: { insideRestaurant: boolean }) {
+function CODStrip({
+  insideRestaurant,
+  sourceLabel,
+}: {
+  insideRestaurant: boolean;
+  sourceLabel?: string;
+}) {
   return (
     <Animated.View
       entering={FadeInDown.duration(450).delay(220)}
@@ -180,11 +186,13 @@ function CODStrip({ insideRestaurant }: { insideRestaurant: boolean }) {
           <View className="flex-1">
             <Text className="text-[14px] font-sans-bold text-emerald-900">
               {insideRestaurant
-                ? "Cash on Delivery & Free delivery"
+                ? `Cash on Delivery · No delivery fee${sourceLabel ? ` · ${sourceLabel}` : ""}`
                 : "Cash on Delivery & ₹0 delivery fee above ₹149 in Graphic Era"}
             </Text>
             <Text className="text-[11px] text-emerald-700 mt-0.5 font-sans-medium">
-              Pay in cash when your order reaches you
+              {insideRestaurant
+                ? "Pay in cash when your order is served"
+                : "Pay in cash when your order reaches you"}
             </Text>
           </View>
           <Ionicons name="checkmark-circle" size={22} color="#059669" />
@@ -271,7 +279,13 @@ function ComingSoonSection() {
   );
 }
 
-function Footer({ insideRestaurant }: { insideRestaurant: boolean }) {
+function Footer({
+  insideRestaurant,
+  sourceLabel,
+}: {
+  insideRestaurant: boolean;
+  sourceLabel?: string;
+}) {
   return (
     <View className="mt-8 px-4 pb-10">
       <BlurView
@@ -371,7 +385,7 @@ function Footer({ insideRestaurant }: { insideRestaurant: boolean }) {
             <Ionicons name="cash-outline" size={18} color="#34D399" />
             <Text className="text-emerald-300 text-xs font-sans-semibold flex-1">
               {insideRestaurant
-                ? "Cash on Delivery & Free delivery"
+                ? `Cash on Delivery · No delivery fee${sourceLabel ? ` · ${sourceLabel}` : ""}`
                 : "Cash on Delivery & ₹0 delivery fee above ₹149 in Graphic Era"}
             </Text>
           </View>
@@ -427,10 +441,9 @@ export default function HomeScreen() {
   const [coins, setCoins] = useState<number | null>(null);
   const params = useLocalSearchParams();
   const t = params.t;
-  const tableNumber = useMemo(() => {
+  const tableParam = useMemo(() => {
     const raw = Array.isArray(t) ? t[0] : t;
-    const value = raw?.trim();
-    return value && /^\d+$/.test(value) ? value : undefined;
+    return raw?.trim();
   }, [t]);
   const queryParams = useMemo(() => {
     const extra: Record<string, string> = {};
@@ -441,10 +454,12 @@ export default function HomeScreen() {
     }
     return extra;
   }, [params]);
-  const insideRestaurant = useMemo(
-    () => !!tableNumber || isInsideRestaurant(queryParams),
-    [tableNumber, queryParams]
+  const orderSource = useMemo(
+    () => parseOrderSource(queryParams.utm_source, tableParam),
+    [queryParams, tableParam]
   );
+  const insideRestaurant = orderSource.insideRestaurant;
+  const sourceLabel = orderSource.sourceLabel;
   const { itemCount } = useCart();
   const { isItemDisabled } = useDisabledItems();
   const { columns } = useResponsiveLayout();
@@ -553,8 +568,13 @@ export default function HomeScreen() {
   };
 
   const handleWhatsApp = () => {
-    const message = tableNumber
-      ? `Hi, I'd like to place an order.\n\n🍽️ *Table No:* ${tableNumber}`
+    const sourceLine = orderSource.tableNumber
+      ? `🍽️ *Table No:* ${orderSource.tableNumber}`
+      : orderSource.counterNumber
+        ? `🔢 *Counter No:* ${orderSource.counterNumber}`
+        : null;
+    const message = sourceLine
+      ? `Hi, I'd like to place an order.\n\n${sourceLine}`
       : "Hi, I'd like to place an order.";
     Linking.openURL(
       `https://wa.me/${PHONE_NUMBER}?text=${encodeURIComponent(message)}`
@@ -706,7 +726,7 @@ export default function HomeScreen() {
               <BannerCarousel onComboPress={handleComboPress} />
             </Animated.View>
 
-            <CODStrip insideRestaurant={insideRestaurant} />
+            <CODStrip insideRestaurant={insideRestaurant} sourceLabel={sourceLabel} />
 
             <View className="px-4 mt-6 mb-2 flex-row items-center justify-between gap-3">
               <View className="flex-row items-center gap-2.5 flex-1">
@@ -781,7 +801,7 @@ export default function HomeScreen() {
               </View>
             </Animated.View>
             <ComingSoonSection />
-            <Footer insideRestaurant={insideRestaurant} />
+            <Footer insideRestaurant={insideRestaurant} sourceLabel={sourceLabel} />
           </View>
         }
         renderItem={({ item, index }) =>
@@ -840,7 +860,9 @@ export default function HomeScreen() {
       <CartSheet
         visible={cartVisible}
         onClose={() => setCartVisible(false)}
-        tableNumber={tableNumber}
+        tableNumber={orderSource.tableNumber}
+        counterNumber={orderSource.counterNumber}
+        sourceLabel={sourceLabel}
         queryParams={queryParams}
         insideRestaurant={insideRestaurant}
       />
@@ -848,7 +870,8 @@ export default function HomeScreen() {
       <OrderBottomSheet
         visible={orderVisible}
         onClose={() => setOrderVisible(false)}
-        tableNumber={tableNumber}
+        tableNumber={orderSource.tableNumber}
+        counterNumber={orderSource.counterNumber}
       />
 
       <WifiBottomSheet

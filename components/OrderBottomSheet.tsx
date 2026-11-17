@@ -12,16 +12,27 @@ interface Props {
   visible: boolean;
   onClose: () => void;
   tableNumber?: string;
+  counterNumber?: string;
 }
 
-export default function OrderBottomSheet({ visible, onClose, tableNumber }: Props) {
+export default function OrderBottomSheet({
+  visible,
+  onClose,
+  tableNumber,
+  counterNumber,
+}: Props) {
   const handleCall = () => {
     Linking.openURL(`tel:${PHONE_NUMBER}`);
   };
 
   const handleWhatsApp = () => {
-    const message = tableNumber
-      ? `Hi, I'd like to place an order.\n\n🍽️ *Table No:* ${tableNumber}`
+    const sourceLine = tableNumber
+      ? `🍽️ *Table No:* ${tableNumber}`
+      : counterNumber
+        ? `🔢 *Counter No:* ${counterNumber}`
+        : null;
+    const message = sourceLine
+      ? `Hi, I'd like to place an order.\n\n${sourceLine}`
       : "Hi, I'd like to place an order.";
     const url = `https://wa.me/${PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
     Linking.openURL(url);

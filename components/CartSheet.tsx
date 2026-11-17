@@ -28,6 +28,8 @@ interface CartSheetProps {
   visible: boolean;
   onClose: () => void;
   tableNumber?: string;
+  counterNumber?: string;
+  sourceLabel?: string;
   queryParams?: Record<string, string>;
   insideRestaurant?: boolean;
 }
@@ -38,6 +40,8 @@ export default function CartSheet({
   visible,
   onClose,
   tableNumber,
+  counterNumber,
+  sourceLabel,
   queryParams,
   insideRestaurant,
 }: CartSheetProps) {
@@ -129,6 +133,9 @@ export default function CartSheet({
     if (tableNumber) {
       msg += `🍽️ *Table No:* ${tableNumber}\n`;
     }
+    if (counterNumber) {
+      msg += `🔢 *Counter No:* ${counterNumber}\n`;
+    }
     msg += `📱 *Customer Mobile:* ${savedMobile || "N/A"}\n\n`;
     msg += "━━━━━━━━━━━━━━━━\n";
     items.forEach((item, idx) => {
@@ -140,7 +147,9 @@ export default function CartSheet({
     if (coinsDiscount > 0) {
       msg += `🪙 *Coins Used:* ${appliedCoins} (−₹${coinsDiscount})\n`;
     }
-    msg += `🛵 *Delivery:* ${deliveryCharge === 0 ? "Free" : `₹${deliveryCharge}`}\n`;
+    if (!insideRestaurant) {
+      msg += `🛵 *Delivery:* ${deliveryCharge === 0 ? "Free" : `₹${deliveryCharge}`}\n`;
+    }
     msg += `🪙 *Coins Earned:* ${coinsEarned}\n`;
     msg += `💵 *Final Total:* ₹${finalTotal}\n`;
     msg += `📦 Items: ${itemCount}\n`;
@@ -162,11 +171,16 @@ export default function CartSheet({
         price: getItemPrice(i.subcategory),
         quantity: i.quantity,
       })),
+      subtotal: total,
       totalAmount: total + deliveryCharge,
+      deliveryFee: deliveryCharge,
       coinsUsed: savedMobile ? appliedCoins : 0,
       paymentMethod: "cod",
       whatsappMessage: message,
       tableNumber,
+      counterNumber,
+      utmSource: queryParams?.utm_source,
+      insideRestaurant: !!insideRestaurant,
       queryParams,
     };
     const url = `https://wa.me/${PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
@@ -491,18 +505,20 @@ export default function CartSheet({
                     </View>
                   )}
 
-                  <View className="flex-row justify-between items-center mb-1">
-                    <Text className="text-sm text-gray-500">Delivery</Text>
-                    <Text
-                      className={`text-sm ${
-                        deliveryCharge === 0
-                          ? "text-green-600 font-sans-semibold"
-                          : "text-gray-700"
-                      }`}
-                    >
-                      {deliveryCharge === 0 ? "Free" : `₹${deliveryCharge}`}
-                    </Text>
-                  </View>
+                  {!insideRestaurant && (
+                    <View className="flex-row justify-between items-center mb-1">
+                      <Text className="text-sm text-gray-500">Delivery</Text>
+                      <Text
+                        className={`text-sm ${
+                          deliveryCharge === 0
+                            ? "text-green-600 font-sans-semibold"
+                            : "text-gray-700"
+                        }`}
+                      >
+                        {deliveryCharge === 0 ? "Free" : `₹${deliveryCharge}`}
+                      </Text>
+                    </View>
+                  )}
                 </View>
                   }
                 />
@@ -535,7 +551,7 @@ export default function CartSheet({
                     <Ionicons name="cash-outline" size={18} color="#D97706" />
                     <Text className="text-sm text-amber-700 font-sans-medium">
                       {insideRestaurant
-                        ? "Cash on Delivery & Free delivery"
+                        ? `Cash on Delivery · No delivery fee${sourceLabel ? ` · ${sourceLabel}` : ""}`
                         : "Cash on Delivery & ₹0 delivery fee above ₹149 in Graphic Era"}
                     </Text>
                   </View>

@@ -13,11 +13,16 @@ export interface PlaceOrderPayload {
   customerMobile?: string;
   customerName?: string;
   items: BackendOrderItem[];
+  subtotal?: number;
   totalAmount: number;
+  deliveryFee?: number;
   coinsUsed: number;
   paymentMethod?: string;
   whatsappMessage?: string;
   tableNumber?: string;
+  counterNumber?: string;
+  utmSource?: string;
+  insideRestaurant?: boolean;
   queryParams?: Record<string, string>;
   coinEarnRate?: number;
 }
