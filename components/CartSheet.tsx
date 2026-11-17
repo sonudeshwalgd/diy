@@ -29,6 +29,7 @@ interface CartSheetProps {
   onClose: () => void;
   tableNumber?: string;
   queryParams?: Record<string, string>;
+  insideRestaurant?: boolean;
 }
 
 const MOBILE_KEY = "diy_customer_mobile";
@@ -38,6 +39,7 @@ export default function CartSheet({
   onClose,
   tableNumber,
   queryParams,
+  insideRestaurant,
 }: CartSheetProps) {
   const { items, total, itemCount, increment, decrement, removeItem, clearCart } =
     useCart();
@@ -118,7 +120,7 @@ export default function CartSheet({
 
   const appliedCoins = Math.min(coinsToUse, maxRedeemable);
   const coinsDiscount = appliedCoins;
-  const deliveryCharge = tableNumber ? 0 : getDeliveryCharge(total);
+  const deliveryCharge = insideRestaurant ? 0 : getDeliveryCharge(total);
   const finalTotal = Math.max(0, total - coinsDiscount) + deliveryCharge;
   const coinsEarned = Math.floor(finalTotal * (COIN_EARN_RATE / 100));
 
@@ -532,7 +534,9 @@ export default function CartSheet({
                   <View className="flex-row items-center gap-2 mb-4 bg-amber-50 rounded-lg px-3 py-2">
                     <Ionicons name="cash-outline" size={18} color="#D97706" />
                     <Text className="text-sm text-amber-700 font-sans-medium">
-                      Cash on Delivery & ₹0 delivery fee above ₹149 in Graphic Era
+                      {insideRestaurant
+                        ? "Cash on Delivery & Free delivery"
+                        : "Cash on Delivery & ₹0 delivery fee above ₹149 in Graphic Era"}
                     </Text>
                   </View>
 

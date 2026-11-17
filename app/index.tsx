@@ -38,6 +38,7 @@ import {
   PAGE_PADDING,
   useResponsiveLayout,
 } from "../utils/responsive";
+import { isInsideRestaurant } from "../utils/delivery";
 import {
   MENU_SORT_OPTIONS,
   buildPopularityMap,
@@ -161,7 +162,7 @@ function QuickPill({
   );
 }
 
-function CODStrip() {
+function CODStrip({ insideRestaurant }: { insideRestaurant: boolean }) {
   return (
     <Animated.View
       entering={FadeInDown.duration(450).delay(220)}
@@ -178,7 +179,9 @@ function CODStrip() {
           </View>
           <View className="flex-1">
             <Text className="text-[14px] font-sans-bold text-emerald-900">
-              Cash on Delivery & ₹0 delivery fee above ₹149 in Graphic Era
+              {insideRestaurant
+                ? "Cash on Delivery & Free delivery"
+                : "Cash on Delivery & ₹0 delivery fee above ₹149 in Graphic Era"}
             </Text>
             <Text className="text-[11px] text-emerald-700 mt-0.5 font-sans-medium">
               Pay in cash when your order reaches you
@@ -268,7 +271,7 @@ function ComingSoonSection() {
   );
 }
 
-function Footer() {
+function Footer({ insideRestaurant }: { insideRestaurant: boolean }) {
   return (
     <View className="mt-8 px-4 pb-10">
       <BlurView
@@ -367,7 +370,9 @@ function Footer() {
           <View className="flex-row items-center gap-2 bg-emerald-500/10 border border-emerald-400/20 rounded-2xl px-4 py-3 mb-6">
             <Ionicons name="cash-outline" size={18} color="#34D399" />
             <Text className="text-emerald-300 text-xs font-sans-semibold flex-1">
-              Cash on Delivery & ₹0 delivery fee above ₹149 in Graphic Era
+              {insideRestaurant
+                ? "Cash on Delivery & Free delivery"
+                : "Cash on Delivery & ₹0 delivery fee above ₹149 in Graphic Era"}
             </Text>
           </View>
 
@@ -436,6 +441,10 @@ export default function HomeScreen() {
     }
     return extra;
   }, [params]);
+  const insideRestaurant = useMemo(
+    () => !!tableNumber || isInsideRestaurant(queryParams),
+    [tableNumber, queryParams]
+  );
   const { itemCount } = useCart();
   const { isItemDisabled } = useDisabledItems();
   const { columns } = useResponsiveLayout();
@@ -697,7 +706,7 @@ export default function HomeScreen() {
               <BannerCarousel onComboPress={handleComboPress} />
             </Animated.View>
 
-            <CODStrip />
+            <CODStrip insideRestaurant={insideRestaurant} />
 
             <View className="px-4 mt-6 mb-2 flex-row items-center justify-between gap-3">
               <View className="flex-row items-center gap-2.5 flex-1">
@@ -772,7 +781,7 @@ export default function HomeScreen() {
               </View>
             </Animated.View>
             <ComingSoonSection />
-            <Footer />
+            <Footer insideRestaurant={insideRestaurant} />
           </View>
         }
         renderItem={({ item, index }) =>
@@ -833,6 +842,7 @@ export default function HomeScreen() {
         onClose={() => setCartVisible(false)}
         tableNumber={tableNumber}
         queryParams={queryParams}
+        insideRestaurant={insideRestaurant}
       />
 
       <OrderBottomSheet
