@@ -10,15 +10,28 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { Audio } from "expo-av";
 import { useDisabledItems } from "../context/DisabledItemsContext";
 import {
   getTodaysOrders,
   updateOrderStatus,
   type AdminOrder,
+  type BackendOrderItem,
   type OrderStatus,
 } from "../services/api";
+import Sheet from "../components/Sheet";
 
-const REFRESH_SECONDS = 60;
+const REFRESH_SECONDS = 30;
+const ALERT_DURATION_MS = 60_000;
+const ALERT_SOUND = require("../assets/sound/notification.wav");
+
+type TabKey = "new" | "accepted" | "done";
+
+const TABS: { key: TabKey; label: string }[] = [
+  { key: "new", label: "New / Received" },
+  { key: "accepted", label: "Accepted" },
+  { key: "done", label: "Delivered / Cancel" },
+];
 
 const STATUS_ACTIONS: {
   label: string;
@@ -52,6 +65,147 @@ function sourceLabel(order: AdminOrder): string {
   return "Delivery";
 }
 
+function matchesTab(order: AdminOrder, tab: TabKey): boolean {
+  if (tab === "new") return order.orderStatus === "placed";
+  if (tab === "accepted") return order.orderStatus === "accepted";
+  return order.orderStatus === "delivered" || order.orderStatus === "cancelled";
+}
+
+function statusStyle(status: string): string {
+  if (status === "placed") return "bg-orange-50 text-orange-700";
+  if (status === "accepted") return "bg-emerald-50 text-emerald-700";
+  if (status === "delivered") return "bg-sky-50 text-sky-700";
+  return "bg-red-50 text-red-600";
+}
+
+function ItemRow({ item }: { item: BackendOrderItem }) {
+  return (
+    <View className="flex-row items-start justify-between py-2 border-b border-stone-100">
+      <View className="flex-1 pr-3">
+        <Text className="text-xs text-stone-800 font-sans-semibold">{item.name}</Text>
+        <Text className="text-[10px] text-stone-400 font-sans-medium mt-0.5">
+          ₹{item.price} × {item.quantity}
+        </Text>
+      </View>
+      <Text className="text-xs text-stone-900 font-sans-extrabold">
+        ₹{item.price * item.quantity}
+      </Text>
+    </View>
+  );
+}
+
+function OrderDetailSheet({
+  order,
+  onClose,
+  onStatusUpdate,
+  updatingId,
+}: {
+  order: AdminOrder | null;
+  onClose: () => void;
+  onStatusUpdate: (order: AdminOrder, status: OrderStatus) => void;
+  updatingId: string | null;
+}) {
+  if (!order) return null;
+
+  return (
+    <Sheet visible={!!order} onClose={onClose} sheetStyle={{ maxHeight: "88%" }}>
+      <ScrollView
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View className="flex-row items-center justify-between pb-3">
+          <View className="flex-1 pr-3">
+            <Text className="text-lg font-sans-extrabold text-stone-900">
+              {order.orderId || `#${order._id.slice(-6).toUpperCase()}`}
+            </Text>
+            <Text className="text-[11px] text-stone-400 font-sans-medium mt-0.5">
+              {new Date(order.createdAt).toLocaleString()}
+            </Text>
+          </View>
+          <Pressable onPress={onClose} className="p-2 rounded-full bg-stone-100">
+            <Ionicons name="close" size={18} color="#57534E" />
+          </Pressable>
+        </View>
+
+        <View className="flex-row items-center gap-2 flex-wrap pb-3">
+          <View className={`rounded-full px-2.5 py-1 ${statusStyle(order.orderStatus)}`}>
+            <Text className="text-[10px] font-sans-bold capitalize">{order.orderStatus}</Text>
+          </View>
+          <View className="bg-orange-50 rounded-full px-2.5 py-1">
+            <Text className="text-[10px] font-sans-bold text-orange-700">
+              {sourceLabel(order)}
+            </Text>
+          </View>
+        </View>
+
+        {(order.customerName || order.customerMobile) && (
+          <View className="bg-stone-50 rounded-2xl px-3 py-2.5 mb-3 flex-row items-center gap-2 flex-wrap">
+            <Ionicons name="person-outline" size={15} color="#78716C" />
+            {order.customerName ? (
+              <Text className="text-xs text-stone-700 font-sans-semibold">{order.customerName}</Text>
+            ) : null}
+            {order.customerMobile ? (
+              <Text className="text-xs text-stone-500 font-sans-medium">📱 {order.customerMobile}</Text>
+            ) : null}
+          </View>
+        )}
+
+        <Text className="text-[11px] text-stone-400 font-sans-bold uppercase tracking-wide mb-1">
+          Items ({order.items.length})
+        </Text>
+        <View className="border-t border-stone-200">
+          {order.items.map((item, index) => (
+            <ItemRow key={`${item.name}-${index}`} item={item} />
+          ))}
+        </View>
+
+        <View className="mt-4 bg-white rounded-2xl border border-stone-100 px-3 py-2">
+          <View className="flex-row items-center justify-between py-1.5">
+            <Text className="text-xs text-stone-500 font-sans-medium">Subtotal</Text>
+            <Text className="text-xs text-stone-700 font-sans-semibold">₹{order.totalAmount ?? 0}</Text>
+          </View>
+          {order.coinsUsed > 0 && (
+            <View className="flex-row items-center justify-between py-1.5">
+              <Text className="text-xs text-emerald-600 font-sans-medium">Coins used</Text>
+              <Text className="text-xs text-emerald-600 font-sans-semibold">−₹{order.coinsUsed}</Text>
+            </View>
+          )}
+          <View className="flex-row items-center justify-between py-1.5">
+            <Text className="text-xs text-stone-500 font-sans-medium">Delivery</Text>
+            <Text className="text-xs text-stone-700 font-sans-semibold">₹{order.deliveryFee ?? 0}</Text>
+          </View>
+          <View className="flex-row items-center justify-between py-2 border-t border-stone-100 mt-1">
+            <Text className="text-sm font-sans-bold text-stone-900">Final total</Text>
+            <Text className="text-base font-sans-extrabold text-orange-600">₹{order.finalAmount}</Text>
+          </View>
+        </View>
+
+        <View className="flex-row gap-2 mt-4 flex-wrap">
+          {STATUS_ACTIONS.map((action) => {
+            const isCurrent = order.orderStatus === action.status;
+            const isUpdating = updatingId === order._id;
+            return (
+              <Pressable
+                key={action.status}
+                onPress={() => onStatusUpdate(order, action.status)}
+                disabled={isCurrent || isUpdating}
+                className={`flex-row items-center gap-1.5 border rounded-full px-3 py-1.5 ${
+                  isCurrent || isUpdating ? "opacity-40" : "active:opacity-80"
+                } ${action.className}`}
+              >
+                {isUpdating ? <ActivityIndicator size="small" color="#57534E" /> : null}
+                <Text className={`text-[11px] font-sans-bold ${action.textClassName}`}>
+                  {action.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </ScrollView>
+    </Sheet>
+  );
+}
+
 export default function OrdersScreen() {
   const router = useRouter();
   const { unlock, lock, unlocked, verifying } = useDisabledItems();
@@ -62,20 +216,75 @@ export default function OrdersScreen() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<TabKey>("new");
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+
   const [secondsLeft, setSecondsLeft] = useState(REFRESH_SECONDS);
   const secondsRef = useRef(REFRESH_SECONDS);
   const refreshingRef = useRef(false);
+  const knownIdsRef = useRef<Set<string> | null>(null);
+
+  const [alertOrderIds, setAlertOrderIds] = useState<string[]>([]);
+  const alertIdsRef = useRef<string[]>([]);
+  const alertTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const soundRef = useRef<Audio.Sound | null>(null);
+
   const hasAccess = unlocked && staffKey.length > 0;
-  const refreshCountdown = `${String(Math.floor(secondsLeft / 60)).padStart(
-    2,
-    "0"
-  )}:${String(secondsLeft % 60).padStart(2, "0")}`;
+  const refreshCountdown = `00:${String(secondsLeft).padStart(2, "0")}`;
+
+  const stopAlert = useCallback(async () => {
+    if (alertTimerRef.current) {
+      clearTimeout(alertTimerRef.current);
+      alertTimerRef.current = null;
+    }
+    alertIdsRef.current = [];
+    setAlertOrderIds([]);
+    const sound = soundRef.current;
+    soundRef.current = null;
+    if (sound) {
+      try {
+        await sound.stopAsync();
+        await sound.unloadAsync();
+      } catch {
+        // sound may already be unloaded
+      }
+    }
+  }, []);
+
+  const startAlert = useCallback(
+    async (ids: string[]) => {
+      if (alertTimerRef.current) clearTimeout(alertTimerRef.current);
+      alertIdsRef.current = ids;
+      setAlertOrderIds(ids);
+
+      alertTimerRef.current = setTimeout(() => {
+        void stopAlert();
+      }, ALERT_DURATION_MS);
+
+      try {
+        const existing = soundRef.current;
+        if (existing) {
+          await existing.unloadAsync();
+        }
+        const { sound } = await Audio.Sound.createAsync(ALERT_SOUND, {
+          isLooping: true,
+          volume: 1.0,
+        });
+        soundRef.current = sound;
+        await sound.playAsync();
+      } catch {
+        // Audio unavailable (e.g. web without permission) - banner still shown
+      }
+    },
+    [stopAlert]
+  );
 
   useEffect(() => {
     return () => {
       void lock();
+      void stopAlert();
     };
-  }, [lock]);
+  }, [lock, stopAlert]);
 
   const handleLoadError = useCallback(
     (err: unknown) => {
@@ -83,6 +292,7 @@ export default function OrdersScreen() {
       if (message.toLowerCase().includes("invalid staff key")) {
         setStaffKey("");
         setOrders([]);
+        knownIdsRef.current = null;
         void lock();
         setUnlockError("That staff key is not valid. Please try again.");
       } else {
@@ -99,8 +309,24 @@ export default function OrdersScreen() {
       if (!silent) setLoading(true);
       try {
         const data = await getTodaysOrders(staffKey);
+        const previous = knownIdsRef.current;
+        knownIdsRef.current = new Set(data.orders.map((order) => order._id));
+
+        const newIds = previous
+          ? data.orders
+              .filter(
+                (order) =>
+                  order.orderStatus === "placed" && !previous.has(order._id)
+              )
+              .map((order) => order._id)
+          : [];
+
         setOrders(data.orders);
         setLoadError(null);
+
+        if (newIds.length > 0) {
+          void startAlert(newIds);
+        }
       } catch (err) {
         handleLoadError(err);
       } finally {
@@ -110,7 +336,7 @@ export default function OrdersScreen() {
         setSecondsLeft(REFRESH_SECONDS);
       }
     },
-    [handleLoadError, staffKey]
+    [handleLoadError, staffKey, startAlert]
   );
 
   useEffect(() => {
@@ -129,6 +355,14 @@ export default function OrdersScreen() {
     return () => clearInterval(interval);
   }, [unlocked, staffKey, refreshOrders]);
 
+  useEffect(() => {
+    if (alertIdsRef.current.length === 0) return;
+    const stillPlaced = alertIdsRef.current.some((id) =>
+      orders.some((order) => order._id === id && order.orderStatus === "placed")
+    );
+    if (!stillPlaced) void stopAlert();
+  }, [orders, stopAlert]);
+
   const handleUnlock = async () => {
     const ok = await unlock(staffKey);
     if (!ok) {
@@ -137,10 +371,6 @@ export default function OrdersScreen() {
     }
     setUnlockError(null);
     setLoading(true);
-  };
-
-  const handleRefresh = async () => {
-    await refreshOrders();
   };
 
   const handleStatusUpdate = async (order: AdminOrder, status: OrderStatus) => {
@@ -155,9 +385,7 @@ export default function OrdersScreen() {
         )
       );
     } catch (err) {
-      setLoadError(
-        err instanceof Error ? err.message : "Could not update order"
-      );
+      setLoadError(err instanceof Error ? err.message : "Could not update order");
     } finally {
       setUpdatingId(null);
     }
@@ -166,9 +394,15 @@ export default function OrdersScreen() {
   const handleLock = () => {
     setStaffKey("");
     setOrders([]);
+    knownIdsRef.current = null;
     setUnlockError(null);
+    void stopAlert();
     void lock();
   };
+
+  const visibleOrders = orders.filter((order) => matchesTab(order, activeTab));
+  const selectedOrder = orders.find((order) => order._id === selectedOrderId) ?? null;
+  const alertCount = alertOrderIds.length;
 
   return (
     <View className="flex-1 bg-stone-100">
@@ -176,11 +410,8 @@ export default function OrdersScreen() {
         <View className="px-4 py-3 flex-row items-center gap-3">
           <Pressable
             onPress={() => {
-              if (router.canGoBack()) {
-                router.back();
-              } else {
-                router.replace("/");
-              }
+              if (router.canGoBack()) router.back();
+              else router.replace("/");
             }}
             className="p-2 rounded-full bg-stone-100 active:opacity-80"
             accessibilityLabel="Go back"
@@ -198,7 +429,7 @@ export default function OrdersScreen() {
           {hasAccess && (
             <>
               <Pressable
-                onPress={() => void handleRefresh()}
+                onPress={() => void refreshOrders()}
                 className="p-2 rounded-full bg-orange-100 active:opacity-80"
                 accessibilityLabel="Refresh orders"
               >
@@ -234,13 +465,10 @@ export default function OrdersScreen() {
             <View className="w-14 h-14 rounded-2xl bg-orange-100 items-center justify-center mb-4">
               <Ionicons name="lock-closed" size={26} color="#EA580C" />
             </View>
-            <Text className="text-xl font-sans-extrabold text-stone-900">
-              Staff access
-            </Text>
+            <Text className="text-xl font-sans-extrabold text-stone-900">Staff access</Text>
             <Text className="text-sm text-stone-500 font-sans-medium mt-1 leading-5">
               Enter your staff key to view and manage all customer orders.
             </Text>
-
             <TextInput
               value={staffKey}
               onChangeText={(value) => {
@@ -256,23 +484,17 @@ export default function OrdersScreen() {
               onSubmitEditing={() => void handleUnlock()}
               returnKeyType="go"
             />
-
-            {unlockError && (
+            {unlockError ? (
               <View className="flex-row items-center gap-2 mt-3">
                 <Ionicons name="alert-circle" size={16} color="#DC2626" />
-                <Text className="text-xs text-red-600 font-sans-semibold flex-1">
-                  {unlockError}
-                </Text>
+                <Text className="text-xs text-red-600 font-sans-semibold flex-1">{unlockError}</Text>
               </View>
-            )}
-
+            ) : null}
             <Pressable
               onPress={() => void handleUnlock()}
               disabled={verifying || !staffKey.trim()}
               className={`mt-4 rounded-2xl py-3.5 items-center justify-center flex-row gap-2 ${
-                verifying || !staffKey.trim()
-                  ? "bg-stone-300"
-                  : "bg-orange-600 active:opacity-90"
+                verifying || !staffKey.trim() ? "bg-stone-300" : "bg-orange-600 active:opacity-90"
               }`}
             >
               {verifying ? (
@@ -280,165 +502,180 @@ export default function OrdersScreen() {
               ) : (
                 <>
                   <Ionicons name="key" size={17} color="white" />
-                  <Text className="text-white text-sm font-sans-bold">
-                    Unlock orders
-                  </Text>
+                  <Text className="text-white text-sm font-sans-bold">Unlock orders</Text>
                 </>
               )}
             </Pressable>
           </View>
-
-          <View className="flex-row items-start gap-2 mt-5 px-2">
-            <Ionicons name="information-circle-outline" size={16} color="#78716C" />
-            <Text className="text-[11px] text-stone-500 font-sans-medium flex-1 leading-4">
-              Ask the outlet manager if you do not have a staff key. The same key
-              used for item availability unlocks orders.
-            </Text>
-          </View>
         </ScrollView>
       ) : (
-        <ScrollView
-          contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
-          showsVerticalScrollIndicator={false}
-        >
-          <View className="flex-row items-center justify-between mb-3">
-            <Text className="text-sm text-stone-500 font-sans-semibold">
-              {loading ? "Loading orders…" : `${orders.length} orders`}
-            </Text>
-            {loading && <ActivityIndicator size="small" color="#EA580C" />}
-          </View>
-
-          <View className="flex-row items-center gap-1.5 mb-3 px-1">
-            <Ionicons name="time-outline" size={13} color="#A8A29E" />
-            <Text className="text-[11px] text-stone-400 font-sans-medium">
-              Next refresh in {refreshCountdown}
-            </Text>
-          </View>
-
-          {loadError && (
-            <View className="flex-row items-center gap-2 mb-3 bg-red-50 border border-red-200 rounded-2xl px-4 py-3">
-              <Ionicons name="alert-circle" size={16} color="#DC2626" />
-              <Text className="text-xs text-red-700 font-sans-semibold flex-1">
-                {loadError}
-              </Text>
-            </View>
+        <View className="flex-1">
+          {alertCount > 0 && (
+            <Pressable
+              onPress={() => {
+                setActiveTab("new");
+                void stopAlert();
+              }}
+              className="mx-4 mt-3 bg-red-600 rounded-2xl px-4 py-3 flex-row items-center gap-3 active:opacity-90"
+            >
+              <Ionicons name="notifications" size={22} color="white" />
+              <View className="flex-1">
+                <Text className="text-white text-sm font-sans-extrabold">
+                  🔔 NEW ORDER{alertCount > 1 ? `S` : ""} — {alertCount}
+                </Text>
+                <Text className="text-white/80 text-[10px] font-sans-medium">
+                  Tap to view & silence
+                </Text>
+              </View>
+              <Ionicons name="volume-high" size={20} color="white" />
+            </Pressable>
           )}
 
-          {!loading && orders.length === 0 && !loadError ? (
-            <View className="bg-white rounded-3xl py-14 items-center border border-white">
-              <Ionicons name="receipt-outline" size={48} color="#D6D3D1" />
-              <Text className="text-stone-400 text-sm mt-3 font-sans-medium">
-                No orders yet
+          <View className="flex-row items-center justify-between px-4 pt-3 pb-2">
+            <Text className="text-sm text-stone-500 font-sans-semibold">
+              {loading ? "Loading orders…" : `${visibleOrders.length} orders`}
+            </Text>
+            <View className="flex-row items-center gap-1.5">
+              <Ionicons name="time-outline" size={13} color="#A8A29E" />
+              <Text className="text-[11px] text-stone-400 font-sans-medium">
+                Refresh in {refreshCountdown}
               </Text>
             </View>
-          ) : (
-            orders.map((order) => (
-              <View
-                key={order._id}
-                className="bg-white rounded-3xl p-4 mb-3 border border-white"
-              >
-                <View className="flex-row items-center justify-between">
-                  <Text className="text-sm font-sans-extrabold text-stone-900">
-                    {order.orderId || `#${order._id.slice(-6).toUpperCase()}`}
+          </View>
+
+          {loadError ? (
+            <View className="mx-4 mb-2 flex-row items-center gap-2 bg-red-50 border border-red-200 rounded-2xl px-4 py-3">
+              <Ionicons name="alert-circle" size={16} color="#DC2626" />
+              <Text className="text-xs text-red-700 font-sans-semibold flex-1">{loadError}</Text>
+            </View>
+          ) : null}
+
+          <View className="flex-row mx-4 mb-2 bg-white rounded-2xl p-1 border border-stone-200">
+            {TABS.map((tab) => {
+              const active = activeTab === tab.key;
+              const count = orders.filter((order) => matchesTab(order, tab.key)).length;
+              return (
+                <Pressable
+                  key={tab.key}
+                  onPress={() => setActiveTab(tab.key)}
+                  className={`flex-1 rounded-xl py-2 items-center ${active ? "bg-orange-600" : ""}`}
+                >
+                  <Text
+                    className={`text-[11px] font-sans-bold ${active ? "text-white" : "text-stone-500"}`}
+                  >
+                    {tab.label} ({count})
                   </Text>
-                  <View className="bg-emerald-50 rounded-full px-2.5 py-1">
-                    <Text className="text-[10px] font-sans-bold text-emerald-700">
-                      {order.orderStatus}
-                    </Text>
-                  </View>
-                </View>
+                </Pressable>
+              );
+            })}
+          </View>
 
-                <Text className="text-[11px] text-stone-400 font-sans-medium mt-1">
-                  {new Date(order.createdAt).toLocaleString()}
+          <ScrollView
+            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 30 }}
+            showsVerticalScrollIndicator={false}
+          >
+            {!loading && visibleOrders.length === 0 ? (
+              <View className="bg-white rounded-3xl py-14 items-center border border-white">
+                <Ionicons name="receipt-outline" size={48} color="#D6D3D1" />
+                <Text className="text-stone-400 text-sm mt-3 font-sans-medium">
+                  No orders in this tab
                 </Text>
-
-                <View className="flex-row items-center gap-2 mt-2 flex-wrap">
-                  <View className="bg-orange-50 rounded-full px-2.5 py-1">
-                    <Text className="text-[10px] font-sans-bold text-orange-700">
-                      {sourceLabel(order)}
+              </View>
+            ) : (
+              visibleOrders.map((order) => (
+                <View key={order._id} className="bg-white rounded-3xl p-4 mb-3 border border-white">
+                  <View className="flex-row items-center justify-between">
+                    <Text className="text-sm font-sans-extrabold text-stone-900">
+                      {order.orderId || `#${order._id.slice(-6).toUpperCase()}`}
                     </Text>
+                    <View className={`rounded-full px-2.5 py-1 ${statusStyle(order.orderStatus)}`}>
+                      <Text className="text-[10px] font-sans-bold capitalize">{order.orderStatus}</Text>
+                    </View>
                   </View>
-                  {order.customerMobile ? (
-                    <Text className="text-[11px] text-stone-600 font-sans-medium">
-                      📱 {order.customerMobile}
-                    </Text>
-                  ) : null}
-                  {order.customerName ? (
-                    <Text className="text-[11px] text-stone-600 font-sans-medium">
-                      {order.customerName}
-                    </Text>
-                  ) : null}
-                </View>
-
-                <View className="border-t border-stone-100 mt-3 pt-3">
-                  {order.items.map((item, index) => (
-                    <View
-                      key={`${order._id}-${index}`}
-                      className="flex-row items-center justify-between mb-1"
-                    >
-                      <Text className="text-xs text-stone-600 font-sans-medium flex-1">
-                        {item.name} × {item.quantity}
-                      </Text>
-                      <Text className="text-xs text-stone-800 font-sans-semibold">
-                        ₹{item.price * item.quantity}
+                  <Text className="text-[11px] text-stone-400 font-sans-medium mt-1">
+                    {new Date(order.createdAt).toLocaleString()}
+                  </Text>
+                  <View className="flex-row items-center gap-2 mt-2 flex-wrap">
+                    <View className="bg-orange-50 rounded-full px-2.5 py-1">
+                      <Text className="text-[10px] font-sans-bold text-orange-700">
+                        {sourceLabel(order)}
                       </Text>
                     </View>
-                  ))}
-                </View>
-
-                <View className="border-t border-stone-100 mt-2 pt-2">
-                  <View className="flex-row items-center justify-between mb-1">
-                    <Text className="text-[11px] text-stone-500 font-sans-medium">
-                      Delivery
-                    </Text>
-                    <Text className="text-[11px] text-stone-700 font-sans-semibold">
-                      ₹{order.deliveryFee ?? 0}
-                    </Text>
+                    {order.customerMobile ? (
+                      <Text className="text-[11px] text-stone-600 font-sans-medium">
+                        📱 {order.customerMobile}
+                      </Text>
+                    ) : null}
+                    {order.customerName ? (
+                      <Text className="text-[11px] text-stone-600 font-sans-medium">
+                        {order.customerName}
+                      </Text>
+                    ) : null}
                   </View>
-                  <View className="flex-row items-center justify-between">
-                    <Text className="text-sm font-sans-bold text-stone-900">
-                      Final total
-                    </Text>
+                  <View className="border-t border-stone-100 mt-3 pt-2">
+                    {order.items.slice(0, 3).map((item, index) => (
+                      <View key={`${item.name}-${index}`} className="flex-row justify-between py-0.5">
+                        <Text className="text-xs text-stone-600 font-sans-medium flex-1" numberOfLines={1}>
+                          {item.name} × {item.quantity}
+                        </Text>
+                        <Text className="text-xs text-stone-800 font-sans-semibold">
+                          ₹{item.price * item.quantity}
+                        </Text>
+                      </View>
+                    ))}
+                    {order.items.length > 3 ? (
+                      <Text className="text-[10px] text-stone-400 font-sans-medium mt-1">
+                        +{order.items.length - 3} more items
+                      </Text>
+                    ) : null}
+                  </View>
+                  <View className="flex-row items-center justify-between border-t border-stone-100 mt-2 pt-2">
+                    <Text className="text-sm font-sans-bold text-stone-900">Final total</Text>
                     <Text className="text-base font-sans-extrabold text-orange-600">
                       ₹{order.finalAmount}
                     </Text>
                   </View>
-                </View>
-
-                <View className="flex-row gap-2 mt-3 flex-wrap">
-                  {STATUS_ACTIONS.map((action) => {
-                    const isCurrent = order.orderStatus === action.status;
-                    const isUpdating = updatingId === order._id;
-                    return (
-                      <Pressable
-                        key={action.status}
-                        onPress={() =>
-                          void handleStatusUpdate(order, action.status)
-                        }
-                        disabled={isCurrent || isUpdating}
-                        className={`flex-row items-center gap-1.5 border rounded-full px-3 py-1.5 ${
-                          isCurrent || isUpdating
-                            ? "opacity-40"
-                            : "active:opacity-80"
-                        } ${action.className}`}
-                      >
-                        {isUpdating && (
-                          <ActivityIndicator size="small" color="#57534E" />
-                        )}
-                        <Text
-                          className={`text-[11px] font-sans-bold ${action.textClassName}`}
+                  <View className="flex-row gap-2 mt-3 flex-wrap">
+                    {STATUS_ACTIONS.map((action) => {
+                      const isCurrent = order.orderStatus === action.status;
+                      const isUpdating = updatingId === order._id;
+                      return (
+                        <Pressable
+                          key={action.status}
+                          onPress={() => void handleStatusUpdate(order, action.status)}
+                          disabled={isCurrent || isUpdating}
+                          className={`flex-row items-center gap-1.5 border rounded-full px-3 py-1.5 ${
+                            isCurrent || isUpdating ? "opacity-40" : "active:opacity-80"
+                          } ${action.className}`}
                         >
-                          {action.label}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
+                          {isUpdating ? <ActivityIndicator size="small" color="#57534E" /> : null}
+                          <Text className={`text-[11px] font-sans-bold ${action.textClassName}`}>
+                            {action.label}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                  <Pressable
+                    onPress={() => setSelectedOrderId(order._id)}
+                    className="mt-3 py-2 flex-row items-center justify-center gap-2 bg-orange-50 rounded-xl active:opacity-80"
+                  >
+                    <Ionicons name="eye-outline" size={17} color="#EA580C" />
+                    <Text className="text-xs font-sans-bold text-orange-700">View full details</Text>
+                  </Pressable>
                 </View>
-              </View>
-            ))
-          )}
-        </ScrollView>
+              ))
+            )}
+          </ScrollView>
+        </View>
       )}
+
+      <OrderDetailSheet
+        order={selectedOrder}
+        onClose={() => setSelectedOrderId(null)}
+        onStatusUpdate={(order, status) => void handleStatusUpdate(order, status)}
+        updatingId={updatingId}
+      />
     </View>
   );
 }

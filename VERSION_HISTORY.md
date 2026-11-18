@@ -9,6 +9,13 @@ Format: `MAJOR.MINOR.PATCH`
 
 The current version lives in `app.json` and is displayed at the bottom of the sidebar.
 
+## 1.2.4
+
+- Added a "View full details" popup on every order card showing every item with its unit price, quantity, and line total, plus subtotal, coins used, delivery, and final total. Combo selections already appear inside the item name saved with the order (for example `Burger Fest (Fries, Coke)`), so they are visible in the popup.
+- Split the orders list into three tabs: New / Received, Accepted, and Delivered / Cancel, each with a live count.
+- Added a 30-second auto-refresh with a visible countdown (down from 60 seconds).
+- Added a loud looping alarm and a red "NEW ORDER" banner whenever a newly placed order appears on refresh. The alarm stops automatically after 1 minute, as soon as the order is moved to Accepted / Delivered / Cancel, or when the banner is tapped.
+
 ## 1.2.3
 
 - Fixed `POST /api/orders` returning 500 for anonymous WhatsApp orders by making `customerMobile` optional in the Order schema.
