@@ -78,6 +78,163 @@ function statusStyle(status: string): string {
   return "bg-red-50 text-red-600";
 }
 
+interface OrderStats {
+  total: number;
+  placed: number;
+  accepted: number;
+  delivered: number;
+  cancelled: number;
+  revenue: number;
+  itemsSold: number;
+  avgOrder: number;
+  coinsUsed: number;
+  coinsEarned: number;
+  tableOrders: number;
+  counterOrders: number;
+  deliveryOrders: number;
+}
+
+function buildStats(orders: AdminOrder[]): OrderStats {
+  const billable = orders.filter((order) => order.orderStatus !== "cancelled");
+  const revenue = billable.reduce((sum, order) => sum + (order.finalAmount ?? 0), 0);
+  const itemsSold = billable.reduce(
+    (sum, order) =>
+      sum + order.items.reduce((count, item) => count + (item.quantity ?? 0), 0),
+    0
+  );
+
+  return {
+    total: orders.length,
+    placed: orders.filter((order) => order.orderStatus === "placed").length,
+    accepted: orders.filter((order) => order.orderStatus === "accepted").length,
+    delivered: orders.filter((order) => order.orderStatus === "delivered").length,
+    cancelled: orders.filter((order) => order.orderStatus === "cancelled").length,
+    revenue,
+    itemsSold,
+    avgOrder: billable.length ? Math.round(revenue / billable.length) : 0,
+    coinsUsed: orders.reduce((sum, order) => sum + (order.coinsUsed ?? 0), 0),
+    coinsEarned: orders.reduce((sum, order) => sum + (order.coinsEarned ?? 0), 0),
+    tableOrders: orders.filter((order) => !!order.tableNumber).length,
+    counterOrders: orders.filter((order) => !!order.counterNumber).length,
+    deliveryOrders: orders.filter(
+      (order) => !order.tableNumber && !order.counterNumber
+    ).length,
+  };
+}
+
+function StatCell({
+  label,
+  value,
+  icon,
+  color,
+}: {
+  label: string;
+  value: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  color: string;
+}) {
+  return (
+    <View className="flex-1 items-center py-2">
+      <Ionicons name={icon} size={16} color={color} />
+      <Text className="text-base font-sans-extrabold text-stone-900 mt-1">{value}</Text>
+      <Text className="text-[10px] text-stone-400 font-sans-medium text-center">{label}</Text>
+    </View>
+  );
+}
+
+function StatsPanel({ stats }: { stats: OrderStats }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const rows: { label: string; count: number; color: string; bg: string }[] = [
+    { label: "New", count: stats.placed, color: "#EA580C", bg: "bg-orange-500" },
+    { label: "Accepted", count: stats.accepted, color: "#059669", bg: "bg-emerald-500" },
+    { label: "Delivered", count: stats.delivered, color: "#0284C7", bg: "bg-sky-500" },
+    { label: "Cancelled", count: stats.cancelled, color: "#DC2626", bg: "bg-red-500" },
+  ];
+
+  return (
+    <View className="mx-4 mt-3 bg-white rounded-3xl border border-stone-100 px-4 py-3">
+      <Pressable
+        onPress={() => setExpanded((value) => !value)}
+        className="flex-row items-center justify-between"
+      >
+        <View className="flex-row items-center gap-2">
+          <Ionicons name="stats-chart" size={17} color="#EA580C" />
+          <Text className="text-sm font-sans-extrabold text-stone-900">Today&apos;s summary</Text>
+        </View>
+        <View className="flex-row items-center gap-1">
+          <Text className="text-[10px] font-sans-semibold text-stone-400">
+            {expanded ? "Hide" : "Details"}
+          </Text>
+          <Ionicons
+            name={expanded ? "chevron-up" : "chevron-down"}
+            size={16}
+            color="#A8A29E"
+          />
+        </View>
+      </Pressable>
+
+      <View className="flex-row mt-2 pt-1 border-t border-stone-100">
+        <StatCell label="Orders" value={String(stats.total)} icon="receipt-outline" color="#EA580C" />
+        <StatCell label="Sales" value={`₹${stats.revenue}`} icon="cash-outline" color="#059669" />
+        <StatCell label="Items" value={String(stats.itemsSold)} icon="cart-outline" color="#0284C7" />
+        <StatCell label="Avg / order" value={`₹${stats.avgOrder}`} icon="trending-up-outline" color="#7C3AED" />
+      </View>
+
+      {expanded ? (
+        <View className="border-t border-stone-100 mt-1 pt-3">
+          <Text className="text-[10px] text-stone-400 font-sans-bold uppercase tracking-wide mb-2">
+            By status
+          </Text>
+          {rows.map((row) => (
+            <View key={row.label} className="flex-row items-center gap-2 mb-2">
+              <Text className="text-[11px] text-stone-600 font-sans-medium w-[60px]">
+                {row.label}
+              </Text>
+              <View className="flex-1 h-2 bg-stone-100 rounded-full overflow-hidden">
+                <View
+                  className={`h-full rounded-full ${row.bg}`}
+                  style={{
+                    width: `${
+                      stats.total ? Math.round((row.count / stats.total) * 100) : 0
+                    }%`,
+                  }}
+                />
+              </View>
+              <Text className="text-[11px] font-sans-bold text-stone-800 w-6 text-right">
+                {row.count}
+              </Text>
+            </View>
+          ))}
+
+          <View className="flex-row flex-wrap mt-3 pt-3 border-t border-stone-100">
+            <View className="w-1/2 mb-2">
+              <Text className="text-[10px] text-stone-400 font-sans-medium">Coins used</Text>
+              <Text className="text-xs font-sans-bold text-stone-800">🪙 {stats.coinsUsed}</Text>
+            </View>
+            <View className="w-1/2 mb-2">
+              <Text className="text-[10px] text-stone-400 font-sans-medium">Coins earned</Text>
+              <Text className="text-xs font-sans-bold text-stone-800">🪙 {stats.coinsEarned}</Text>
+            </View>
+            <View className="w-1/3">
+              <Text className="text-[10px] text-stone-400 font-sans-medium">Table</Text>
+              <Text className="text-xs font-sans-bold text-stone-800">{stats.tableOrders}</Text>
+            </View>
+            <View className="w-1/3">
+              <Text className="text-[10px] text-stone-400 font-sans-medium">Counter</Text>
+              <Text className="text-xs font-sans-bold text-stone-800">{stats.counterOrders}</Text>
+            </View>
+            <View className="w-1/3">
+              <Text className="text-[10px] text-stone-400 font-sans-medium">Delivery</Text>
+              <Text className="text-xs font-sans-bold text-stone-800">{stats.deliveryOrders}</Text>
+            </View>
+          </View>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 function ItemRow({ item }: { item: BackendOrderItem }) {
   return (
     <View className="flex-row items-start justify-between py-2 border-b border-stone-100">
@@ -403,6 +560,7 @@ export default function OrdersScreen() {
   const visibleOrders = orders.filter((order) => matchesTab(order, activeTab));
   const selectedOrder = orders.find((order) => order._id === selectedOrderId) ?? null;
   const alertCount = alertOrderIds.length;
+  const stats = buildStats(orders);
 
   return (
     <View className="flex-1 bg-stone-100">
@@ -550,7 +708,9 @@ export default function OrdersScreen() {
             </View>
           ) : null}
 
-          <View className="flex-row mx-4 mb-2 bg-white rounded-2xl p-1 border border-stone-200">
+          <StatsPanel stats={stats} />
+
+          <View className="flex-row mx-4 mb-2 mt-3 bg-white rounded-2xl p-1 border border-stone-200">
             {TABS.map((tab) => {
               const active = activeTab === tab.key;
               const count = orders.filter((order) => matchesTab(order, tab.key)).length;

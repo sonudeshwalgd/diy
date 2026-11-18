@@ -9,6 +9,11 @@ Format: `MAJOR.MINOR.PATCH`
 
 The current version lives in `app.json` and is displayed at the bottom of the sidebar.
 
+## 1.2.5
+
+- Added a "Today's summary" statistics panel to the orders page showing total orders, sales (excluding cancelled), items sold, and average order value.
+- The panel expands to show a per-status breakdown bar chart (New / Accepted / Delivered / Cancelled), coins used and earned, and the split between table, counter, and delivery orders.
+
 ## 1.2.4
 
 - Added a "View full details" popup on every order card showing every item with its unit price, quantity, and line total, plus subtotal, coins used, delivery, and final total. Combo selections already appear inside the item name saved with the order (for example `Burger Fest (Fries, Coke)`), so they are visible in the popup.
