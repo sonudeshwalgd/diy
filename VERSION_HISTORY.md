@@ -9,6 +9,11 @@ Format: `MAJOR.MINOR.PATCH`
 
 The current version lives in `app.json` and is displayed at the bottom of the sidebar.
 
+## 1.3.7
+
+- Added a synchronous guard to the WhatsApp order button so repeated taps while the order is being saved or WhatsApp is opening are ignored.
+- The button stays disabled until the order request and WhatsApp launch finish, preventing duplicate submissions from impatient taps.
+
 ## 1.3.6
 
 - Added backend order idempotency using the generated order ID. Repeated submissions of the same order are returned as already saved instead of creating another record, deducting coins again, or opening WhatsApp again.

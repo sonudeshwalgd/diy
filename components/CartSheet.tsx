@@ -58,6 +58,7 @@ export default function CartSheet({
   const [showMobileInput, setShowMobileInput] = useState(false);
   const [loyaltyError, setLoyaltyError] = useState<string | null>(null);
   const pendingOrderIdRef = useRef<string | null>(null);
+  const placingRef = useRef(false);
 
   const fetchCustomer = useCallback(async (m: string) => {
     setLoadingCustomer(true);
@@ -96,11 +97,16 @@ export default function CartSheet({
     }
   }, []);
 
-  const handleClose = () => {
+  const closeSheet = () => {
     setShowMobileInput(false);
     setLoyaltyError(null);
     pendingOrderIdRef.current = null;
     onClose();
+  };
+
+  const handleClose = () => {
+    if (placingRef.current) return;
+    closeSheet();
   };
 
   useEffect(() => {
@@ -165,8 +171,9 @@ export default function CartSheet({
   };
 
   const handlePlaceOrder = async () => {
-    if (items.length === 0) return;
+    if (items.length === 0 || placingRef.current) return;
 
+    placingRef.current = true;
     setPlacing(true);
 
     const orderId = pendingOrderIdRef.current ?? generateOrderId();
@@ -202,15 +209,16 @@ export default function CartSheet({
         "Order not saved",
         "We could not save your order. Please try again."
       );
+      placingRef.current = false;
       setPlacing(false);
       return;
     }
 
     if (result.idempotent) {
       clearCart();
-      handleClose();
+      placingRef.current = false;
+      closeSheet();
       setPlacing(false);
-      pendingOrderIdRef.current = null;
       Alert.alert(
         "Order already placed",
         "This order was already saved. It was not sent again."
@@ -228,9 +236,9 @@ export default function CartSheet({
     }
 
     clearCart();
-    handleClose();
+    placingRef.current = false;
+    closeSheet();
     setPlacing(false);
-    pendingOrderIdRef.current = null;
   };
 
   const renderItem = ({ item }: { item: CartItem }) => (
