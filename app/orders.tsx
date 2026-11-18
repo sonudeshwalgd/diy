@@ -25,12 +25,13 @@ const REFRESH_SECONDS = 30;
 const ALERT_DURATION_MS = 60_000;
 const ALERT_SOUND = require("../assets/sound/notification.wav");
 
-type TabKey = "new" | "accepted" | "done";
+type TabKey = "new" | "accepted" | "delivered" | "cancelled";
 
 const TABS: { key: TabKey; label: string }[] = [
-  { key: "new", label: "New / Received" },
+  { key: "new", label: "New" },
   { key: "accepted", label: "Accepted" },
-  { key: "done", label: "Delivered / Cancel" },
+  { key: "delivered", label: "Delivered" },
+  { key: "cancelled", label: "Cancelled" },
 ];
 
 const STATUS_ACTIONS: {
@@ -67,8 +68,7 @@ function sourceLabel(order: AdminOrder): string {
 
 function matchesTab(order: AdminOrder, tab: TabKey): boolean {
   if (tab === "new") return order.orderStatus === "placed";
-  if (tab === "accepted") return order.orderStatus === "accepted";
-  return order.orderStatus === "delivered" || order.orderStatus === "cancelled";
+  return order.orderStatus === tab;
 }
 
 function statusStyle(status: string): string {

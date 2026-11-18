@@ -43,6 +43,7 @@ export interface PlaceOrderResponse {
     createdAt: string;
   };
   updatedCoins: number;
+  idempotent?: boolean;
 }
 
 export interface CustomerInfo {

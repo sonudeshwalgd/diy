@@ -9,7 +9,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCart, type CartItem } from "../context/CartContext";
@@ -57,23 +57,9 @@ export default function CartSheet({
   const [placing, setPlacing] = useState(false);
   const [showMobileInput, setShowMobileInput] = useState(false);
   const [loyaltyError, setLoyaltyError] = useState<string | null>(null);
+  const pendingOrderIdRef = useRef<string | null>(null);
 
-  useEffect(() => {
-    if (visible) {
-      AsyncStorage.getItem(MOBILE_KEY).then((m) => {
-        if (m) {
-          setMobile(m);
-          fetchCustomer(m);
-          setShowMobileInput(false);
-        }
-      });
-    } else {
-      setShowMobileInput(false);
-      setLoyaltyError(null);
-    }
-  }, [visible]);
-
-  const fetchCustomer = async (m: string) => {
+  const fetchCustomer = useCallback(async (m: string) => {
     setLoadingCustomer(true);
     setLoyaltyError(null);
     try {
@@ -108,7 +94,25 @@ export default function CartSheet({
     } finally {
       setLoadingCustomer(false);
     }
+  }, []);
+
+  const handleClose = () => {
+    setShowMobileInput(false);
+    setLoyaltyError(null);
+    pendingOrderIdRef.current = null;
+    onClose();
   };
+
+  useEffect(() => {
+    if (!visible) return;
+    AsyncStorage.getItem(MOBILE_KEY).then((m) => {
+      if (m) {
+        setMobile(m);
+        setShowMobileInput(false);
+        void fetchCustomer(m);
+      }
+    });
+  }, [visible, fetchCustomer]);
 
   const handleMobileSubmit = async () => {
     const cleaned = mobile.trim();
@@ -165,7 +169,8 @@ export default function CartSheet({
 
     setPlacing(true);
 
-    const orderId = generateOrderId();
+    const orderId = pendingOrderIdRef.current ?? generateOrderId();
+    pendingOrderIdRef.current = orderId;
     const message = buildWhatsAppMessage(orderId);
     const orderPayload = {
       orderId,
@@ -189,14 +194,27 @@ export default function CartSheet({
     };
     const url = `https://wa.me/${PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
 
+    let result: Awaited<ReturnType<typeof placeOrder>>;
     try {
-      await placeOrder(orderPayload);
+      result = await placeOrder(orderPayload);
     } catch {
       Alert.alert(
         "Order not saved",
         "We could not save your order. Please try again."
       );
       setPlacing(false);
+      return;
+    }
+
+    if (result.idempotent) {
+      clearCart();
+      handleClose();
+      setPlacing(false);
+      pendingOrderIdRef.current = null;
+      Alert.alert(
+        "Order already placed",
+        "This order was already saved. It was not sent again."
+      );
       return;
     }
 
@@ -210,8 +228,9 @@ export default function CartSheet({
     }
 
     clearCart();
-    onClose();
+    handleClose();
     setPlacing(false);
+    pendingOrderIdRef.current = null;
   };
 
   const renderItem = ({ item }: { item: CartItem }) => (
@@ -266,7 +285,7 @@ export default function CartSheet({
   return (
     <Sheet
       visible={visible}
-      onClose={onClose}
+      onClose={handleClose}
       keyboardAvoiding
       sheetClassName=""
       sheetStyle={{ maxHeight: "85%" }}
@@ -288,7 +307,7 @@ export default function CartSheet({
                   )}
                 </View>
               </View>
-              <Pressable onPress={onClose} className="p-1">
+              <Pressable onPress={handleClose} className="p-1">
                 <Ionicons name="close" size={24} color="#6B7280" />
               </Pressable>
             </View>
