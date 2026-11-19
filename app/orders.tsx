@@ -667,7 +667,10 @@ export default function OrdersScreen() {
           </View>
         </ScrollView>
       ) : (
-        <View className="flex-1">
+        <ScrollView
+          contentContainerStyle={{ paddingBottom: 30 }}
+          showsVerticalScrollIndicator={false}
+        >
           {alertCount > 0 && (
             <Pressable
               onPress={() => {
@@ -730,10 +733,7 @@ export default function OrdersScreen() {
             })}
           </View>
 
-          <ScrollView
-            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 30 }}
-            showsVerticalScrollIndicator={false}
-          >
+          <View className="px-4">
             {!loading && visibleOrders.length === 0 ? (
               <View className="bg-white rounded-3xl py-14 items-center border border-white">
                 <Ionicons name="receipt-outline" size={48} color="#D6D3D1" />
@@ -826,8 +826,8 @@ export default function OrdersScreen() {
                 </View>
               ))
             )}
-          </ScrollView>
-        </View>
+          </View>
+        </ScrollView>
       )}
 
       <OrderDetailSheet

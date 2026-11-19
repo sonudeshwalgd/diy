@@ -9,6 +9,11 @@ Format: `MAJOR.MINOR.PATCH`
 
 The current version lives in `app.json` and is displayed at the bottom of the sidebar.
 
+## 1.3.8
+
+- Made the orders page content below the header scroll as one area, including the new-order banner, summary panel, tabs, and order cards.
+- The upper section no longer stays fixed, so expanded summary details and tabs remain reachable on smaller screens.
+
 ## 1.3.7
 
 - Added a synchronous guard to the WhatsApp order button so repeated taps while the order is being saved or WhatsApp is opening are ignored.
