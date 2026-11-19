@@ -9,6 +9,11 @@ Format: `MAJOR.MINOR.PATCH`
 
 The current version lives in `app.json` and is displayed at the bottom of the sidebar.
 
+## 1.3.9
+
+- Replaced the new-order alarm with a louder, repeating three-note chime so incoming orders are easier to hear.
+- The alert still loops for one minute or until the order is moved out of New / Received.
+
 ## 1.3.8
 
 - Made the orders page content below the header scroll as one area, including the new-order banner, summary panel, tabs, and order cards.
