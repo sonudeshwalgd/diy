@@ -96,7 +96,7 @@ export interface AdminOrdersResponse {
 }
 
 export interface SingleOrderResponse {
-  order: OrderHistoryOrder;
+  order: AdminOrder;
 }
 
 export interface RedeemResponse {

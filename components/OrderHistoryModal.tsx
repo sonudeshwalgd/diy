@@ -6,7 +6,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -14,6 +14,11 @@ import {
   type OrderHistoryOrder,
   type OrderHistoryResponse,
 } from "../services/api";
+import {
+  CUSTOMER_MOBILE_KEY,
+  LAST_ORDER_ID_KEY,
+  resolveCustomerMobile,
+} from "../utils/orderId";
 import Sheet from "./Sheet";
 import FeedbackSheet from "./FeedbackSheet";
 
@@ -21,8 +26,6 @@ interface Props {
   visible: boolean;
   onClose: () => void;
 }
-
-const MOBILE_KEY = "diy_customer_mobile";
 
 export default function OrderHistoryModal({ visible, onClose }: Props) {
   const [mobile, setMobile] = useState("");
@@ -32,22 +35,7 @@ export default function OrderHistoryModal({ visible, onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [feedbackOrder, setFeedbackOrder] = useState<OrderHistoryOrder | null>(null);
 
-  useEffect(() => {
-    if (visible) {
-      AsyncStorage.getItem(MOBILE_KEY).then((m) => {
-        if (m) {
-          setSavedMobile(m);
-          setMobile(m);
-          fetchHistory(m);
-        }
-      });
-    } else {
-      setData(null);
-      setError(null);
-    }
-  }, [visible]);
-
-  const fetchHistory = async (m: string) => {
+  const fetchHistory = useCallback(async (m: string) => {
     setLoading(true);
     setError(null);
     try {
@@ -59,7 +47,26 @@ export default function OrderHistoryModal({ visible, onClose }: Props) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  const loadHistory = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    setData(null);
+    try {
+      const detected = await resolveCustomerMobile();
+      if (!detected) return;
+      setSavedMobile(detected);
+      setMobile(detected);
+      await fetchHistory(detected);
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchHistory]);
+
+  useEffect(() => {
+    if (visible) void Promise.resolve().then(loadHistory);
+  }, [visible, loadHistory]);
 
   const handleMobileSubmit = async () => {
     const cleaned = mobile.trim();
@@ -67,7 +74,7 @@ export default function OrderHistoryModal({ visible, onClose }: Props) {
       setError("Please enter a valid 10-digit mobile number.");
       return;
     }
-    await AsyncStorage.setItem(MOBILE_KEY, cleaned);
+    await AsyncStorage.setItem(CUSTOMER_MOBILE_KEY, cleaned);
     setSavedMobile(cleaned);
     await fetchHistory(cleaned);
   };
@@ -127,7 +134,8 @@ export default function OrderHistoryModal({ visible, onClose }: Props) {
                     onPress={() => {
                       setSavedMobile(null);
                       setData(null);
-                      AsyncStorage.removeItem(MOBILE_KEY);
+                      AsyncStorage.removeItem(CUSTOMER_MOBILE_KEY);
+                      AsyncStorage.removeItem(LAST_ORDER_ID_KEY);
                     }}
                   >
                     <Text className="text-blue-600 text-xs font-sans-medium">Change</Text>

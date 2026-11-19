@@ -9,6 +9,12 @@ Format: `MAJOR.MINOR.PATCH`
 
 The current version lives in `app.json` and is displayed at the bottom of the sidebar.
 
+## 1.4.10
+
+- Saved the last placed order ID on the device and used it to detect the customer when no mobile number is saved.
+- Order lookup now accepts the generated order ID, so the app can resolve the customer's mobile number and load their full order history, loyalty points, total orders, and lifetime spend automatically.
+- Manual mobile number entry still works as a fallback when no saved order or mobile number is available.
+
 ## 1.3.9
 
 - Replaced the new-order alarm with a louder, repeating three-note chime so incoming orders are easier to hear.

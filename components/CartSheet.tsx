@@ -15,7 +15,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCart, type CartItem } from "../context/CartContext";
 import { getItemPrice } from "../data/products";
 import { getDeliveryCharge } from "../utils/delivery";
-import { generateOrderId } from "../utils/orderId";
+import {
+  CUSTOMER_MOBILE_KEY,
+  LAST_ORDER_ID_KEY,
+  generateOrderId,
+  saveLastOrderId,
+} from "../utils/orderId";
 import { PHONE_NUMBER } from "./OrderBottomSheet";
 import {
   getCustomer,
@@ -34,8 +39,6 @@ interface CartSheetProps {
   queryParams?: Record<string, string>;
   insideRestaurant?: boolean;
 }
-
-const MOBILE_KEY = "diy_customer_mobile";
 
 export default function CartSheet({
   visible,
@@ -70,7 +73,7 @@ export default function CartSheet({
       setMobile(m);
       setShowMobileInput(false);
       setCoinsToUse(0);
-      await AsyncStorage.setItem(MOBILE_KEY, m);
+      await AsyncStorage.setItem(CUSTOMER_MOBILE_KEY, m);
     } catch (err) {
       const message = err instanceof Error ? err.message : "";
       if (message.toLowerCase().includes("not found")) {
@@ -84,7 +87,7 @@ export default function CartSheet({
         setMobile(m);
         setShowMobileInput(false);
         setCoinsToUse(0);
-        await AsyncStorage.setItem(MOBILE_KEY, m);
+        await AsyncStorage.setItem(CUSTOMER_MOBILE_KEY, m);
         return;
       }
       setCustomer(null);
@@ -111,7 +114,7 @@ export default function CartSheet({
 
   useEffect(() => {
     if (!visible) return;
-    AsyncStorage.getItem(MOBILE_KEY).then((m) => {
+    AsyncStorage.getItem(CUSTOMER_MOBILE_KEY).then((m) => {
       if (m) {
         setMobile(m);
         setShowMobileInput(false);
@@ -213,6 +216,8 @@ export default function CartSheet({
       setPlacing(false);
       return;
     }
+
+    await saveLastOrderId(orderId);
 
     if (result.idempotent) {
       clearCart();
@@ -361,7 +366,8 @@ export default function CartSheet({
                               setCoinsToUse(0);
                               setShowMobileInput(false);
                               setLoyaltyError(null);
-                              AsyncStorage.removeItem(MOBILE_KEY);
+                              AsyncStorage.removeItem(CUSTOMER_MOBILE_KEY);
+                              AsyncStorage.removeItem(LAST_ORDER_ID_KEY);
                             }}
                           >
                             <Text className="text-amber-600 text-xs font-sans-medium">Change</Text>

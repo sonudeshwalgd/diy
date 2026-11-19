@@ -6,7 +6,6 @@ import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   categories,
   combos,
@@ -39,6 +38,7 @@ import {
   useResponsiveLayout,
 } from "../utils/responsive";
 import { parseOrderSource } from "../utils/delivery";
+import { resolveCustomerMobile } from "../utils/orderId";
 import {
   MENU_SORT_OPTIONS,
   buildPopularityMap,
@@ -48,8 +48,6 @@ import {
   isMenuTagSort,
   type MenuSortId,
 } from "../utils/menuSort";
-
-const MOBILE_KEY = "diy_customer_mobile";
 
 const OUTLET_MAPS_URL =
   "https://www.google.com/maps/place/DIY+Drinks/data=!4m2!3m1!1s0x0:0xb1c683b845157dec?sa=X&ved=1t:2428&ictx=111";
@@ -480,9 +478,9 @@ export default function HomeScreen() {
 
   useEffect(() => {
     let active = true;
-    AsyncStorage.getItem(MOBILE_KEY)
+    resolveCustomerMobile()
       .then(async (mobile) => {
-        if (!mobile) {
+        if (!mobile || !active) {
           if (active) setCoins(null);
           return;
         }
