@@ -19,6 +19,7 @@ import {
   LAST_ORDER_ID_KEY,
   resolveCustomerMobile,
 } from "../utils/orderId";
+import { setApiLogContext } from "../services/apiLogStore";
 import Sheet from "./Sheet";
 import FeedbackSheet from "./FeedbackSheet";
 
@@ -58,6 +59,7 @@ export default function OrderHistoryModal({ visible, onClose }: Props) {
       if (!detected) return;
       setSavedMobile(detected);
       setMobile(detected);
+      setApiLogContext({ customerMobile: detected });
       await fetchHistory(detected);
     } finally {
       setLoading(false);
@@ -75,6 +77,7 @@ export default function OrderHistoryModal({ visible, onClose }: Props) {
       return;
     }
     await AsyncStorage.setItem(CUSTOMER_MOBILE_KEY, cleaned);
+    setApiLogContext({ customerMobile: cleaned });
     setSavedMobile(cleaned);
     await fetchHistory(cleaned);
   };
@@ -136,6 +139,7 @@ export default function OrderHistoryModal({ visible, onClose }: Props) {
                       setData(null);
                       AsyncStorage.removeItem(CUSTOMER_MOBILE_KEY);
                       AsyncStorage.removeItem(LAST_ORDER_ID_KEY);
+                      setApiLogContext({ customerMobile: null, lastOrderId: null });
                     }}
                   >
                     <Text className="text-blue-600 text-xs font-sans-medium">Change</Text>

@@ -16,6 +16,7 @@ import {
 import { CartProvider } from "../context/CartContext";
 import { DisabledItemsProvider } from "../context/DisabledItemsContext";
 import { ActiveOrdersProvider } from "../context/ActiveOrdersContext";
+import ApiLogSync from "../components/ApiLogSync";
 import VercelAnalytics from "../components/VercelAnalytics";
 
 SplashScreen.preventAutoHideAsync();
@@ -44,6 +45,7 @@ export default function RootLayout() {
       <CartProvider>
         <DisabledItemsProvider>
           <ActiveOrdersProvider>
+            <ApiLogSync />
             <VercelAnalytics />
             <StatusBar style="dark" />
             <Stack>

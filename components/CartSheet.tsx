@@ -21,6 +21,7 @@ import {
   generateOrderId,
 } from "../utils/orderId";
 import { useActiveOrders } from "../context/ActiveOrdersContext";
+import { setApiLogContext } from "../services/apiLogStore";
 import { PHONE_NUMBER } from "./OrderBottomSheet";
 import {
   getCustomer,
@@ -75,6 +76,7 @@ export default function CartSheet({
       setShowMobileInput(false);
       setCoinsToUse(0);
       await AsyncStorage.setItem(CUSTOMER_MOBILE_KEY, m);
+      setApiLogContext({ customerMobile: m });
     } catch (err) {
       const message = err instanceof Error ? err.message : "";
       if (message.toLowerCase().includes("not found")) {
@@ -89,6 +91,7 @@ export default function CartSheet({
         setShowMobileInput(false);
         setCoinsToUse(0);
         await AsyncStorage.setItem(CUSTOMER_MOBILE_KEY, m);
+        setApiLogContext({ customerMobile: m });
         return;
       }
       setCustomer(null);
@@ -369,6 +372,7 @@ export default function CartSheet({
                               setLoyaltyError(null);
                               AsyncStorage.removeItem(CUSTOMER_MOBILE_KEY);
                               AsyncStorage.removeItem(LAST_ORDER_ID_KEY);
+                              setApiLogContext({ customerMobile: null, lastOrderId: null });
                             }}
                           >
                             <Text className="text-amber-600 text-xs font-sans-medium">Change</Text>

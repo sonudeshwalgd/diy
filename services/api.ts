@@ -1,4 +1,6 @@
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || "http://localhost:5001/api";
+import { apiFetch, ApiError } from "./apiClient";
+
+export { ApiError };
 export const ADMIN_MOBILE = process.env.EXPO_PUBLIC_ADMIN_MOBILE || "";
 export const COIN_EARN_RATE = Number(process.env.EXPO_PUBLIC_COIN_EARN_RATE || 5);
 export const FEEDBACK_POINTS = Number(process.env.EXPO_PUBLIC_FEEDBACK_POINTS || 5);
@@ -141,7 +143,7 @@ export interface PopularItemsResponse {
 }
 
 export const getDisabledItems = async (): Promise<DisabledItemsResponse> => {
-  const res = await fetch(`${API_BASE}/items/disabled`);
+  const res = await apiFetch("/items/disabled");
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.error || "Failed to fetch disabled items");
@@ -150,7 +152,7 @@ export const getDisabledItems = async (): Promise<DisabledItemsResponse> => {
 };
 
 export const verifyStaffKey = async (staffKey: string): Promise<boolean> => {
-  const res = await fetch(`${API_BASE}/items/disabled/verify`, {
+  const res = await apiFetch("/items/disabled/verify", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ staffKey }),
@@ -166,7 +168,7 @@ export const saveDisabledItems = async (
   itemIds: string[],
   staffKey: string
 ): Promise<DisabledItemsResponse> => {
-  const res = await fetch(`${API_BASE}/items/disabled`, {
+  const res = await apiFetch("/items/disabled", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ itemIds, staffKey }),
@@ -179,7 +181,7 @@ export const saveDisabledItems = async (
 };
 
 export const placeOrder = async (payload: PlaceOrderPayload): Promise<PlaceOrderResponse> => {
-  const res = await fetch(`${API_BASE}/orders`, {
+  const res = await apiFetch("/orders", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ ...payload, coinEarnRate: COIN_EARN_RATE }),
@@ -192,7 +194,7 @@ export const placeOrder = async (payload: PlaceOrderPayload): Promise<PlaceOrder
 };
 
 export const getCustomer = async (mobile: string): Promise<CustomerInfo> => {
-  const res = await fetch(`${API_BASE}/customer/${mobile}`);
+  const res = await apiFetch(`/customer/${mobile}`);
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.error || "Customer not found");
@@ -201,7 +203,7 @@ export const getCustomer = async (mobile: string): Promise<CustomerInfo> => {
 };
 
 export const getOrderHistory = async (mobile: string): Promise<OrderHistoryResponse> => {
-  const res = await fetch(`${API_BASE}/orders/${mobile}`);
+  const res = await apiFetch(`/orders/${mobile}`);
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.error || "Failed to fetch orders");
@@ -212,7 +214,7 @@ export const getOrderHistory = async (mobile: string): Promise<OrderHistoryRespo
 export const getTodaysOrders = async (
   staffKey: string
 ): Promise<AdminOrdersResponse> => {
-  const res = await fetch(`${API_BASE}/orders`, {
+  const res = await apiFetch("/orders", {
     cache: "no-store",
     headers: { "x-staff-key": staffKey },
   });
@@ -230,8 +232,8 @@ export const updateOrderStatus = async (
   staffKey: string,
   status: OrderStatus
 ): Promise<{ order: AdminOrder }> => {
-  const res = await fetch(
-    `${API_BASE}/orders/${encodeURIComponent(orderId)}/status`,
+  const res = await apiFetch(
+    `/orders/${encodeURIComponent(orderId)}/status`,
     {
       method: "PATCH",
       headers: {
@@ -248,18 +250,8 @@ export const updateOrderStatus = async (
   return res.json();
 };
 
-export class ApiError extends Error {
-  status: number;
-
-  constructor(message: string, status: number) {
-    super(message);
-    this.name = "ApiError";
-    this.status = status;
-  }
-}
-
 export const getOrderById = async (orderId: string): Promise<SingleOrderResponse> => {
-  const res = await fetch(`${API_BASE}/order/${encodeURIComponent(orderId)}`);
+  const res = await apiFetch(`/order/${encodeURIComponent(orderId)}`);
   if (!res.ok) {
     const err = await res.json();
     throw new ApiError(err.error || "Failed to fetch order", res.status);
@@ -268,7 +260,7 @@ export const getOrderById = async (orderId: string): Promise<SingleOrderResponse
 };
 
 export const getPopularItems = async (): Promise<PopularItemsResponse> => {
-  const res = await fetch(`${API_BASE}/orders/popular`);
+  const res = await apiFetch("/orders/popular");
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.error || "Failed to fetch popular items");
@@ -281,7 +273,7 @@ export const redeemCoinsAPI = async (
   coinsToUse: number,
   orderTotal: number
 ): Promise<RedeemResponse> => {
-  const res = await fetch(`${API_BASE}/redeem-coins`, {
+  const res = await apiFetch("/redeem-coins", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ mobileNumber, coinsToUse, orderTotal }),
@@ -296,7 +288,7 @@ export const redeemCoinsAPI = async (
 export const submitFeedback = async (
   payload: FeedbackPayload
 ): Promise<FeedbackResponse> => {
-  const res = await fetch(`${API_BASE}/feedback`, {
+  const res = await apiFetch("/feedback", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ ...payload, feedbackPoints: FEEDBACK_POINTS }),
@@ -313,7 +305,7 @@ export const getAllFeedback = async (customerMobile?: string): Promise<FeedbackL
   if (ADMIN_MOBILE) params.set("adminMobile", ADMIN_MOBILE);
   if (customerMobile) params.set("customerMobile", customerMobile);
   const query = params.toString();
-  const res = await fetch(`${API_BASE}/zxcvbnm55${query ? `?${query}` : ""}`);
+  const res = await apiFetch(`/zxcvbnm55${query ? `?${query}` : ""}`);
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.error || "Failed to fetch feedback");

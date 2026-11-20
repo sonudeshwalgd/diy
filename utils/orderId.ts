@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getOrderById } from "../services/api";
+import { setApiLogContext } from "../services/apiLogStore";
 
 export const CUSTOMER_MOBILE_KEY = "diy_customer_mobile";
 export const LAST_ORDER_ID_KEY = "diy_last_order_id";
@@ -39,6 +40,7 @@ export async function saveLastOrderId(orderId: string): Promise<void> {
       await AsyncStorage.setItem(ORDER_IDS_KEY, JSON.stringify([...ids, id]));
     }
     await AsyncStorage.setItem(LAST_ORDER_ID_KEY, id);
+    setApiLogContext({ lastOrderId: id });
   } catch {
     return;
   }
@@ -67,6 +69,7 @@ export async function resolveCustomerMobile(): Promise<string | null> {
     const mobile = order.customerMobile?.trim();
     if (!mobile) return null;
     await AsyncStorage.setItem(CUSTOMER_MOBILE_KEY, mobile);
+    setApiLogContext({ customerMobile: mobile, lastOrderId: orderId });
     return mobile;
   } catch {
     return null;
