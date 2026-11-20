@@ -21,44 +21,40 @@ export default function FloatingCartBar({ onPress }: Props) {
   return (
     <Animated.View
       entering={FadeInDown.duration(350)}
-      className="absolute bottom-0 left-0 right-0 items-center px-4 pb-5 pt-6"
-      style={{ alignItems: "center" }}
+      style={{ width: "100%", maxWidth: 640, alignSelf: "center" }}
     >
       <BlurView
         intensity={60}
         tint="light"
         experimentalBlurMethod="dimezisBlurView"
-        className="rounded-3xl overflow-hidden"
+        className="rounded-[30px] overflow-hidden border border-white/70"
         style={{
-          width: "100%",
-          maxWidth: 640,
-          alignSelf: "center",
           shadowColor: "#000",
-          shadowOffset: { width: 0, height: 6 },
-          shadowOpacity: 0.15,
-          shadowRadius: 16,
-          elevation: 10,
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.16,
+          shadowRadius: 18,
+          elevation: 12,
         }}
       >
-        <View className="bg-white/85">
+        <View className="bg-white/85 rounded-[30px]">
           <Pressable
             onPress={onPress}
-            className="rounded-3xl px-4 py-3 flex-row items-center gap-3"
+            className="rounded-[30px] px-4 py-3 flex-row items-center gap-3"
+            accessibilityLabel="Place order"
           >
-            {/* Category icons */}
             <View className="flex-row">
               {uniqueCategories.map((cat, i) => (
                 <Image
                   key={cat.id}
                   source={cat.image}
                   style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 18,
+                    width: 38,
+                    height: 38,
+                    borderRadius: 19,
                     borderWidth: 2,
                     borderColor: "white",
                     backgroundColor: "#F5F5F4",
-                    marginLeft: i > 0 ? -8 : 0,
+                    marginLeft: i > 0 ? -9 : 0,
                     zIndex: uniqueCategories.length - i,
                   }}
                   resizeMode="cover"
@@ -66,7 +62,6 @@ export default function FloatingCartBar({ onPress }: Props) {
               ))}
             </View>
 
-            {/* Item count + total */}
             <View className="flex-1 ml-1">
               <Text className="text-stone-500 text-xs font-sans-medium">
                 {itemCount} {itemCount === 1 ? "item" : "items"}
@@ -76,18 +71,17 @@ export default function FloatingCartBar({ onPress }: Props) {
               </Text>
             </View>
 
-            {/* Place Order button */}
             <LinearGradient
               colors={["#FB923C", "#EA580C"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={{
-                borderRadius: 16,
+                borderRadius: 20,
                 flexDirection: "row",
                 alignItems: "center",
                 gap: 6,
                 paddingHorizontal: 16,
-                paddingVertical: 10,
+                paddingVertical: 11,
               }}
             >
               <Ionicons name="cart-outline" size={16} color="white" />

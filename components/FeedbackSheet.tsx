@@ -30,9 +30,11 @@ export default function FeedbackSheet({
 
   useEffect(() => {
     if (visible) {
-      setRating(0);
-      setMessage("");
-      setSubmitted(false);
+      void Promise.resolve().then(() => {
+        setRating(0);
+        setMessage("");
+        setSubmitted(false);
+      });
     }
   }, [visible]);
 

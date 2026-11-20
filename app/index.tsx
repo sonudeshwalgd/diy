@@ -24,12 +24,15 @@ import IceCreamSheet from "../components/IceCreamSheet";
 import OrderBottomSheet, { PHONE_NUMBER } from "../components/OrderBottomSheet";
 import BannerCarousel from "../components/BannerCarousel";
 import FloatingCartBar from "../components/FloatingCartBar";
+import ActiveOrdersWidget from "../components/ActiveOrdersWidget";
+import ActiveOrderDetailsSheet from "../components/ActiveOrderDetailsSheet";
 import WifiBottomSheet from "../components/WifiBottomSheet";
 import OrderHistoryModal from "../components/OrderHistoryModal";
 import Sidebar from "../components/Sidebar";
 import MenuSortSheet from "../components/MenuSortSheet";
 import { useCart } from "../context/CartContext";
 import { useDisabledItems } from "../context/DisabledItemsContext";
+import { useActiveOrders } from "../context/ActiveOrdersContext";
 import { getCustomer, getPopularItems } from "../services/api";
 import {
   GRID_GAP,
@@ -433,6 +436,7 @@ export default function HomeScreen() {
   const [historyVisible, setHistoryVisible] = useState(false);
   const [feedbackVisible, setFeedbackVisible] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [menuSort, setMenuSort] = useState<MenuSortId>("all");
   const [sortVisible, setSortVisible] = useState(false);
   const [popularity, setPopularity] = useState<Record<string, number>>({});
@@ -459,6 +463,7 @@ export default function HomeScreen() {
   const insideRestaurant = orderSource.insideRestaurant;
   const sourceLabel = orderSource.sourceLabel;
   const { itemCount } = useCart();
+  const { activeOrders } = useActiveOrders();
   const { isItemDisabled } = useDisabledItems();
   const { columns } = useResponsiveLayout();
 
@@ -544,17 +549,6 @@ export default function HomeScreen() {
     setSelectedCategory(category);
     setSubcatVisible(true);
   }, []);
-
-  const handleSidebarCategorySelect = useCallback(
-    (category: Category) => {
-      setSidebarVisible(false);
-      setTimeout(() => {
-        setSelectedCategory(category);
-        setSubcatVisible(true);
-      }, 260);
-    },
-    []
-  );
 
   const handleComboPress = useCallback((combo: Combo) => {
     setSelectedCombo(combo);
@@ -652,7 +646,7 @@ export default function HomeScreen() {
                 <Pressable
                   onPress={() => setSidebarVisible(true)}
                   className="p-2.5 bg-white/70 border border-white/80 rounded-full active:opacity-80"
-                  accessibilityLabel="Open category menu"
+                  accessibilityLabel="Open orders"
                 >
                   <Ionicons name="menu" size={20} color="#EA580C" />
                 </Pressable>
@@ -818,12 +812,25 @@ export default function HomeScreen() {
             />
           )
         }
-        contentContainerStyle={{ paddingBottom: 120 }}
+        contentContainerStyle={{
+          paddingBottom:
+            activeOrders.length > 0 ? (itemCount > 0 ? 205 : 155) : itemCount > 0 ? 110 : 120,
+        }}
         showsVerticalScrollIndicator={false}
       />
 
-      {/* Floating cart bar */}
-      <FloatingCartBar onPress={() => setCartVisible(true)} />
+      {/* Floating bars: active orders above, cart with Place Order always visible */}
+      <View
+        className="absolute bottom-0 left-0 right-0 px-4 pb-4 pt-3"
+        style={{ gap: 8 }}
+        pointerEvents="box-none"
+      >
+        <ActiveOrdersWidget
+          compact={itemCount > 0}
+          onOpenOrder={setSelectedOrderId}
+        />
+        <FloatingCartBar onPress={() => setCartVisible(true)} />
+      </View>
 
       {/* Bottom sheets */}
       {selectedCategory?.id === "ice-cream" ? (
@@ -894,11 +901,16 @@ export default function HomeScreen() {
         onClose={() => setSortVisible(false)}
       />
 
+      <ActiveOrderDetailsSheet
+        visible={!!selectedOrderId}
+        orderId={selectedOrderId}
+        onClose={() => setSelectedOrderId(null)}
+      />
+
       <Sidebar
         visible={sidebarVisible}
-        categories={categories}
         onClose={() => setSidebarVisible(false)}
-        onSelectCategory={handleSidebarCategorySelect}
+        onOpenOrder={setSelectedOrderId}
       />
     </View>
   );

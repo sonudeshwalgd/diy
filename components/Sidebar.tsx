@@ -1,9 +1,23 @@
-import { Image, Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { useEffect } from "react";
+import {
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { SlideInRight } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import Constants from "expo-constants";
-import type { Category } from "../data/products";
+import { useActiveOrders } from "../context/ActiveOrdersContext";
+import type { AdminOrder } from "../services/api";
+import {
+  formatOrderDate,
+  formatOrderItems,
+  getOrderDisplayId,
+} from "../utils/orderDisplay";
 import { PHONE_NUMBER } from "./OrderBottomSheet";
 
 const CONTACT_NUMBER = `+${PHONE_NUMBER.slice(0, 2)} ${PHONE_NUMBER.slice(
@@ -12,42 +26,54 @@ const CONTACT_NUMBER = `+${PHONE_NUMBER.slice(0, 2)} ${PHONE_NUMBER.slice(
 )} ${PHONE_NUMBER.slice(7)}`;
 const APP_VERSION = Constants.expoConfig?.version ?? "1.2.3";
 
-const SIDEBAR_ITEMS = [
-  { id: "strawberry-glass", label: "Strawberry Chocolate Glass" },
-  { id: "strawberry-crusher", label: "Strawberry Chocolate Crusher" },
-  { id: "waffles", label: "Waffles" },
-  { id: "pancakes", label: "Pancakes" },
-  { id: "tiramisu", label: "Tiramisu" },
-  { id: "churros", label: "Churros" },
-  { id: "ice-cream", label: "Ice Cream" },
-  { id: "mojitos", label: "Mojitos" },
-  { id: "hot-chocolate", label: "Hot Chocolate" },
-  { id: "cold-coffee", label: "Cold Coffee" },
-  { id: "corn", label: "Corn" },
-  { id: "french-fries", label: "French Fries" },
-  { id: "sandwiches", label: "Sandwiches" },
-  { id: "burgers", label: "Burgers" },
-];
-
 interface Props {
   visible: boolean;
-  categories: Category[];
   onClose: () => void;
-  onSelectCategory: (category: Category) => void;
+  onOpenOrder: (orderId: string) => void;
 }
 
-export default function Sidebar({
-  visible,
-  categories,
-  onClose,
-  onSelectCategory,
-}: Props) {
-  const items = SIDEBAR_ITEMS.map((item) => ({
-    ...item,
-    category: categories.find((category) => category.id === item.id),
-  })).filter(
-    (item): item is typeof item & { category: Category } =>
-      Boolean(item.category)
+export default function Sidebar({ visible, onClose, onOpenOrder }: Props) {
+  const { activeOrders, isSyncing, lastSyncedAt, syncOrders } =
+    useActiveOrders();
+
+  useEffect(() => {
+    if (visible) void syncOrders(true);
+  }, [visible, syncOrders]);
+
+  const renderOrder = (order: AdminOrder) => (
+    <Pressable
+      key={order.orderId || order._id}
+      onPress={() => onOpenOrder(order.orderId || order._id)}
+      className="bg-white rounded-[22px] px-3 py-2.5 mb-2 border border-stone-100 active:opacity-80"
+    >
+      <View className="flex-row items-center justify-between gap-2">
+        <Text
+          className="text-[13px] font-sans-extrabold text-stone-800 flex-1"
+          numberOfLines={1}
+        >
+          {getOrderDisplayId(order)}
+        </Text>
+        <View className="bg-emerald-50 rounded-full px-2 py-0.5">
+          <Text className="text-[9px] font-sans-bold text-emerald-700 capitalize">
+            {order.orderStatus}
+          </Text>
+        </View>
+      </View>
+      <Text
+        className="text-[11px] text-stone-500 font-sans-medium mt-1"
+        numberOfLines={2}
+      >
+        {formatOrderItems(order.items)}
+      </Text>
+      <View className="flex-row items-center justify-between mt-1.5">
+        <Text className="text-sm font-sans-extrabold text-orange-600">
+          ₹{order.finalAmount}
+        </Text>
+        <Text className="text-[10px] text-stone-400 font-sans-medium">
+          {formatOrderDate(order.createdAt)}
+        </Text>
+      </View>
+    </Pressable>
   );
 
   return (
@@ -88,19 +114,37 @@ export default function Sidebar({
             >
               <View>
                 <Text className="text-xl font-sans-extrabold text-stone-900 tracking-tight">
-                  Categories
+                  Your Orders
                 </Text>
                 <Text className="text-xs text-stone-500 font-sans-medium mt-0.5">
-                  Jump to a menu section
+                  {isSyncing
+                    ? "Syncing with server..."
+                    : lastSyncedAt
+                      ? "Up to date"
+                      : "Track your active orders"}
                 </Text>
               </View>
-              <Pressable
-                onPress={onClose}
-                className="p-2 rounded-full bg-stone-100 active:opacity-80"
-                accessibilityLabel="Close sidebar"
-              >
-                <Ionicons name="close" size={20} color="#57534E" />
-              </Pressable>
+              <View className="flex-row items-center gap-1">
+                <Pressable
+                  onPress={() => void syncOrders(true)}
+                  disabled={isSyncing}
+                  className="p-2 rounded-full bg-stone-100 active:opacity-80"
+                  accessibilityLabel="Refresh orders"
+                >
+                  {isSyncing ? (
+                    <ActivityIndicator size={16} color="#EA580C" />
+                  ) : (
+                    <Ionicons name="refresh" size={18} color="#EA580C" />
+                  )}
+                </Pressable>
+                <Pressable
+                  onPress={onClose}
+                  className="p-2 rounded-full bg-stone-100 active:opacity-80"
+                  accessibilityLabel="Close sidebar"
+                >
+                  <Ionicons name="close" size={20} color="#57534E" />
+                </Pressable>
+              </View>
             </View>
 
             <ScrollView
@@ -108,38 +152,27 @@ export default function Sidebar({
               contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12 }}
               showsVerticalScrollIndicator
             >
-              {items.map((item) => (
-                <Pressable
-                  key={item.id}
-                  onPress={() => onSelectCategory(item.category)}
-                  className="flex-row items-center gap-3 px-3 py-2.5 mb-2 rounded-2xl bg-stone-50 border border-stone-100 active:opacity-80"
-                >
-                  <View className="w-10 h-10 rounded-xl overflow-hidden bg-stone-100 items-center justify-center">
-                    {item.category.image ? (
-                      <Image
-                        source={item.category.image}
-                        style={{ width: "100%", height: "100%" }}
-                        resizeMode="contain"
-                      />
-                    ) : (
-                      <Ionicons
-                        name="restaurant-outline"
-                        size={18}
-                        color="#A8A29E"
-                      />
-                    )}
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-[15px] font-sans-semibold text-stone-800">
-                      {item.label}
-                    </Text>
-                    <Text className="text-[11px] text-stone-500 font-sans-medium mt-0.5">
-                      {item.category.subcategories.length} items
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={16} color="#A8A29E" />
-                </Pressable>
-              ))}
+              {isSyncing && activeOrders.length === 0 ? (
+                <View className="items-center py-14">
+                  <ActivityIndicator size="large" color="#EA580C" />
+                  <Text className="text-stone-400 text-sm mt-3">
+                    Loading your orders...
+                  </Text>
+                </View>
+              ) : activeOrders.length === 0 ? (
+                <View className="items-center py-14 px-4">
+                  <Ionicons name="receipt-outline" size={48} color="#D6D3D1" />
+                  <Text className="text-stone-500 text-sm font-sans-semibold mt-3 text-center">
+                    No active orders
+                  </Text>
+                  <Text className="text-stone-400 text-xs font-sans-medium mt-1 text-center">
+                    Orders you place will appear here until they are delivered or
+                    cancelled.
+                  </Text>
+                </View>
+              ) : (
+                activeOrders.map(renderOrder)
+              )}
             </ScrollView>
 
             <View

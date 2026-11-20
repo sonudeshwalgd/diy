@@ -248,11 +248,21 @@ export const updateOrderStatus = async (
   return res.json();
 };
 
+export class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
 export const getOrderById = async (orderId: string): Promise<SingleOrderResponse> => {
-  const res = await fetch(`${API_BASE}/order/${orderId}`);
+  const res = await fetch(`${API_BASE}/order/${encodeURIComponent(orderId)}`);
   if (!res.ok) {
     const err = await res.json();
-    throw new Error(err.error || "Failed to fetch order");
+    throw new ApiError(err.error || "Failed to fetch order", res.status);
   }
   return res.json();
 };

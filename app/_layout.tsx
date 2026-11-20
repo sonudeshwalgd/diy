@@ -15,6 +15,7 @@ import {
 } from "@expo-google-fonts/plus-jakarta-sans";
 import { CartProvider } from "../context/CartContext";
 import { DisabledItemsProvider } from "../context/DisabledItemsContext";
+import { ActiveOrdersProvider } from "../context/ActiveOrdersContext";
 import VercelAnalytics from "../components/VercelAnalytics";
 
 SplashScreen.preventAutoHideAsync();
@@ -42,16 +43,18 @@ export default function RootLayout() {
     <GestureHandlerRootView className="flex-1">
       <CartProvider>
         <DisabledItemsProvider>
-          <VercelAnalytics />
-          <StatusBar style="dark" />
-          <Stack>
-            <Stack.Screen name="index" options={{ headerShown: false }} />
-            <Stack.Screen name="about" options={{ title: "About" }} />
-            <Stack.Screen name="privacy" options={{ title: "Privacy Policy" }} />
-            <Stack.Screen name="feedback" options={{ title: "Feedback", headerShown: false }} />
-            <Stack.Screen name="items/disabled" options={{ headerShown: false }} />
-            <Stack.Screen name="orders" options={{ headerShown: false }} />
-          </Stack>
+          <ActiveOrdersProvider>
+            <VercelAnalytics />
+            <StatusBar style="dark" />
+            <Stack>
+              <Stack.Screen name="index" options={{ headerShown: false }} />
+              <Stack.Screen name="about" options={{ title: "About" }} />
+              <Stack.Screen name="privacy" options={{ title: "Privacy Policy" }} />
+              <Stack.Screen name="feedback" options={{ title: "Feedback", headerShown: false }} />
+              <Stack.Screen name="items/disabled" options={{ headerShown: false }} />
+              <Stack.Screen name="orders" options={{ headerShown: false }} />
+            </Stack>
+          </ActiveOrdersProvider>
         </DisabledItemsProvider>
       </CartProvider>
     </GestureHandlerRootView>

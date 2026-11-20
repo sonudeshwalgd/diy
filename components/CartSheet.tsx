@@ -19,8 +19,8 @@ import {
   CUSTOMER_MOBILE_KEY,
   LAST_ORDER_ID_KEY,
   generateOrderId,
-  saveLastOrderId,
 } from "../utils/orderId";
+import { useActiveOrders } from "../context/ActiveOrdersContext";
 import { PHONE_NUMBER } from "./OrderBottomSheet";
 import {
   getCustomer,
@@ -51,6 +51,7 @@ export default function CartSheet({
 }: CartSheetProps) {
   const { items, total, itemCount, increment, decrement, removeItem, clearCart } =
     useCart();
+  const { rememberOrderId } = useActiveOrders();
 
   const [mobile, setMobile] = useState("");
   const [savedMobile, setSavedMobile] = useState<string | null>(null);
@@ -217,7 +218,7 @@ export default function CartSheet({
       return;
     }
 
-    await saveLastOrderId(orderId);
+    await rememberOrderId(orderId, result.order);
 
     if (result.idempotent) {
       clearCart();

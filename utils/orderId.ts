@@ -3,6 +3,7 @@ import { getOrderById } from "../services/api";
 
 export const CUSTOMER_MOBILE_KEY = "diy_customer_mobile";
 export const LAST_ORDER_ID_KEY = "diy_last_order_id";
+export const ORDER_IDS_KEY = "diy_order_ids";
 
 export function generateOrderId(): string {
   const now = new Date();
@@ -15,9 +16,40 @@ export function generateOrderId(): string {
   return `DIY-${date}-${suffix}`;
 }
 
-export async function saveLastOrderId(orderId: string): Promise<void> {
+export async function getStoredOrderIds(): Promise<string[]> {
   try {
-    await AsyncStorage.setItem(LAST_ORDER_ID_KEY, orderId);
+    const raw = await AsyncStorage.getItem(ORDER_IDS_KEY);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return Array.from(
+      new Set(parsed.filter((id): id is string => typeof id === "string" && !!id.trim()))
+    );
+  } catch {
+    return [];
+  }
+}
+
+export async function saveLastOrderId(orderId: string): Promise<void> {
+  const id = orderId.trim();
+  if (!id) return;
+  try {
+    const ids = await getStoredOrderIds();
+    if (!ids.includes(id)) {
+      await AsyncStorage.setItem(ORDER_IDS_KEY, JSON.stringify([...ids, id]));
+    }
+    await AsyncStorage.setItem(LAST_ORDER_ID_KEY, id);
+  } catch {
+    return;
+  }
+}
+
+export async function removeStoredOrderIds(orderIds: string[]): Promise<void> {
+  if (orderIds.length === 0) return;
+  try {
+    const remove = new Set(orderIds);
+    const ids = (await getStoredOrderIds()).filter((id) => !remove.has(id));
+    await AsyncStorage.setItem(ORDER_IDS_KEY, JSON.stringify(ids));
   } catch {
     return;
   }
