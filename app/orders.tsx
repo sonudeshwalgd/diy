@@ -20,6 +20,12 @@ import {
   type OrderStatus,
 } from "../services/api";
 import Sheet from "../components/Sheet";
+import {
+  formatOrderDuration,
+  getOrderElapsedMs,
+  isLateOrder,
+  orderProgressColor,
+} from "../utils/orderDisplay";
 
 const REFRESH_SECONDS = 30;
 const ALERT_DURATION_MS = 60_000;
@@ -264,6 +270,9 @@ function OrderDetailSheet({
 }) {
   if (!order) return null;
 
+  const elapsed = getOrderElapsedMs(order.createdAt);
+  const late = isLateOrder(order, elapsed);
+
   return (
     <Sheet visible={!!order} onClose={onClose} sheetStyle={{ maxHeight: "88%" }}>
       <ScrollView
@@ -275,7 +284,11 @@ function OrderDetailSheet({
             <Text className="text-lg font-sans-extrabold text-stone-900">
               {order.orderId || `#${order._id.slice(-6).toUpperCase()}`}
             </Text>
-            <Text className="text-[11px] text-stone-400 font-sans-medium mt-0.5">
+            <Text
+              className="text-[11px] font-sans-semibold mt-0.5"
+              style={{ color: orderProgressColor(elapsed) }}
+            >
+              Placed {formatOrderDuration(elapsed)} ago ·{" "}
               {new Date(order.createdAt).toLocaleString()}
             </Text>
           </View>
@@ -288,6 +301,13 @@ function OrderDetailSheet({
           <View className={`rounded-full px-2.5 py-1 ${statusStyle(order.orderStatus)}`}>
             <Text className="text-[10px] font-sans-bold capitalize">{order.orderStatus}</Text>
           </View>
+          {late ? (
+            <View className="bg-red-500 rounded-full px-2.5 py-1">
+              <Text className="text-[10px] font-sans-bold text-white">
+                Late · {formatOrderDuration(elapsed)}
+              </Text>
+            </View>
+          ) : null}
           <View className="bg-orange-50 rounded-full px-2.5 py-1">
             <Text className="text-[10px] font-sans-bold text-orange-700">
               {sourceLabel(order)}
@@ -742,17 +762,38 @@ export default function OrdersScreen() {
                 </Text>
               </View>
             ) : (
-              visibleOrders.map((order) => (
-                <View key={order._id} className="bg-white rounded-3xl p-4 mb-3 border border-white">
+              visibleOrders.map((order) => {
+                const elapsed = getOrderElapsedMs(order.createdAt);
+                const late = isLateOrder(order, elapsed);
+                return (
+                <View
+                  key={order._id}
+                  className={`bg-white rounded-3xl p-4 mb-3 border ${
+                    late ? "border-red-300" : "border-white"
+                  }`}
+                >
                   <View className="flex-row items-center justify-between">
                     <Text className="text-sm font-sans-extrabold text-stone-900">
                       {order.orderId || `#${order._id.slice(-6).toUpperCase()}`}
                     </Text>
-                    <View className={`rounded-full px-2.5 py-1 ${statusStyle(order.orderStatus)}`}>
-                      <Text className="text-[10px] font-sans-bold capitalize">{order.orderStatus}</Text>
+                    <View className="flex-row items-center gap-1.5">
+                      <View className={`rounded-full px-2.5 py-1 ${statusStyle(order.orderStatus)}`}>
+                        <Text className="text-[10px] font-sans-bold capitalize">
+                          {order.orderStatus}
+                        </Text>
+                      </View>
+                      {late ? (
+                        <View className="bg-red-500 rounded-full px-2 py-1">
+                          <Text className="text-[10px] font-sans-bold text-white">Late</Text>
+                        </View>
+                      ) : null}
                     </View>
                   </View>
-                  <Text className="text-[11px] text-stone-400 font-sans-medium mt-1">
+                  <Text
+                    className="text-[11px] font-sans-semibold mt-1"
+                    style={{ color: orderProgressColor(elapsed) }}
+                  >
+                    Placed {formatOrderDuration(elapsed)} ago ·{" "}
                     {new Date(order.createdAt).toLocaleString()}
                   </Text>
                   <View className="flex-row items-center gap-2 mt-2 flex-wrap">
@@ -824,7 +865,8 @@ export default function OrdersScreen() {
                     <Text className="text-xs font-sans-bold text-orange-700">View full details</Text>
                   </Pressable>
                 </View>
-              ))
+                );
+              })
             )}
           </View>
         </ScrollView>

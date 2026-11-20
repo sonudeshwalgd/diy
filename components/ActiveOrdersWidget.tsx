@@ -23,14 +23,13 @@ import {
   formatOrderDate,
   formatOrderItems,
   getOrderDisplayId,
+  LATE_ORDER_AFTER_MS,
 } from "../utils/orderDisplay";
 import Sheet from "./Sheet";
 
 interface Props {
   onOpenOrder: (orderId: string) => void;
 }
-
-const PROGRESS_DURATION_MS = 10 * 60 * 1000;
 
 function orderFetchId(order: AdminOrder): string {
   return order.orderId || order._id;
@@ -49,8 +48,8 @@ export default function ActiveOrdersWidget({ onOpenOrder }: Props) {
     const elapsed = Number.isFinite(createdAt)
       ? Math.max(0, Date.now() - createdAt)
       : 0;
-    const initial = Math.min(1, elapsed / PROGRESS_DURATION_MS);
-    const remaining = Math.max(0, PROGRESS_DURATION_MS - elapsed);
+    const initial = Math.min(1, elapsed / LATE_ORDER_AFTER_MS);
+    const remaining = Math.max(0, LATE_ORDER_AFTER_MS - elapsed);
 
     cancelAnimation(progress);
     progress.value = initial;
@@ -73,6 +72,7 @@ export default function ActiveOrdersWidget({ onOpenOrder }: Props) {
 
   const progressStyle = useAnimatedStyle(() => ({
     width: `${Math.min(1, Math.max(0, progress.value)) * 100}%`,
+    backgroundColor: "#10B981",
   }));
 
   const shimmerStyle = useAnimatedStyle(() => ({
@@ -165,24 +165,25 @@ export default function ActiveOrdersWidget({ onOpenOrder }: Props) {
                   {
                     height: 3,
                     borderRadius: 999,
-                    backgroundColor: "#10B981",
+                    overflow: "hidden",
                   },
                   progressStyle,
                 ]}
-              />
-              <Animated.View
-                style={[
-                  {
-                    position: "absolute",
-                    top: 0,
-                    height: 3,
-                    width: "35%",
-                    borderRadius: 999,
-                    backgroundColor: "rgba(255,255,255,0.7)",
-                  },
-                  shimmerStyle,
-                ]}
-              />
+              >
+                <Animated.View
+                  style={[
+                    {
+                      position: "absolute",
+                      top: 0,
+                      height: 3,
+                      width: "35%",
+                      borderRadius: 999,
+                      backgroundColor: "#6EE7B7",
+                    },
+                    shimmerStyle,
+                  ]}
+                />
+              </Animated.View>
             </View>
           </View>
         </BlurView>
@@ -215,38 +216,40 @@ export default function ActiveOrdersWidget({ onOpenOrder }: Props) {
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24 }}
           showsVerticalScrollIndicator={false}
         >
-          {activeOrders.map((order) => (
-            <Pressable
-              key={orderFetchId(order)}
-              onPress={() => openOrder(order)}
-              className="bg-white rounded-[22px] border border-stone-100 p-3 mb-2 active:opacity-80"
-            >
-              <View className="flex-row items-center justify-between gap-2">
-                <Text
-                  className="text-sm font-sans-extrabold text-stone-800 flex-1"
-                  numberOfLines={1}
-                >
-                  {getOrderDisplayId(order)}
+          {activeOrders.map((order) => {
+            return (
+              <Pressable
+                key={orderFetchId(order)}
+                onPress={() => openOrder(order)}
+                className="bg-white rounded-[22px] border border-stone-100 p-3 mb-2 active:opacity-80"
+              >
+                <View className="flex-row items-center justify-between gap-2">
+                  <Text
+                    className="text-sm font-sans-extrabold text-stone-800 flex-1"
+                    numberOfLines={1}
+                  >
+                    {getOrderDisplayId(order)}
+                  </Text>
+                  <View className="bg-emerald-50 rounded-full px-2 py-0.5">
+                    <Text className="text-[10px] font-sans-bold text-emerald-700 capitalize">
+                      {order.orderStatus}
+                    </Text>
+                  </View>
+                </View>
+                <Text className="text-xs text-stone-500 font-sans-medium mt-1">
+                  {formatOrderItems(order.items)}
                 </Text>
-                <View className="bg-emerald-50 rounded-full px-2 py-0.5">
-                  <Text className="text-[10px] font-sans-bold text-emerald-700 capitalize">
-                    {order.orderStatus}
+                <View className="flex-row items-center justify-between mt-2">
+                  <Text className="text-sm font-sans-extrabold text-orange-600">
+                    ₹{order.finalAmount}
+                  </Text>
+                  <Text className="text-[10px] text-stone-400 font-sans-medium">
+                    {formatOrderDate(order.createdAt)}
                   </Text>
                 </View>
-              </View>
-              <Text className="text-xs text-stone-500 font-sans-medium mt-1">
-                {formatOrderItems(order.items)}
-              </Text>
-              <View className="flex-row items-center justify-between mt-2">
-                <Text className="text-sm font-sans-extrabold text-orange-600">
-                  ₹{order.finalAmount}
-                </Text>
-                <Text className="text-[10px] text-stone-400 font-sans-medium">
-                  {formatOrderDate(order.createdAt)}
-                </Text>
-              </View>
-            </Pressable>
-          ))}
+              </Pressable>
+            );
+          })}
         </ScrollView>
       </Sheet>
     </>
