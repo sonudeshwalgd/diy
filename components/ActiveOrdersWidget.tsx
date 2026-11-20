@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -8,7 +8,15 @@ import {
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
-import Animated, { FadeInDown } from "react-native-reanimated";
+import Animated, {
+  cancelAnimation,
+  Easing,
+  FadeInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from "react-native-reanimated";
 import { useActiveOrders } from "../context/ActiveOrdersContext";
 import type { AdminOrder } from "../services/api";
 import {
@@ -19,21 +27,60 @@ import {
 import Sheet from "./Sheet";
 
 interface Props {
-  compact?: boolean;
   onOpenOrder: (orderId: string) => void;
 }
+
+const PROGRESS_DURATION_MS = 10 * 60 * 1000;
 
 function orderFetchId(order: AdminOrder): string {
   return order.orderId || order._id;
 }
 
-export default function ActiveOrdersWidget({ compact = false, onOpenOrder }: Props) {
+export default function ActiveOrdersWidget({ onOpenOrder }: Props) {
   const { activeOrders, isSyncing, syncOrders } = useActiveOrders();
   const [listVisible, setListVisible] = useState(false);
+  const progress = useSharedValue(0);
+  const shimmer = useSharedValue(0);
+  const latestCreatedAt = activeOrders[0]?.createdAt ?? null;
+
+  useEffect(() => {
+    if (!latestCreatedAt) return;
+    const createdAt = Date.parse(latestCreatedAt);
+    const elapsed = Number.isFinite(createdAt)
+      ? Math.max(0, Date.now() - createdAt)
+      : 0;
+    const initial = Math.min(1, elapsed / PROGRESS_DURATION_MS);
+    const remaining = Math.max(0, PROGRESS_DURATION_MS - elapsed);
+
+    cancelAnimation(progress);
+    progress.value = initial;
+    if (remaining > 0) {
+      progress.value = withTiming(1, {
+        duration: remaining,
+        easing: Easing.linear,
+      });
+    }
+  }, [latestCreatedAt, progress]);
+
+  useEffect(() => {
+    shimmer.value = withRepeat(
+      withTiming(1, { duration: 1600, easing: Easing.linear }),
+      -1,
+      false,
+    );
+    return () => cancelAnimation(shimmer);
+  }, [shimmer]);
+
+  const progressStyle = useAnimatedStyle(() => ({
+    width: `${Math.min(1, Math.max(0, progress.value)) * 100}%`,
+  }));
+
+  const shimmerStyle = useAnimatedStyle(() => ({
+    left: `${shimmer.value * 100}%`,
+  }));
 
   if (activeOrders.length === 0) return null;
 
-  const visibleOrders = activeOrders.slice(0, 3);
   const latest = activeOrders[0];
 
   const openOrder = (order: AdminOrder) => {
@@ -51,137 +98,92 @@ export default function ActiveOrdersWidget({ compact = false, onOpenOrder }: Pro
           intensity={60}
           tint="light"
           experimentalBlurMethod="dimezisBlurView"
-          className="rounded-[30px] overflow-hidden border border-white/70"
+          className="rounded-[26px] overflow-hidden border border-white/70"
           style={{
             shadowColor: "#000",
-            shadowOffset: { width: 0, height: 8 },
+            shadowOffset: { width: 0, height: 6 },
             shadowOpacity: 0.14,
-            shadowRadius: 18,
-            elevation: 12,
+            shadowRadius: 16,
+            elevation: 11,
           }}
         >
-          <View className="bg-white/85 rounded-[30px] px-3.5 py-2.5">
-            <View className="flex-row items-center gap-2">
-              <Pressable
-                onPress={() => setListVisible(true)}
-                className="flex-row items-center gap-2 flex-1"
-                accessibilityLabel="View active orders"
-              >
-                <View className="bg-emerald-100 rounded-[12px] w-8 h-8 items-center justify-center">
-                  <Ionicons name="bag-handle" size={16} color="#047857" />
-                </View>
-                <View className="flex-1">
-                  <View className="flex-row items-center gap-1.5">
-                    <Text className="text-[13px] font-sans-extrabold text-stone-800">
-                      Active orders
-                    </Text>
-                    <View className="bg-emerald-600 rounded-full min-w-5 px-1.5 py-0.5 items-center">
-                      <Text className="text-[10px] font-sans-bold text-white">
-                        {activeOrders.length}
-                      </Text>
-                    </View>
-                  </View>
-                  {compact && (
-                    <Text className="text-[10px] text-stone-500 font-sans-medium" numberOfLines={1}>
-                      {getOrderDisplayId(latest)} · {formatOrderItems(latest.items)}
-                    </Text>
-                  )}
-                </View>
-              </Pressable>
-
-              <Pressable
-                onPress={() => void syncOrders(true)}
-                disabled={isSyncing}
-                className="w-8 h-8 rounded-full bg-stone-100 items-center justify-center active:opacity-70"
-                accessibilityLabel="Refresh active orders"
-              >
-                {isSyncing ? (
-                  <ActivityIndicator size={14} color="#EA580C" />
-                ) : (
-                  <Ionicons name="refresh" size={14} color="#EA580C" />
-                )}
-              </Pressable>
-              <Pressable
-                onPress={() => setListVisible(true)}
-                className="w-8 h-8 rounded-full bg-stone-100 items-center justify-center active:opacity-70"
-                accessibilityLabel="Open active orders list"
-              >
-                <Ionicons name="chevron-forward" size={16} color="#57534E" />
-              </Pressable>
-            </View>
-
-            {compact ? (
-              <Pressable
-                onPress={() => openOrder(latest)}
-                className="mt-2 rounded-[20px] bg-white px-3 py-2 flex-row items-center gap-2 active:opacity-80"
-              >
-                <View className="rounded-full bg-emerald-50 px-2 py-0.5">
-                  <Text className="text-[9px] font-sans-bold text-emerald-700 capitalize">
-                    {latest.orderStatus}
+          <View className="bg-white/85 rounded-[26px] overflow-hidden px-3 py-2 pb-3.5 flex-row items-center gap-2">
+            <Pressable
+              onPress={() => setListVisible(true)}
+              className="flex-row items-center gap-2 flex-1"
+              accessibilityLabel="View active order details"
+            >
+              <View className="w-8 h-8 rounded-[12px] bg-emerald-100 items-center justify-center">
+                <Ionicons name="bag-handle" size={16} color="#047857" />
+              </View>
+              <View className="flex-1">
+                <View className="flex-row items-center gap-1.5">
+                  <Text className="text-[12px] font-sans-extrabold text-stone-800">
+                    {activeOrders.length === 1 ? "Active order" : "Active orders"}
                   </Text>
-                </View>
-                <Text className="text-xs font-sans-extrabold text-orange-600">
-                  ₹{latest.finalAmount}
-                </Text>
-                <Text className="text-[9px] text-stone-400 font-sans-medium ml-auto">
-                  {formatOrderDate(latest.createdAt)}
-                </Text>
-              </Pressable>
-            ) : (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ gap: 8, marginTop: 8 }}
-              >
-                {visibleOrders.map((order) => (
-                  <Pressable
-                    key={orderFetchId(order)}
-                    onPress={() => openOrder(order)}
-                    className="bg-white border border-stone-100 rounded-[20px] px-3 py-2 active:opacity-80"
-                    style={{ width: 230 }}
-                  >
-                    <View className="flex-row items-center justify-between gap-1">
-                      <Text
-                        className="text-[11px] font-sans-extrabold text-stone-800 flex-1"
-                        numberOfLines={1}
-                      >
-                        {getOrderDisplayId(order)}
-                      </Text>
-                      <View className="bg-emerald-50 rounded-full px-1.5 py-0.5">
-                        <Text className="text-[9px] font-sans-bold text-emerald-700 capitalize">
-                          {order.orderStatus}
-                        </Text>
-                      </View>
-                    </View>
-                    <Text
-                      className="text-[10px] text-stone-500 font-sans-medium mt-1"
-                      numberOfLines={2}
-                    >
-                      {formatOrderItems(order.items)}
+                  <View className="bg-emerald-600 rounded-full min-w-[18px] px-1 py-[1px] items-center">
+                    <Text className="text-[9px] font-sans-bold text-white">
+                      {activeOrders.length}
                     </Text>
-                    <View className="flex-row items-center justify-between mt-1">
-                      <Text className="text-sm font-sans-extrabold text-orange-600">
-                        ₹{order.finalAmount}
-                      </Text>
-                      <Text className="text-[9px] text-stone-400 font-sans-medium">
-                        {formatOrderDate(order.createdAt)}
-                      </Text>
-                    </View>
-                  </Pressable>
-                ))}
-              </ScrollView>
-            )}
-
-            {activeOrders.length > 3 && (
-              <Pressable
-                onPress={() => setListVisible(true)}
-                className="mt-2 items-center"
-              >
-                <Text className="text-[11px] font-sans-bold text-orange-600">
-                  View all {activeOrders.length} orders
+                  </View>
+                  <View className="bg-emerald-50 rounded-full px-1.5 py-[1px]">
+                    <Text className="text-[9px] font-sans-bold text-emerald-700 capitalize">
+                      {latest.orderStatus}
+                    </Text>
+                  </View>
+                </View>
+                <Text
+                  className="text-[10px] text-stone-500 font-sans-medium mt-0.5"
+                  numberOfLines={1}
+                >
+                  {getOrderDisplayId(latest)} · {formatOrderItems(latest.items)} · ₹{latest.finalAmount}
                 </Text>
-              </Pressable>
-            )}
+              </View>
+              <Ionicons name="chevron-forward" size={15} color="#A8A29E" />
+            </Pressable>
+
+            <Pressable
+              onPress={() => void syncOrders(true)}
+              disabled={isSyncing}
+              className="w-7 h-7 rounded-full bg-stone-100 items-center justify-center active:opacity-70"
+              accessibilityLabel="Refresh active orders"
+            >
+              {isSyncing ? (
+                <ActivityIndicator size={13} color="#EA580C" />
+              ) : (
+                <Ionicons name="refresh" size={13} color="#EA580C" />
+              )}
+            </Pressable>
+
+            <View
+              className="absolute bottom-1 left-3 right-3 bg-emerald-100/70 rounded-full overflow-hidden"
+              style={{ height: 3 }}
+              pointerEvents="none"
+            >
+              <Animated.View
+                style={[
+                  {
+                    height: 3,
+                    borderRadius: 999,
+                    backgroundColor: "#10B981",
+                  },
+                  progressStyle,
+                ]}
+              />
+              <Animated.View
+                style={[
+                  {
+                    position: "absolute",
+                    top: 0,
+                    height: 3,
+                    width: "35%",
+                    borderRadius: 999,
+                    backgroundColor: "rgba(255,255,255,0.7)",
+                  },
+                  shimmerStyle,
+                ]}
+              />
+            </View>
           </View>
         </BlurView>
       </Animated.View>

@@ -814,7 +814,7 @@ export default function HomeScreen() {
         }
         contentContainerStyle={{
           paddingBottom:
-            activeOrders.length > 0 ? (itemCount > 0 ? 205 : 155) : itemCount > 0 ? 110 : 120,
+            activeOrders.length > 0 ? (itemCount > 0 ? 160 : 100) : itemCount > 0 ? 110 : 120,
         }}
         showsVerticalScrollIndicator={false}
       />
@@ -825,10 +825,7 @@ export default function HomeScreen() {
         style={{ gap: 8 }}
         pointerEvents="box-none"
       >
-        <ActiveOrdersWidget
-          compact={itemCount > 0}
-          onOpenOrder={setSelectedOrderId}
-        />
+        <ActiveOrdersWidget onOpenOrder={setSelectedOrderId} />
         <FloatingCartBar onPress={() => setCartVisible(true)} />
       </View>
 
