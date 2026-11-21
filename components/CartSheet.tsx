@@ -22,6 +22,11 @@ import {
 } from "../utils/orderId";
 import { useActiveOrders } from "../context/ActiveOrdersContext";
 import { setApiLogContext } from "../services/apiLogStore";
+import {
+  markOrderPlaced,
+  trackCheckoutStart,
+  trackImpression,
+} from "../services/activityTracker";
 import { PHONE_NUMBER } from "./OrderBottomSheet";
 import {
   getCustomer,
@@ -118,6 +123,12 @@ export default function CartSheet({
 
   useEffect(() => {
     if (!visible) return;
+    trackImpression({
+      type: "cart_view",
+      name: "Opened cart",
+      value: total,
+      quantity: itemCount,
+    });
     AsyncStorage.getItem(CUSTOMER_MOBILE_KEY).then((m) => {
       if (m) {
         setMobile(m);
@@ -125,7 +136,7 @@ export default function CartSheet({
         void fetchCustomer(m);
       }
     });
-  }, [visible, fetchCustomer]);
+  }, [visible, fetchCustomer, total, itemCount]);
 
   const handleMobileSubmit = async () => {
     const cleaned = mobile.trim();
@@ -208,10 +219,32 @@ export default function CartSheet({
     };
     const url = `https://wa.me/${PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
 
+    trackCheckoutStart({
+      value: finalTotal,
+      quantity: itemCount,
+      metadata: {
+        itemCount,
+        subtotal: total,
+        deliveryCharge,
+        coinsDiscount,
+        insideRestaurant: !!insideRestaurant,
+        tableNumber: tableNumber ?? null,
+        counterNumber: counterNumber ?? null,
+        items: orderPayload.items,
+      },
+    });
+
     let result: Awaited<ReturnType<typeof placeOrder>>;
     try {
       result = await placeOrder(orderPayload);
     } catch {
+      trackImpression({
+        type: "order_failed",
+        name: "Order save failed",
+        value: finalTotal,
+        quantity: itemCount,
+        metadata: { orderId, items: orderPayload.items },
+      });
       Alert.alert(
         "Order not saved",
         "We could not save your order. Please try again."
@@ -222,6 +255,18 @@ export default function CartSheet({
     }
 
     await rememberOrderId(orderId, result.order);
+
+    await markOrderPlaced({
+      orderId,
+      items: items.map((item) => ({
+        id: item.subcategory.id,
+        name: item.subcategory.name,
+        price: getItemPrice(item.subcategory),
+        quantity: item.quantity,
+      })),
+      total: finalTotal,
+      itemCount,
+    });
 
     if (result.idempotent) {
       clearCart();

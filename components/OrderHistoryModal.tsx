@@ -20,6 +20,7 @@ import {
   resolveCustomerMobile,
 } from "../utils/orderId";
 import { setApiLogContext } from "../services/apiLogStore";
+import { trackImpression } from "../services/activityTracker";
 import Sheet from "./Sheet";
 import FeedbackSheet from "./FeedbackSheet";
 
@@ -67,7 +68,9 @@ export default function OrderHistoryModal({ visible, onClose }: Props) {
   }, [fetchHistory]);
 
   useEffect(() => {
-    if (visible) void Promise.resolve().then(loadHistory);
+    if (!visible) return;
+    trackImpression({ type: "order_history_view", name: "Opened order history" });
+    void Promise.resolve().then(loadHistory);
   }, [visible, loadHistory]);
 
   const handleMobileSubmit = async () => {

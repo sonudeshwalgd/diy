@@ -1,5 +1,15 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { FlatList, Linking, Pressable, ScrollView, Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  FlatList,
+  Linking,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+  type ViewToken,
+} from "react-native";
 import { Link, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BlurView } from "expo-blur";
@@ -42,6 +52,11 @@ import {
 } from "../utils/responsive";
 import { parseOrderSource } from "../utils/delivery";
 import { resolveCustomerMobile } from "../utils/orderId";
+import {
+  endTimedActivity,
+  startTimedActivity,
+  trackImpression,
+} from "../services/activityTracker";
 import {
   MENU_SORT_OPTIONS,
   buildPopularityMap,
@@ -545,15 +560,132 @@ export default function HomeScreen() {
     MENU_SORT_OPTIONS.find((option) => option.id === menuSort) ??
     MENU_SORT_OPTIONS[0];
 
+  const viewabilityConfig = useMemo(
+    () => ({
+      itemVisiblePercentThreshold: 60,
+      minimumViewTime: 800,
+    }),
+    []
+  );
+  const lastScrollBucketRef = useRef(0);
+
+  const onViewableItemsChanged = useMemo(
+    () => ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      for (const viewable of viewableItems) {
+        const item = viewable.item as MenuItem | undefined;
+        if (!item) continue;
+        if (item.kind === "category") {
+          trackImpression({
+            type: "category_impression",
+            name: item.category.name,
+            categoryId: item.category.id,
+            categoryName: item.category.name,
+            position: viewable.index ?? undefined,
+            dedupeKey: `category_impression:${item.category.id}`,
+          });
+        } else {
+          trackImpression({
+            type: "product_impression",
+            name: item.product.name,
+            categoryId: item.category.id,
+            categoryName: item.category.name,
+            productId: item.product.id,
+            productName: item.product.name,
+            price: item.product.price ?? item.product.variants?.[0]?.price,
+            position: viewable.index ?? undefined,
+            dedupeKey: `product_impression:${item.product.id}`,
+          });
+        }
+      }
+    },
+    []
+  );
+
+  const handleMenuScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+      const scrollable = contentSize.height - layoutMeasurement.height;
+      if (scrollable <= 0) return;
+      const depth = Math.max(0, Math.min(100, Math.round((contentOffset.y / scrollable) * 100)));
+      const bucket = depth >= 100 ? 100 : depth >= 75 ? 75 : depth >= 50 ? 50 : depth >= 25 ? 25 : 0;
+      if (bucket <= lastScrollBucketRef.current) return;
+      lastScrollBucketRef.current = bucket;
+      trackImpression({
+        type: "scroll_depth",
+        name: `Scrolled ${bucket}%`,
+        scrollDepth: bucket,
+        dedupeKey: `scroll_depth:${bucket}`,
+      });
+    },
+    []
+  );
+
   const handleCategoryPress = useCallback((category: Category) => {
+    startTimedActivity(`category:${category.id}`, "category_open", {
+      name: category.name,
+      categoryId: category.id,
+      categoryName: category.name,
+    });
     setSelectedCategory(category);
     setSubcatVisible(true);
   }, []);
 
+  const handleProductPress = useCallback((category: Category, product: Subcategory) => {
+    startTimedActivity(`product:${product.id}`, "product_view", {
+      name: product.name,
+      categoryId: category.id,
+      categoryName: category.name,
+      productId: product.id,
+      productName: product.name,
+      price: product.price ?? product.variants?.[0]?.price,
+    });
+    trackImpression({
+      type: "product_impression",
+      name: product.name,
+      categoryId: category.id,
+      categoryName: category.name,
+      productId: product.id,
+      productName: product.name,
+      price: product.price ?? product.variants?.[0]?.price,
+      dedupeKey: `product_impression:${product.id}`,
+    });
+    setSelectedCategory(category);
+    setSubcatVisible(true);
+  }, []);
+
+  const closeCategorySheet = useCallback(() => {
+    if (selectedCategory) {
+      endTimedActivity(`category:${selectedCategory.id}`, "category_close", {
+        name: selectedCategory.name,
+        categoryId: selectedCategory.id,
+        categoryName: selectedCategory.name,
+      });
+    }
+    setSubcatVisible(false);
+    setSelectedCategory(null);
+  }, [selectedCategory]);
+
   const handleComboPress = useCallback((combo: Combo) => {
+    startTimedActivity(`combo:${combo.id}`, "combo_open", {
+      name: combo.name,
+      productId: `combo:${combo.id}`,
+      productName: combo.name,
+    });
     setSelectedCombo(combo);
     setComboVisible(true);
   }, []);
+
+  const closeComboSheet = useCallback(() => {
+    if (selectedCombo) {
+      endTimedActivity(`combo:${selectedCombo.id}`, "combo_close", {
+        name: selectedCombo.name,
+        productId: `combo:${selectedCombo.id}`,
+        productName: selectedCombo.name,
+      });
+    }
+    setComboVisible(false);
+    setSelectedCombo(null);
+  }, [selectedCombo]);
 
   const handleWhatsApp = () => {
     const sourceLine = orderSource.tableNumber
@@ -798,7 +930,7 @@ export default function HomeScreen() {
               product={item.product}
               category={item.category}
               index={index}
-              onPress={handleCategoryPress}
+              onPress={handleProductPress}
             />
           )
         }
@@ -807,6 +939,10 @@ export default function HomeScreen() {
             activeOrders.length > 0 ? (itemCount > 0 ? 160 : 100) : itemCount > 0 ? 110 : 120,
         }}
         showsVerticalScrollIndicator={false}
+        onScroll={handleMenuScroll}
+        scrollEventThrottle={200}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
       />
 
       {/* Floating bars: active orders above, cart with Place Order always visible */}
@@ -824,29 +960,20 @@ export default function HomeScreen() {
         <IceCreamSheet
           visible={subcatVisible}
           category={selectedCategory}
-          onClose={() => {
-            setSubcatVisible(false);
-            setSelectedCategory(null);
-          }}
+          onClose={closeCategorySheet}
         />
       ) : (
         <SubcategorySheet
           visible={subcatVisible}
           category={selectedCategory}
-          onClose={() => {
-            setSubcatVisible(false);
-            setSelectedCategory(null);
-          }}
+          onClose={closeCategorySheet}
         />
       )}
 
       <ComboSheet
         visible={comboVisible}
         combo={selectedCombo}
-        onClose={() => {
-          setComboVisible(false);
-          setSelectedCombo(null);
-        }}
+        onClose={closeComboSheet}
       />
 
       <CartSheet

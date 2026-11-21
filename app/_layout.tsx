@@ -17,6 +17,7 @@ import { CartProvider } from "../context/CartContext";
 import { DisabledItemsProvider } from "../context/DisabledItemsContext";
 import { ActiveOrdersProvider } from "../context/ActiveOrdersContext";
 import ApiLogSync from "../components/ApiLogSync";
+import ActivityTrackerSync from "../components/ActivityTrackerSync";
 import VercelAnalytics from "../components/VercelAnalytics";
 import { setApiLogContext } from "../services/apiLogStore";
 import { getUserToken } from "../services/userToken";
@@ -54,6 +55,7 @@ export default function RootLayout() {
         <DisabledItemsProvider>
           <ActiveOrdersProvider>
             <ApiLogSync />
+            <ActivityTrackerSync />
             <VercelAnalytics />
             <StatusBar style="dark" />
             <Stack>

@@ -13,7 +13,7 @@ import { useResponsiveLayout } from "../utils/responsive";
 interface Props {
   product: Subcategory;
   category: Category;
-  onPress: (category: Category) => void;
+  onPress: (category: Category, product: Subcategory) => void;
   index?: number;
 }
 
@@ -37,7 +37,7 @@ export default function ProductCard({
       style={{ width: cardWidth }}
     >
       <Pressable
-        onPress={() => onPress(category)}
+        onPress={() => onPress(category, product)}
         className="bg-white/90 rounded-3xl mb-3 border border-white/80 active:opacity-90 overflow-hidden flex-1"
         style={{
           shadowColor: "#78716C",

@@ -14,6 +14,7 @@ import {
   getOrderDisplayId,
 } from "../utils/orderDisplay";
 import { removeStoredOrderIds } from "../utils/orderId";
+import { trackImpression } from "../services/activityTracker";
 import Sheet from "./Sheet";
 
 interface Props {
@@ -35,15 +36,32 @@ export default function ActiveOrderDetailsSheet({
   useEffect(() => {
     if (!visible || !orderId) return;
     let active = true;
+    trackImpression({
+      type: "order_status_check",
+      name: "Checked order status",
+      metadata: { orderId },
+    });
     void Promise.resolve().then(async () => {
       setOrder(null);
       setError(null);
       setLoading(true);
       try {
         const data = await getOrderById(orderId, { silentNotFound: true });
-        if (active) setOrder(data.order);
+        if (active) {
+          setOrder(data.order);
+          trackImpression({
+            type: "order_status_viewed",
+            name: "Viewed order status",
+            metadata: { orderId, status: data.order.orderStatus ?? null },
+          });
+        }
       } catch (err: unknown) {
         if (!active) return;
+        trackImpression({
+          type: "order_status_failed",
+          name: "Order status check failed",
+          metadata: { orderId },
+        });
         setError(
           err instanceof Error ? err.message : "Could not load order details"
         );
