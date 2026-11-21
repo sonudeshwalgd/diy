@@ -7,6 +7,7 @@ import {
   isRetryableStatus,
   MAX_API_ATTEMPTS,
   RETRY_BASE_MS,
+  setApiLogContext,
   sanitizeBody,
   sanitizeHeaders,
   sanitizeUrl,
@@ -15,6 +16,7 @@ import {
   type ApiAttemptLog,
   type ApiFailureLog,
 } from "./apiLogStore";
+import { getUserToken } from "./userToken";
 
 const GET_TIMEOUT_MS = 12_000;
 const MUTATION_TIMEOUT_MS = 20_000;
@@ -71,7 +73,17 @@ export async function apiFetch(
   const method = (init.method || "GET").toUpperCase();
   const timeoutMs =
     method === "GET" || method === "HEAD" ? GET_TIMEOUT_MS : MUTATION_TIMEOUT_MS;
-  const requestHeaders = sanitizeHeaders(init.headers);
+
+  const headers = new Headers(init.headers);
+  try {
+    const visitorToken = await getUserToken();
+    headers.set("x-visitor-token", visitorToken);
+    setApiLogContext({ visitorId: visitorToken });
+  } catch (error) {
+    console.warn("Visitor token unavailable", error);
+  }
+
+  const requestHeaders = sanitizeHeaders(headers);
   const requestBody = sanitizeBody(init.body);
   const silentStatuses = new Set(options.silentStatuses ?? []);
   const attempts: ApiAttemptLog[] = [];
@@ -85,7 +97,7 @@ export async function apiFetch(
 
     const startedAt = Date.now();
     const timed = withRequestTimeout(init.signal, timeoutMs);
-    const requestInit: RequestInit = { ...init, signal: timed.signal };
+    const requestInit: RequestInit = { ...init, headers, signal: timed.signal };
     let retryable = true;
     lastResponse = null;
 

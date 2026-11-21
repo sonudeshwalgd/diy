@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import { AppState, Platform } from "react-native";
 import { API_BASE } from "./apiConfig";
+import { getUserToken } from "./userToken";
 
 export const API_FAILURE_LOGS_KEY = "diy_api_failure_logs_v1";
 export const MAX_API_ATTEMPTS = 3;
@@ -47,6 +48,7 @@ export interface ApiLogContextSnapshot {
   appState?: string | null;
   isOnline?: boolean | null;
   route?: string | null;
+  visitorId?: string | null;
   customerMobile?: string | null;
   lastOrderId?: string | null;
   cart?: { itemCount: number; total: number } | null;
@@ -86,6 +88,7 @@ export function getApiLogContext(): Record<string, unknown> {
 
   return {
     ...contextSnapshot,
+    visitorId: contextSnapshot.visitorId ?? null,
     appState: contextSnapshot.appState ?? AppState.currentState ?? null,
     isOnline: contextSnapshot.isOnline ?? nav?.onLine ?? null,
     customerMobile: maskMobile(contextSnapshot.customerMobile),
@@ -316,16 +319,27 @@ export async function flushApiLogs(): Promise<LogFlushResult> {
   flushing = true;
   const batch = logs.slice(0, MAX_BATCH_LOGS);
   let lastError: string | undefined;
+  let visitorToken = contextSnapshot.visitorId ?? undefined;
 
   try {
+    try {
+      visitorToken = await getUserToken();
+      setApiLogContext({ visitorId: visitorToken });
+    } catch (error) {
+      console.warn("Visitor token unavailable for log upload", error);
+    }
+
     for (let attempt = 1; attempt <= MAX_API_ATTEMPTS; attempt += 1) {
       if (!isAppForeground()) break;
       const timed = withRequestTimeout(undefined, LOG_UPLOAD_TIMEOUT_MS);
       try {
         const response = await fetch(`${API_BASE}/client-logs`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ logs: batch }),
+          headers: {
+            "Content-Type": "application/json",
+            ...(visitorToken ? { "x-visitor-token": visitorToken } : {}),
+          },
+          body: JSON.stringify({ logs: batch, visitorId: visitorToken ?? null }),
           signal: timed.signal,
         });
         if (!response.ok) {

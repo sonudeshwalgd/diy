@@ -18,6 +18,8 @@ import { DisabledItemsProvider } from "../context/DisabledItemsContext";
 import { ActiveOrdersProvider } from "../context/ActiveOrdersContext";
 import ApiLogSync from "../components/ApiLogSync";
 import VercelAnalytics from "../components/VercelAnalytics";
+import { setApiLogContext } from "../services/apiLogStore";
+import { getUserToken } from "../services/userToken";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -29,6 +31,12 @@ export default function RootLayout() {
     PlusJakartaSans_700Bold,
     PlusJakartaSans_800ExtraBold,
   });
+
+  useEffect(() => {
+    void getUserToken()
+      .then((visitorId) => setApiLogContext({ visitorId }))
+      .catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     if (fontsLoaded) {

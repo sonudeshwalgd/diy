@@ -1,4 +1,6 @@
 import { apiFetch, ApiError } from "./apiClient";
+import { getUserToken } from "./userToken";
+import { setApiLogContext } from "./apiLogStore";
 
 export { ApiError };
 export const ADMIN_MOBILE = process.env.EXPO_PUBLIC_ADMIN_MOBILE || "";
@@ -200,10 +202,18 @@ export const saveDisabledItems = async (
 };
 
 export const placeOrder = async (payload: PlaceOrderPayload): Promise<PlaceOrderResponse> => {
+  let userToken: string | undefined;
+  try {
+    userToken = await getUserToken();
+    setApiLogContext({ visitorId: userToken });
+  } catch (error) {
+    console.warn("Could not attach user token to order", error);
+  }
+
   const res = await apiFetch("/orders", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ...payload, coinEarnRate: COIN_EARN_RATE }),
+    body: JSON.stringify({ ...payload, coinEarnRate: COIN_EARN_RATE, userToken }),
   });
   if (!res.ok) {
     const err = await res.json();
