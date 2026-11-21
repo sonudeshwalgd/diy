@@ -196,11 +196,6 @@ function StatsPanel({ stats }: { stats: OrderStats }) {
         </View>
       </Pressable>
 
-      <View className="flex-row mt-2 pt-1 border-t border-stone-100">
-        <StatCell label="Orders" value={String(stats.total)} icon="receipt-outline" color="#EA580C" />
-        <StatCell label="Avg / order" value={`₹${stats.avgOrder}`} icon="trending-up-outline" color="#7C3AED" />
-      </View>
-
       {expanded ? (
         <View className="border-t border-stone-100 mt-1 pt-3">
           <Text className="text-[10px] text-stone-400 font-sans-bold uppercase tracking-wide mb-2">
