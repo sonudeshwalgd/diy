@@ -213,7 +213,7 @@ export const placeOrder = async (payload: PlaceOrderPayload): Promise<PlaceOrder
 };
 
 export const getCustomer = async (mobile: string): Promise<CustomerInfo> => {
-  const res = await apiFetch(`/customer/${mobile}`);
+  const res = await apiFetch(`/customer/${mobile}`, {}, { silentStatuses: [404] });
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.error || "Customer not found");
@@ -283,8 +283,15 @@ export const updateOrderStatus = async (
   return res.json();
 };
 
-export const getOrderById = async (orderId: string): Promise<SingleOrderResponse> => {
-  const res = await apiFetch(`/order/${encodeURIComponent(orderId)}`);
+export const getOrderById = async (
+  orderId: string,
+  options: { silentNotFound?: boolean } = {}
+): Promise<SingleOrderResponse> => {
+  const res = await apiFetch(
+    `/order/${encodeURIComponent(orderId)}`,
+    {},
+    options.silentNotFound ? { silentStatuses: [404] } : undefined
+  );
   if (!res.ok) {
     const err = await res.json();
     throw new ApiError(err.error || "Failed to fetch order", res.status);

@@ -14,6 +14,7 @@ import {
   getOrderById,
   type AdminOrder,
 } from "../services/api";
+import { isAppForeground } from "../services/apiLogStore";
 import {
   getStoredOrderIds,
   removeStoredOrderIds,
@@ -51,7 +52,7 @@ export function ActiveOrdersProvider({ children }: { children: ReactNode }) {
   const lastStartRef = useRef(0);
 
   const syncOrders = useCallback(async (force = false) => {
-    if (syncingRef.current) return;
+    if (syncingRef.current || !isAppForeground()) return;
     const now = Date.now();
     if (!force && now - lastStartRef.current < SYNC_THROTTLE_MS) return;
 
@@ -74,7 +75,7 @@ export function ActiveOrdersProvider({ children }: { children: ReactNode }) {
       const fetched = await Promise.all(
         ids.map(async (id) => {
           try {
-            const { order } = await getOrderById(id);
+            const { order } = await getOrderById(id, { silentNotFound: true });
             if (!isActiveOrderStatus(order.orderStatus)) {
               removedIds.push(id);
             }
@@ -160,7 +161,7 @@ export function ActiveOrdersProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const handleAppState = (nextState: AppStateStatus) => {
-      if (nextState === "active") void syncOrders();
+      if (nextState === "active" && isAppForeground()) void syncOrders();
     };
     const subscription = AppState.addEventListener("change", handleAppState);
     return () => subscription.remove();
@@ -169,12 +170,18 @@ export function ActiveOrdersProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const handleFocus = () => {
-      if (typeof document === "undefined" || document.visibilityState === "visible") {
-        void syncOrders();
-      }
+      if (isAppForeground()) void syncOrders();
     };
     window.addEventListener("focus", handleFocus);
-    return () => window.removeEventListener("focus", handleFocus);
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleFocus);
+    }
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleFocus);
+      }
+    };
   }, [syncOrders]);
 
   const value = useMemo(

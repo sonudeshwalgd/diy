@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getOrderById } from "../services/api";
+import { ApiError, getOrderById } from "../services/api";
 import { setApiLogContext } from "../services/apiLogStore";
 
 export const CUSTOMER_MOBILE_KEY = "diy_customer_mobile";
@@ -52,6 +52,11 @@ export async function removeStoredOrderIds(orderIds: string[]): Promise<void> {
     const remove = new Set(orderIds);
     const ids = (await getStoredOrderIds()).filter((id) => !remove.has(id));
     await AsyncStorage.setItem(ORDER_IDS_KEY, JSON.stringify(ids));
+    const lastOrderId = await AsyncStorage.getItem(LAST_ORDER_ID_KEY);
+    if (lastOrderId && remove.has(lastOrderId)) {
+      await AsyncStorage.removeItem(LAST_ORDER_ID_KEY);
+      setApiLogContext({ lastOrderId: null });
+    }
   } catch {
     return;
   }
@@ -65,13 +70,17 @@ export async function resolveCustomerMobile(): Promise<string | null> {
   if (!orderId) return null;
 
   try {
-    const { order } = await getOrderById(orderId);
+    const { order } = await getOrderById(orderId, { silentNotFound: true });
     const mobile = order.customerMobile?.trim();
     if (!mobile) return null;
     await AsyncStorage.setItem(CUSTOMER_MOBILE_KEY, mobile);
     setApiLogContext({ customerMobile: mobile, lastOrderId: orderId });
     return mobile;
-  } catch {
+  } catch (error) {
+    const notFound =
+      error instanceof ApiError &&
+      (error.status === 404 || error.message.toLowerCase().includes("not found"));
+    if (notFound) await removeStoredOrderIds([orderId]);
     return null;
   }
 }

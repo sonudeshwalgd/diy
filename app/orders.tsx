@@ -8,11 +8,13 @@ import {
 } from "react";
 import {
   ActivityIndicator,
+  AppState,
   Pressable,
   ScrollView,
   Text,
   TextInput,
   View,
+  type AppStateStatus,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -32,6 +34,7 @@ import {
   type OrderAnalytics,
   type OrderStatus,
 } from "../services/api";
+import { isAppForeground } from "../services/apiLogStore";
 import Sheet from "../components/Sheet";
 import {
   formatOrderDuration,
@@ -877,7 +880,7 @@ export default function OrdersScreen() {
 
   const refreshOrders = useCallback(
     async (silent = false) => {
-      if (refreshingRef.current) return;
+      if (refreshingRef.current || !isAppForeground()) return;
       refreshingRef.current = true;
       if (!silent) setLoading(true);
       try {
@@ -916,16 +919,37 @@ export default function OrdersScreen() {
     if (!unlocked || !staffKey) return;
 
     secondsRef.current = REFRESH_SECONDS;
-    void Promise.resolve().then(() => refreshOrders());
+    if (isAppForeground()) void Promise.resolve().then(() => refreshOrders());
+
+    const refreshIfVisible = () => {
+      if (isAppForeground()) void refreshOrders(true);
+    };
+
     const interval = setInterval(() => {
       secondsRef.current -= 1;
       if (secondsRef.current <= 0) {
         secondsRef.current = REFRESH_SECONDS;
-        void refreshOrders(true);
+        refreshIfVisible();
       }
       setSecondsLeft(secondsRef.current);
     }, 1000);
-    return () => clearInterval(interval);
+
+    const handleAppState = (nextState: AppStateStatus) => {
+      if (nextState === "active") refreshIfVisible();
+    };
+    const handleVisibility = () => refreshIfVisible();
+    const subscription = AppState.addEventListener("change", handleAppState);
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleVisibility);
+    }
+
+    return () => {
+      clearInterval(interval);
+      subscription.remove();
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleVisibility);
+      }
+    };
   }, [unlocked, staffKey, refreshOrders]);
 
   useEffect(() => {

@@ -13,6 +13,7 @@ import {
   formatOrderDate,
   getOrderDisplayId,
 } from "../utils/orderDisplay";
+import { removeStoredOrderIds } from "../utils/orderId";
 import Sheet from "./Sheet";
 
 interface Props {
@@ -39,7 +40,7 @@ export default function ActiveOrderDetailsSheet({
       setError(null);
       setLoading(true);
       try {
-        const data = await getOrderById(orderId);
+        const data = await getOrderById(orderId, { silentNotFound: true });
         if (active) setOrder(data.order);
       } catch (err: unknown) {
         if (!active) return;
@@ -47,7 +48,7 @@ export default function ActiveOrderDetailsSheet({
           err instanceof Error ? err.message : "Could not load order details"
         );
         if (err instanceof ApiError && err.status === 404) {
-          void syncOrders(true);
+          void removeStoredOrderIds([orderId]).then(() => syncOrders(true));
         }
       } finally {
         if (active) setLoading(false);

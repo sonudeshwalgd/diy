@@ -4,11 +4,12 @@ import { AppState, Platform } from "react-native";
 import { API_BASE } from "./apiConfig";
 
 export const API_FAILURE_LOGS_KEY = "diy_api_failure_logs_v1";
-export const MAX_API_ATTEMPTS = 5;
+export const MAX_API_ATTEMPTS = 3;
+export const RETRY_BASE_MS = 200;
 
 const MAX_LOCAL_LOGS = 200;
 const MAX_BATCH_LOGS = 25;
-const RETRY_BASE_MS = 200;
+const LOG_UPLOAD_TIMEOUT_MS = 10_000;
 const REDACTED_TEXT = "[REDACTED]";
 const SENSITIVE_KEY =
   /token|secret|password|staff|adminmobile|customermobile|mobilenumber|authorization|signature/i;
@@ -189,6 +190,61 @@ export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+export function isAppForeground(): boolean {
+  if (AppState.currentState === "background") return false;
+  if (typeof document !== "undefined" && document.visibilityState === "hidden") {
+    return false;
+  }
+  return true;
+}
+
+export function isRetryableStatus(status: number): boolean {
+  return status >= 500 || status === 408 || status === 425 || status === 429;
+}
+
+export function isAbortError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    (error.name === "AbortError" || error.name === "TimeoutError")
+  );
+}
+
+export function withRequestTimeout(
+  signal: AbortSignal | null | undefined,
+  timeoutMs: number
+): {
+  signal: AbortSignal | undefined;
+  cleanup: () => void;
+  didTimeout: () => boolean;
+} {
+  if (typeof AbortController === "undefined") {
+    return { signal: signal ?? undefined, cleanup: () => {}, didTimeout: () => false };
+  }
+
+  const controller = new AbortController();
+  let timedOut = false;
+  const abortFromSignal = () => controller.abort();
+
+  if (signal) {
+    if (signal.aborted) controller.abort();
+    else signal.addEventListener("abort", abortFromSignal, { once: true });
+  }
+
+  const timeoutId = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
+
+  return {
+    signal: controller.signal,
+    cleanup: () => {
+      clearTimeout(timeoutId);
+      signal?.removeEventListener("abort", abortFromSignal);
+    },
+    didTimeout: () => timedOut,
+  };
+}
+
 function createLogId(): string {
   const uuid = (
     globalThis.crypto as { randomUUID?: () => string } | undefined
@@ -255,6 +311,7 @@ export async function flushApiLogs(): Promise<LogFlushResult> {
 
   const logs = await readLogs();
   if (logs.length === 0) return { uploaded: 0, remaining: 0 };
+  if (!isAppForeground()) return { uploaded: 0, remaining: logs.length };
 
   flushing = true;
   const batch = logs.slice(0, MAX_BATCH_LOGS);
@@ -262,26 +319,34 @@ export async function flushApiLogs(): Promise<LogFlushResult> {
 
   try {
     for (let attempt = 1; attempt <= MAX_API_ATTEMPTS; attempt += 1) {
+      if (!isAppForeground()) break;
+      const timed = withRequestTimeout(undefined, LOG_UPLOAD_TIMEOUT_MS);
       try {
         const response = await fetch(`${API_BASE}/client-logs`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ logs: batch }),
+          signal: timed.signal,
         });
         if (!response.ok) {
-          throw new Error(`Log upload failed with status ${response.status}`);
+          lastError = `Log upload failed with status ${response.status}`;
+          if (!isRetryableStatus(response.status)) break;
+        } else {
+          await removeApiFailureLogs(batch.map((log) => log.id));
+          setApiLogContext({
+            lastLogUploadAt: Date.now(),
+            lastLogUploadError: null,
+          });
+          return { uploaded: batch.length, remaining: (await readLogs()).length };
         }
-        await removeApiFailureLogs(batch.map((log) => log.id));
-        setApiLogContext({
-          lastLogUploadAt: Date.now(),
-          lastLogUploadError: null,
-        });
-        return { uploaded: batch.length, remaining: (await readLogs()).length };
       } catch (error) {
         lastError = error instanceof Error ? error.message : String(error);
-        if (attempt < MAX_API_ATTEMPTS) {
-          await sleep(RETRY_BASE_MS * 2 ** (attempt - 1));
-        }
+      } finally {
+        timed.cleanup();
+      }
+
+      if (attempt < MAX_API_ATTEMPTS && isAppForeground()) {
+        await sleep(RETRY_BASE_MS * 2 ** (attempt - 1));
       }
     }
 
