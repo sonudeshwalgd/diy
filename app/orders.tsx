@@ -198,8 +198,6 @@ function StatsPanel({ stats }: { stats: OrderStats }) {
 
       <View className="flex-row mt-2 pt-1 border-t border-stone-100">
         <StatCell label="Orders" value={String(stats.total)} icon="receipt-outline" color="#EA580C" />
-        <StatCell label="Sales" value={`₹${stats.revenue}`} icon="cash-outline" color="#059669" />
-        <StatCell label="Items" value={String(stats.itemsSold)} icon="cart-outline" color="#0284C7" />
         <StatCell label="Avg / order" value={`₹${stats.avgOrder}`} icon="trending-up-outline" color="#7C3AED" />
       </View>
 
@@ -552,12 +550,14 @@ function AnalyticsSheet({
   visible,
   onClose,
   analytics,
+  stats,
   loading,
   error,
 }: {
   visible: boolean;
   onClose: () => void;
   analytics: OrderAnalytics | null;
+  stats: OrderStats;
   loading: boolean;
   error: string | null;
 }) {
@@ -579,8 +579,20 @@ function AnalyticsSheet({
           Sales analytics
         </Text>
         <Text className="text-[11px] text-stone-400 font-sans-medium mb-3">
-          All-time totals and daily performance
+          Today&apos;s activity and all-time performance
         </Text>
+
+        <View className="bg-stone-50 rounded-2xl py-2 mb-4">
+          <Text className="text-[10px] text-stone-400 font-sans-bold uppercase tracking-wide text-center mb-1">
+            Today
+          </Text>
+          <View className="flex-row">
+            <StatCell label="Orders" value={String(stats.total)} icon="receipt-outline" color="#EA580C" />
+            <StatCell label="Sales" value={`₹${stats.revenue}`} icon="cash-outline" color="#059669" />
+            <StatCell label="Items ordered" value={String(stats.itemsSold)} icon="cart-outline" color="#0284C7" />
+            <StatCell label="Avg / order" value={`₹${stats.avgOrder}`} icon="trending-up-outline" color="#7C3AED" />
+          </View>
+        </View>
 
         {loading ? (
           <ActivityIndicator color="#EA580C" />
@@ -1325,6 +1337,7 @@ export default function OrdersScreen() {
         visible={analyticsVisible}
         onClose={() => setAnalyticsVisible(false)}
         analytics={analytics}
+        stats={stats}
         loading={analyticsLoading}
         error={analyticsError}
       />
