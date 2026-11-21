@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import {
   Linking,
   Pressable,
@@ -21,9 +22,16 @@ export default function OrderBottomSheet({
   tableNumber,
   counterNumber,
 }: Props) {
-  const handleCall = () => {
-    Linking.openURL(`tel:${PHONE_NUMBER}`);
-  };
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  useEffect(() => {
+    if (!visible) return;
+    const timer = setTimeout(() => onCloseRef.current(), 2000);
+    return () => clearTimeout(timer);
+  }, [visible]);
 
   const handleWhatsApp = () => {
     const sourceLine = tableNumber
@@ -42,36 +50,20 @@ export default function OrderBottomSheet({
     <Sheet
       visible={visible}
       onClose={onClose}
-      sheetClassName="px-6 pt-1 pb-10 items-center"
+      sheetClassName="px-6 pt-0 pb-5 items-center"
     >
-          <Text className="text-lg font-sans-semibold text-gray-900 text-center">
-            To place an order, please call on this number
+          <Text className="text-sm font-sans-medium text-stone-600 text-center">
+            To place an order, tap below
           </Text>
-
-          <Text className="text-2xl font-sans-bold text-orange-600 mt-4">
-            +{PHONE_NUMBER}
-          </Text>
-
-          <Pressable
-            onPress={handleCall}
-            className="mt-6 bg-green-600 rounded-full px-8 py-3 flex-row items-center gap-2"
-          >
-            <Ionicons name="call" size={20} color="white" />
-            <Text className="text-white text-base font-sans-semibold">Call Now</Text>
-          </Pressable>
 
           <Pressable
             onPress={handleWhatsApp}
-            className="mt-4 bg-[#25D366] rounded-full px-8 py-3 flex-row items-center gap-2"
+            className="mt-3 bg-[#25D366] rounded-full px-8 py-2.5 flex-row items-center gap-2"
           >
-            <Ionicons name="logo-whatsapp" size={22} color="white" />
-            <Text className="text-white text-base font-sans-semibold">
-              Chat on WhatsApp
+            <Ionicons name="logo-whatsapp" size={20} color="white" />
+            <Text className="text-sm font-sans-semibold text-white">
+              Order on WhatsApp
             </Text>
-          </Pressable>
-
-          <Pressable onPress={onClose} className="mt-6">
-            <Text className="text-gray-400 text-sm">Close</Text>
           </Pressable>
     </Sheet>
   );

@@ -97,6 +97,25 @@ export interface AdminOrdersResponse {
   orders: AdminOrder[];
 }
 
+export interface AnalyticsDay {
+  date: string;
+  orders: number;
+  itemsSold: number;
+  revenue: number;
+}
+
+export interface AnalyticsItem {
+  name: string;
+  quantity: number;
+  revenue: number;
+}
+
+export interface OrderAnalytics {
+  daily: AnalyticsDay[];
+  lifetime: { orders: number; itemsSold: number; revenue: number };
+  items: AnalyticsItem[];
+}
+
 export interface SingleOrderResponse {
   order: AdminOrder;
 }
@@ -221,6 +240,20 @@ export const getTodaysOrders = async (
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.error || "Failed to fetch orders");
+  }
+  return res.json();
+};
+
+export const getOrderAnalytics = async (
+  staffKey: string
+): Promise<OrderAnalytics> => {
+  const res = await apiFetch("/orders/analytics", {
+    cache: "no-store",
+    headers: { "x-staff-key": staffKey },
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to fetch analytics");
   }
   return res.json();
 };

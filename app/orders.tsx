@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -11,12 +18,18 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
+import { Rect, Svg, Text as SvgText } from "react-native-svg";
 import { useDisabledItems } from "../context/DisabledItemsContext";
+import { categories, combosCategory } from "../data/products";
 import {
+  getOrderAnalytics,
   getTodaysOrders,
   updateOrderStatus,
   type AdminOrder,
+  type AnalyticsDay,
+  type AnalyticsItem,
   type BackendOrderItem,
+  type OrderAnalytics,
   type OrderStatus,
 } from "../services/api";
 import Sheet from "../components/Sheet";
@@ -241,6 +254,385 @@ function StatsPanel({ stats }: { stats: OrderStats }) {
   );
 }
 
+const CHART_DAYS = 14;
+
+function recentDates(count: number): string[] {
+  const now = new Date(Date.now() + 5.5 * 60 * 60 * 1000);
+  const todayUtc = Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate()
+  );
+  return Array.from(
+    { length: count },
+    (_, index) =>
+      new Date(todayUtc - (count - 1 - index) * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .slice(0, 10)
+  );
+}
+
+function SalesChart({ daily }: { daily: AnalyticsDay[] }) {
+  const days = useMemo(() => {
+    const byDate = new Map(daily.map((day) => [day.date, day]));
+    return recentDates(CHART_DAYS).map(
+      (date) =>
+        byDate.get(date) ?? { date, orders: 0, itemsSold: 0, revenue: 0 }
+    );
+  }, [daily]);
+
+  const maxItems = Math.max(1, ...days.map((day) => day.itemsSold));
+  const maxRevenue = Math.max(1, ...days.map((day) => day.revenue));
+  const dayWidth = 58;
+  const plotHeight = 120;
+
+  return (
+    <View>
+      <View className="flex-row items-center gap-4 mb-2">
+        <View className="flex-row items-center gap-1.5">
+          <View className="w-2.5 h-2.5 rounded-sm bg-orange-600" />
+          <Text className="text-[10px] text-stone-500 font-sans-semibold">
+            Items sold
+          </Text>
+        </View>
+        <View className="flex-row items-center gap-1.5">
+          <View className="w-2.5 h-2.5 rounded-sm bg-emerald-600" />
+          <Text className="text-[10px] text-stone-500 font-sans-semibold">
+            Revenue (₹)
+          </Text>
+        </View>
+      </View>
+      <ScrollView horizontal showsVerticalScrollIndicator={false}>
+        <Svg width={dayWidth * days.length} height={plotHeight + 20}>
+          {days.map((day, index) => {
+            const left = index * dayWidth;
+            const itemHeight = (day.itemsSold / maxItems) * plotHeight;
+            const revenueHeight = (day.revenue / maxRevenue) * plotHeight;
+            return (
+              <Fragment key={day.date}>
+                <Rect
+                  x={left + 8}
+                  y={plotHeight - itemHeight}
+                  width={14}
+                  height={itemHeight}
+                  rx={3}
+                  fill="#EA580C"
+                />
+                <Rect
+                  x={left + 30}
+                  y={plotHeight - revenueHeight}
+                  width={14}
+                  height={revenueHeight}
+                  rx={3}
+                  fill="#059669"
+                />
+                {day.itemsSold > 0 ? (
+                  <SvgText
+                    x={left + 15}
+                    y={plotHeight - itemHeight - 4}
+                    fontSize={9}
+                    textAnchor="middle"
+                    fill="#57534E"
+                  >
+                    {day.itemsSold}
+                  </SvgText>
+                ) : null}
+                {day.revenue > 0 ? (
+                  <SvgText
+                    x={left + 37}
+                    y={plotHeight - revenueHeight - 4}
+                    fontSize={9}
+                    textAnchor="middle"
+                    fill="#57534E"
+                  >
+                    {day.revenue}
+                  </SvgText>
+                ) : null}
+                <SvgText
+                  x={left + 29}
+                  y={plotHeight + 15}
+                  fontSize={9}
+                  textAnchor="middle"
+                  fill="#A8A29E"
+                >
+                  {day.date.slice(8)}
+                </SvgText>
+              </Fragment>
+            );
+          })}
+        </Svg>
+      </ScrollView>
+      <Text className="text-[10px] text-stone-400 font-sans-medium mt-1">
+        Peak: {maxItems} items · ₹{maxRevenue} per day · last {CHART_DAYS} days
+      </Text>
+    </View>
+  );
+}
+
+function shortLabel(value: string, max: number): string {
+  return value.length > max ? `${value.slice(0, max - 1)}…` : value;
+}
+
+function ItemSalesChart({ items }: { items: AnalyticsItem[] }) {
+  const rows = useMemo(() => {
+    const baseName = (name: string) => name.split(" · ")[0].trim();
+    const result: {
+      name: string;
+      category: string;
+      quantity: number;
+      revenue: number;
+    }[] = [];
+
+    for (const category of [...categories, combosCategory]) {
+      for (const sub of category.subcategories) {
+        const name = baseName(sub.name);
+        if (result.some((row) => row.name === name)) continue;
+        const matches = items.filter((item) => baseName(item.name) === name);
+        result.push({
+          name,
+          category: category.name,
+          quantity: matches.reduce((sum, item) => sum + item.quantity, 0),
+          revenue: matches.reduce((sum, item) => sum + item.revenue, 0),
+        });
+      }
+    }
+
+    for (const item of items) {
+      if (!result.some((row) => row.name === baseName(item.name))) {
+        result.push({
+          name: item.name,
+          category: "Other",
+          quantity: item.quantity,
+          revenue: item.revenue,
+        });
+      }
+    }
+
+    return result;
+  }, [items]);
+
+  const maxQuantity = Math.max(1, ...rows.map((row) => row.quantity));
+  const maxRevenue = Math.max(1, ...rows.map((row) => row.revenue));
+  const rowWidth = 64;
+  const plotHeight = 110;
+
+  return (
+    <View>
+      <View className="flex-row items-center gap-4 mb-2">
+        <View className="flex-row items-center gap-1.5">
+          <View className="w-2.5 h-2.5 rounded-sm bg-orange-600" />
+          <Text className="text-[10px] text-stone-500 font-sans-semibold">
+            Qty sold
+          </Text>
+        </View>
+        <View className="flex-row items-center gap-1.5">
+          <View className="w-2.5 h-2.5 rounded-sm bg-emerald-600" />
+          <Text className="text-[10px] text-stone-500 font-sans-semibold">
+            Net value (₹)
+          </Text>
+        </View>
+      </View>
+      <ScrollView horizontal showsVerticalScrollIndicator={false}>
+        <Svg width={rowWidth * rows.length} height={plotHeight + 32}>
+          {rows.map((row, index) => {
+            const left = index * rowWidth;
+            const quantityHeight = (row.quantity / maxQuantity) * plotHeight;
+            const revenueHeight = (row.revenue / maxRevenue) * plotHeight;
+            return (
+              <Fragment key={`${row.category}-${row.name}`}>
+                <Rect
+                  x={left + 8}
+                  y={plotHeight - quantityHeight}
+                  width={14}
+                  height={quantityHeight}
+                  rx={3}
+                  fill="#EA580C"
+                />
+                <Rect
+                  x={left + 34}
+                  y={plotHeight - revenueHeight}
+                  width={14}
+                  height={revenueHeight}
+                  rx={3}
+                  fill="#059669"
+                />
+                {row.quantity > 0 ? (
+                  <SvgText
+                    x={left + 15}
+                    y={plotHeight - quantityHeight - 4}
+                    fontSize={8}
+                    textAnchor="middle"
+                    fill="#57534E"
+                  >
+                    {row.quantity}
+                  </SvgText>
+                ) : null}
+                {row.revenue > 0 ? (
+                  <SvgText
+                    x={left + 41}
+                    y={plotHeight - revenueHeight - 4}
+                    fontSize={8}
+                    textAnchor="middle"
+                    fill="#57534E"
+                  >
+                    {row.revenue}
+                  </SvgText>
+                ) : null}
+                <SvgText
+                  x={left + 32}
+                  y={plotHeight + 13}
+                  fontSize={8}
+                  textAnchor="middle"
+                  fill="#A8A29E"
+                >
+                  {shortLabel(row.category, 12)}
+                </SvgText>
+                <SvgText
+                  x={left + 32}
+                  y={plotHeight + 26}
+                  fontSize={8}
+                  textAnchor="middle"
+                  fill="#78716C"
+                >
+                  {shortLabel(row.name, 14)}
+                </SvgText>
+              </Fragment>
+            );
+          })}
+        </Svg>
+      </ScrollView>
+      <Text className="text-[10px] text-stone-400 font-sans-medium mt-1">
+        {rows.length} items · peak {maxQuantity} qty / ₹{maxRevenue} · swipe to see all
+      </Text>
+    </View>
+  );
+}
+
+function ItemPerformanceList({
+  title,
+  items,
+  color,
+}: {
+  title: string;
+  items: AnalyticsItem[];
+  color: string;
+}) {
+  return (
+    <View className="flex-1">
+      <Text
+        className="text-[11px] font-sans-extrabold uppercase tracking-wide mb-2"
+        style={{ color }}
+      >
+        {title}
+      </Text>
+      {items.length === 0 ? (
+        <Text className="text-[11px] text-stone-400 font-sans-medium">
+          No items yet
+        </Text>
+      ) : (
+        items.map((item) => (
+          <View key={item.name} className="mb-2">
+            <Text numberOfLines={1} className="text-[11px] text-stone-800 font-sans-semibold">
+              {item.name}
+            </Text>
+            <Text className="text-[10px] text-stone-400 font-sans-medium">
+              {item.quantity} sold · ₹{item.revenue}
+            </Text>
+          </View>
+        ))
+      )}
+    </View>
+  );
+}
+
+function AnalyticsSheet({
+  visible,
+  onClose,
+  analytics,
+  loading,
+  error,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  analytics: OrderAnalytics | null;
+  loading: boolean;
+  error: string | null;
+}) {
+  const topItems = analytics?.items.slice(0, 5) ?? [];
+  const bottomItems = (analytics?.items ?? [])
+    .slice(-5)
+    .reverse()
+    .filter((item) => !topItems.some((top) => top.name === item.name));
+
+  return (
+    <Sheet
+      visible={visible}
+      onClose={onClose}
+      sheetClassName="px-5 pt-0 pb-6"
+      sheetStyle={{ maxHeight: "88%" }}
+    >
+      <ScrollView style={{ maxHeight: 520 }} showsVerticalScrollIndicator={false}>
+        <Text className="text-base font-sans-extrabold text-stone-900 mb-1">
+          Sales analytics
+        </Text>
+        <Text className="text-[11px] text-stone-400 font-sans-medium mb-3">
+          All-time totals and daily performance
+        </Text>
+
+        {loading ? (
+          <ActivityIndicator color="#EA580C" />
+        ) : error ? (
+          <Text className="text-xs text-red-600 font-sans-semibold">{error}</Text>
+        ) : analytics ? (
+          <>
+            <View className="flex-row bg-stone-50 rounded-2xl py-2 mb-4">
+              <StatCell
+                label="Orders"
+                value={String(analytics.lifetime.orders)}
+                icon="receipt-outline"
+                color="#EA580C"
+              />
+              <StatCell
+                label="Items sold"
+                value={String(analytics.lifetime.itemsSold)}
+                icon="cart-outline"
+                color="#0284C7"
+              />
+              <StatCell
+                label="Revenue"
+                value={`₹${analytics.lifetime.revenue}`}
+                icon="cash-outline"
+                color="#059669"
+              />
+            </View>
+
+            <Text className="text-[11px] text-stone-500 font-sans-extrabold uppercase tracking-wide mb-2">
+              Items by category · quantity &amp; net value (lifetime)
+            </Text>
+            <ItemSalesChart items={analytics.items} />
+
+            <View className="h-px bg-stone-100 my-4" />
+            <Text className="text-[11px] text-stone-500 font-sans-extrabold uppercase tracking-wide mb-2">
+              Daily items sold &amp; revenue
+            </Text>
+            <SalesChart daily={analytics.daily} />
+
+            <View className="h-px bg-stone-100 my-4" />
+            <View className="flex-row gap-4">
+              <ItemPerformanceList title="Top items" items={topItems} color="#059669" />
+              <ItemPerformanceList
+                title="Least performing"
+                items={bottomItems}
+                color="#DC2626"
+              />
+            </View>
+          </>
+        ) : null}
+      </ScrollView>
+    </Sheet>
+  );
+}
+
 function ItemRow({ item }: { item: BackendOrderItem }) {
   return (
     <View className="flex-row items-start justify-between py-2 border-b border-stone-100">
@@ -395,6 +787,10 @@ export default function OrdersScreen() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>("new");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [analyticsVisible, setAnalyticsVisible] = useState(false);
+  const [analytics, setAnalytics] = useState<OrderAnalytics | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [analyticsError, setAnalyticsError] = useState<string | null>(null);
 
   const [secondsLeft, setSecondsLeft] = useState(REFRESH_SECONDS);
   const secondsRef = useRef(REFRESH_SECONDS);
@@ -550,6 +946,21 @@ export default function OrdersScreen() {
     setLoading(true);
   };
 
+  const openAnalytics = async () => {
+    setAnalyticsVisible(true);
+    setAnalyticsLoading(true);
+    setAnalyticsError(null);
+    try {
+      setAnalytics(await getOrderAnalytics(staffKey));
+    } catch (err) {
+      setAnalyticsError(
+        err instanceof Error ? err.message : "Could not load analytics"
+      );
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
   const handleStatusUpdate = async (order: AdminOrder, status: OrderStatus) => {
     if (updatingId) return;
     setUpdatingId(order._id);
@@ -572,6 +983,7 @@ export default function OrdersScreen() {
     setStaffKey("");
     setOrders([]);
     knownIdsRef.current = null;
+    setAnalyticsVisible(false);
     setUnlockError(null);
     void stopAlert();
     void lock();
@@ -606,6 +1018,13 @@ export default function OrdersScreen() {
           </View>
           {hasAccess && (
             <>
+              <Pressable
+                onPress={() => void openAnalytics()}
+                className="p-2 rounded-full bg-orange-100 active:opacity-80"
+                accessibilityLabel="View sales analytics"
+              >
+                <Ionicons name="bar-chart" size={19} color="#EA580C" />
+              </Pressable>
               <Pressable
                 onPress={() => void refreshOrders()}
                 className="p-2 rounded-full bg-orange-100 active:opacity-80"
@@ -877,6 +1296,13 @@ export default function OrdersScreen() {
         onClose={() => setSelectedOrderId(null)}
         onStatusUpdate={(order, status) => void handleStatusUpdate(order, status)}
         updatingId={updatingId}
+      />
+      <AnalyticsSheet
+        visible={analyticsVisible}
+        onClose={() => setAnalyticsVisible(false)}
+        analytics={analytics}
+        loading={analyticsLoading}
+        error={analyticsError}
       />
     </View>
   );

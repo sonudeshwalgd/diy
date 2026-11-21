@@ -555,10 +555,6 @@ export default function HomeScreen() {
     setComboVisible(true);
   }, []);
 
-  const handleCall = () => {
-    Linking.openURL(`tel:${PHONE_NUMBER}`);
-  };
-
   const handleWhatsApp = () => {
     const sourceLine = orderSource.tableNumber
       ? `🍽️ *Table No:* ${orderSource.tableNumber}`
@@ -618,12 +614,6 @@ export default function HomeScreen() {
                     </Text>
                   </Pressable>
                 )}
-                <Pressable
-                  onPress={handleCall}
-                  className="p-2.5 bg-white/70 border border-white/80 rounded-full active:opacity-80"
-                >
-                  <Ionicons name="call" size={18} color="#EA580C" />
-                </Pressable>
                 <Pressable
                   onPress={handleWhatsApp}
                   className="p-2.5 bg-white/70 border border-white/80 rounded-full active:opacity-80"
