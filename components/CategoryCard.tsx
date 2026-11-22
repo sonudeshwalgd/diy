@@ -6,6 +6,7 @@ import { getItemPrice } from "../data/products";
 import { useCart } from "../context/CartContext";
 import { useDisabledItems } from "../context/DisabledItemsContext";
 import { useResponsiveLayout } from "../utils/responsive";
+import { isFeatureEnabled } from "../config/featureFlags";
 
 interface Props {
   category: Category;
@@ -74,12 +75,14 @@ export default function CategoryCard({ category, onPress, index = 0 }: Props) {
         <Text className="text-[15px] font-sans-bold text-stone-900" numberOfLines={1}>
           {category.name}
         </Text>
-        <Text
-          className="text-[12px] text-stone-500 mt-0.5 font-sans-medium"
-          numberOfLines={2}
-        >
-          {category.description}
-        </Text>
+        {isFeatureEnabled("categoryCard.showDescription") && (
+          <Text
+            className="text-[12px] text-stone-500 mt-0.5 font-sans-medium"
+            numberOfLines={2}
+          >
+            {category.description}
+          </Text>
+        )}
 
         <View className="flex-row items-end justify-between mt-auto pt-2">
           <View className="flex-row items-center gap-1">
@@ -97,9 +100,9 @@ export default function CategoryCard({ category, onPress, index = 0 }: Props) {
             </Text>
           </View>
           <View className="items-end">
-            <Text className="text-[9px] text-stone-400 leading-3">
+            {/* <Text className="text-[9px] text-stone-400 leading-3">
               {allOutOfStock ? "unavailable" : "from"}
-            </Text>
+            </Text> */}
             <Text
               className={`text-lg font-sans-extrabold leading-5 ${
                 allOutOfStock ? "text-stone-400" : "text-orange-600"
