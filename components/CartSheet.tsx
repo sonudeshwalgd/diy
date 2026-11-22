@@ -165,15 +165,14 @@ export default function CartSheet({
 
   const buildWhatsAppMessage = (orderId: string) => {
     let msg = "🛒 *New Order*\n";
-    msg += `🧾 *Order ID:* ${orderId}\n\n`;
+    msg += `🧾 *Order ID:* ${orderId}\n`;
     if (tableNumber) {
       msg += `🍽️ *Table No:* ${tableNumber}\n`;
     }
     if (counterNumber) {
       msg += `🔢 *Counter No:* ${counterNumber}\n`;
     }
-    msg += `📱 *Customer Mobile:* ${savedMobile || "N/A"}\n\n`;
-    msg += "━━━━━━━━━━━━━━━━\n";
+    msg += "\n━━━━━━━━━━━━━━━━\n";
     items.forEach((item, idx) => {
       msg += `${idx + 1}. *${item.subcategory.name}*\n`;
       msg += `   ${item.category.name} × ${item.quantity} = ₹${getItemPrice(item.subcategory) * item.quantity}\n`;
@@ -219,7 +218,7 @@ export default function CartSheet({
     placingRef.current = true;
     setPlacing(true);
 
-    const orderId = pendingOrderIdRef.current ?? generateOrderId();
+    const orderId = pendingOrderIdRef.current ?? (await generateOrderId());
     pendingOrderIdRef.current = orderId;
     const message = buildWhatsAppMessage(orderId);
     const orderPayload = {

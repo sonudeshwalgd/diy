@@ -9,6 +9,13 @@ Format: `MAJOR.MINOR.PATCH`
 
 The current version lives in `app.json` and is displayed at the bottom of the sidebar.
 
+## 1.10.31
+
+- Shortened order IDs to `XXXXXXXX-CCCC`, removing the date and `DIY` prefix.
+- Appended a hidden 4-character customer code derived from the stored device user token to each order ID.
+- Removed `Customer ID` and `Customer Mobile` lines from WhatsApp order messages on both frontend and backend.
+- Cleaned 291 previously stored WhatsApp messages that still contained those lines.
+
 ## 1.9.30
 
 - Added Momos, Spring Rolls, Maggi, Rajma Chawal, Kadhi Chawal, Pasta, Parathas, Noodles, Fried Rice, and Laphing to the Coming Soon section.

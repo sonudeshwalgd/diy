@@ -1,20 +1,40 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Crypto from "expo-crypto";
 import { ApiError, getOrderById } from "../services/api";
 import { setApiLogContext } from "../services/apiLogStore";
+import { getUserToken } from "../services/userToken";
 
 export const CUSTOMER_MOBILE_KEY = "diy_customer_mobile";
 export const LAST_ORDER_ID_KEY = "diy_last_order_id";
 export const ORDER_IDS_KEY = "diy_order_ids";
 
-export function generateOrderId(): string {
-  const now = new Date();
-  const date = `${String(now.getFullYear()).slice(-2)}${String(
-    now.getMonth() + 1
-  ).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
-  const suffix = `${Date.now().toString(36)}${Math.random()
-    .toString(36)
-    .slice(2, 6)}`.toUpperCase();
-  return `DIY-${date}-${suffix}`;
+const CUSTOMER_CODE_LENGTH = 4;
+const ORDER_CODE_LENGTH = 8;
+
+function customerCodeFromToken(token: string): string {
+  const cleaned = token.replace(/[^0-9a-z]/gi, "").toUpperCase();
+  if (!cleaned) {
+    return Crypto.randomUUID()
+      .replace(/-/g, "")
+      .slice(0, CUSTOMER_CODE_LENGTH)
+      .toUpperCase();
+  }
+  return cleaned.slice(-CUSTOMER_CODE_LENGTH).padStart(CUSTOMER_CODE_LENGTH, "0");
+}
+
+export async function generateOrderId(): Promise<string> {
+  let token: string;
+  try {
+    token = await getUserToken();
+  } catch {
+    token = Crypto.randomUUID();
+  }
+  const customerCode = customerCodeFromToken(token);
+  const orderCode = Crypto.randomUUID()
+    .replace(/-/g, "")
+    .slice(0, ORDER_CODE_LENGTH)
+    .toUpperCase();
+  return `${orderCode}-${customerCode}`;
 }
 
 export async function getStoredOrderIds(): Promise<string[]> {
