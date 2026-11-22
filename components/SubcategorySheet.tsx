@@ -40,9 +40,9 @@ function SubcategorySheetContent({
 }) {
   const { addItem, decrement, getItemQuantity } = useCart();
   const globalItemState = useDisabledItems();
-  const bamboozItemState = useDisabledItems("bambooz");
+  const diyChineseItemState = useDisabledItems("diy_chineese");
   const { isItemDisabled } =
-    category.restaurant === "bambooz" ? bamboozItemState : globalItemState;
+    category.restaurant === "diy_chineese" ? diyChineseItemState : globalItemState;
 
   const addDirectItem = (sub: Subcategory, variant?: Variant) => {
     const cartId = variant ? `${sub.id}:${variant.id}` : sub.id;

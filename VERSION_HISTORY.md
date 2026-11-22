@@ -9,23 +9,32 @@ Format: `MAJOR.MINOR.PATCH`
 
 The current version lives in `app.json` and is displayed at the bottom of the sidebar.
 
+## 1.8.29
+
+- Renamed the secondary menu from the old name to `diy_chineese` / `DIY Chinese` everywhere: frontend and backend API routes, staff screen route, feature flag, restaurant tag, scoped storage keys, disabled/hidden scope values, ID prefix, React providers, data files, dashboard labels, and documentation.
+- Renamed `data/products_bambooz.json` to `data/products_diy_chineese.json`, `data/products_bambooz.ts` to `data/products_diy_chineese.ts`, and `app/items/disabled/bambooz.tsx` to `app/items/disabled/diy_chineese.tsx`.
+- Renamed staff routes to `/items/disabled/diy_chineese`, `/items/hidden`, and `/items/hidden/diy_chineese`, with scope and persisted document key `diy_chineese`.
+- Renamed the restaurant tag to `restaurant: "diy_chineese"` across cart items, order payloads, order documents, activity events, duplicate checks, idempotency keys, analytics, and dashboards.
+- Verified no `bambooz` references remain and reran frontend, backend, and dashboard lint/typechecks.
+
 ## 1.7.28
 
-- Added a full Bambooz menu alongside the existing DIY menu behind the `menu.includeBambooz` feature flag.
-- Added `data/products_bambooz.json` with 13 categories and 41 items, plus a typed adapter in `data/products_bambooz.ts` that maps categories, subcategories, variants, quantities, combo includes, and images into the existing menu model.
-- Prefixed every Bambooz ID with `bambooz--` so cart variant IDs that use `:` continue to resolve to the correct base item for stock checks.
-- Attached every supplied Bambooz image from `assets/bamboocza_ivory_food_images/` to its item and used the first item image as the category card image.
-- Hid the Bambooz Cold Coffee, Sandwiches, Special Combos, and legacy combo category sections from the customer menu.
+- Added a full DIY Chinese menu alongside the existing DIY menu behind the `menu.includeDiyChinese` feature flag.
+- Added `data/products_diy_chineese.json` with 13 categories and 41 items, plus a typed adapter in `data/products_diy_chineese.ts` that maps categories, subcategories, variants, quantities, combo includes, and images into the existing menu model.
+- Prefixed every DIY Chinese ID with `diy_chineese--` so cart variant IDs that use `:` continue to resolve to the correct base item for stock checks.
+- Attached every supplied DIY Chinese image from `assets/bamboocza_ivory_food_images/` to its item and used the first item image as the category card image.
+- Hid the DIY Chinese Cold Coffee, Sandwiches, Special Combos, and legacy combo category sections from the customer menu.
 - Replaced six separate combo cards with one `Regular Meal` combo placed first in Combos & Meals, with six explicit choices: Chai + Aloo Paratha, Veg Steamed Momos + Chai, Classic Masala Maggi + Cold Coffee, Veg Steamed Momos + Cold Coffee, Veg Fried Rice + Veg Steamed Momos, and Veg Fried Rice + Cold Coffee.
 - Mapped each Regular Meal option to its underlying primary item so stock flows through the correct category item while the option price stays the final combo price.
-- Added a separate Bambooz staff screen at `/items/disabled/bambooz` and a `BAMBOOZ` shortcut on the global staff screen.
-- Added independent hide and disable controls for every DIY and Bambooz item and combo; hidden items disappear from the customer menu while disabled items remain visible as out of stock.
+- Added a separate DIY Chinese staff screen at `/items/disabled/diy_chineese` and a `DIY CHINESE` shortcut on the global staff screen.
+- Added independent hide and disable controls for every DIY and DIY Chinese item and combo; hidden items disappear from the customer menu while disabled items remain visible as out of stock.
 - Added separate bulk buttons for each menu: Disable/Enable entire menu and Hide/Unhide entire menu. Hide and disable states are stored and toggled independently.
-- Split disabled and hidden state into scoped global/Bambooz React contexts with local cache plus backend sync, and added `setItemsDisabled` / `setItemsHidden` bulk setters that save in one request.
-- Added scoped backend routes for `items/disabled/bambooz`, `items/hidden`, and `items/hidden/bambooz`, with a separate `HiddenItems` model and document keys for global/Bambooz scopes.
-- Reused the existing staff key verification for both hide and disable controls and added a database bypass for both Bambooz verify endpoints.
-- Tagged cart items, order payloads, order documents, activity events, duplicate checks, duplicate-order guards, idempotency keys, and analytics with `restaurant: "bambooz"`.
-- Updated item analytics in the app, web dashboard, and mobile dashboard to group by item name plus restaurant so Bambooz sales no longer merge into DIY sales, with Bambooz rows labeled separately.
+- Split disabled and hidden state into scoped global/DIY Chinese React contexts with local cache plus backend sync, and added `setItemsDisabled` / `setItemsHidden` bulk setters that save in one request.
+- Added scoped backend routes for `items/disabled/diy_chineese`, `items/hidden`, and `items/hidden/diy_chineese`, with a separate `HiddenItems` model and document keys for global/DIY Chinese scopes.
+- Reused the existing staff key verification for both hide and disable controls and added a database bypass for both DIY Chinese verify endpoints.
+- Tagged cart items, order payloads, order documents, activity events, duplicate checks, duplicate-order guards, idempotency keys, and analytics with `restaurant: "diy_chineese"`.
+- Updated item analytics in the app, web dashboard, and mobile dashboard to group by item name plus restaurant so DIY Chinese sales no longer merge into DIY sales, with DIY Chinese rows labeled separately.
+- Renamed every API route, staff route, feature flag, restaurant tag, React context, ID prefix, data file, and UI label from the old menu name to `diy_chineese` / `DIY Chinese`.
 - Verified the frontend with `npm run lint` and `npx tsc --noEmit`, and the backend with `npx tsc --noEmit`.
 
 ## 1.4.10

@@ -171,10 +171,10 @@ export interface PopularItemsResponse {
 }
 
 const disabledItemsPath = (restaurant?: string) =>
-  restaurant === "bambooz" ? "/items/disabled/bambooz" : "/items/disabled";
+  restaurant === "diy_chineese" ? "/items/disabled/diy_chineese" : "/items/disabled";
 
 const hiddenItemsPath = (restaurant?: string) =>
-  restaurant === "bambooz" ? "/items/hidden/bambooz" : "/items/hidden";
+  restaurant === "diy_chineese" ? "/items/hidden/diy_chineese" : "/items/hidden";
 
 export const getDisabledItems = async (
   restaurant?: string

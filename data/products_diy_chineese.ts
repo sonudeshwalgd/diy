@@ -6,10 +6,10 @@ import type {
   Subcategory,
   Variant,
 } from "./products";
-import bamboozMenuJson from "./products_bambooz.json";
+import diyChineseMenuJson from "./products_diy_chineese.json";
 
-export const BAMBOOZ_RESTAURANT = "bambooz";
-const SCOPED_PREFIX = `${BAMBOOZ_RESTAURANT}--`;
+export const DIY_CHINESE_RESTAURANT = "diy_chineese";
+const SCOPED_PREFIX = `${DIY_CHINESE_RESTAURANT}--`;
 
 const itemImages: Record<string, ImageSourcePropType> = {
   "veg-steamed-momos": require("../assets/bamboocza_ivory_food_images/momos/veg-steamed-momos.jpg"),
@@ -55,39 +55,39 @@ const itemImages: Record<string, ImageSourcePropType> = {
   "gang-platter-for-4": require("../assets/bamboocza_ivory_food_images/special-combos/gang-platter-for-4.jpg"),
 };
 
-interface BamboozVariantInput {
+interface DiyChineseVariantInput {
   quantity: string;
   price: number;
 }
 
-interface BamboozItemInput {
+interface DiyChineseItemInput {
   id: string;
   name: string;
   price?: number;
   quantity?: string;
   includes?: string[];
-  variants?: BamboozVariantInput[];
+  variants?: DiyChineseVariantInput[];
 }
 
-interface BamboozSubcategoryInput {
+interface DiyChineseSubcategoryInput {
   name: string;
-  items: BamboozItemInput[];
+  items: DiyChineseItemInput[];
 }
 
-interface BamboozCategoryInput {
+interface DiyChineseCategoryInput {
   id: string;
   name: string;
   description?: string;
-  subcategories: BamboozSubcategoryInput[];
+  subcategories: DiyChineseSubcategoryInput[];
 }
 
-interface BamboozMenuInput {
-  menu: BamboozCategoryInput[];
+interface DiyChineseMenuInput {
+  menu: DiyChineseCategoryInput[];
 }
 
-const menu = bamboozMenuJson as BamboozMenuInput;
+const menu = diyChineseMenuJson as DiyChineseMenuInput;
 
-export const getBamboozItemImage = (
+export const getDiyChineseItemImage = (
   itemId: string
 ): ImageSourcePropType | undefined => {
   const rawId = itemId.startsWith(SCOPED_PREFIX)
@@ -105,24 +105,24 @@ const slug = (value: string) =>
 
 const scopedId = (id: string) => `${SCOPED_PREFIX}${id}`;
 
-const toVariants = (variants: BamboozVariantInput[]): Variant[] =>
+const toVariants = (variants: DiyChineseVariantInput[]): Variant[] =>
   variants.map((variant) => ({
     id: slug(variant.quantity),
     name: variant.quantity,
     price: variant.price,
   }));
 
-const toSubcategory = (item: BamboozItemInput): Subcategory => ({
+const toSubcategory = (item: DiyChineseItemInput): Subcategory => ({
   id: scopedId(item.id),
   name: item.name,
-  image: getBamboozItemImage(item.id),
+  image: getDiyChineseItemImage(item.id),
   price: item.price,
   variants: item.variants ? toVariants(item.variants) : undefined,
   variantLabel: item.variants ? "Quantity" : undefined,
   maxOneVariant: item.variants ? true : undefined,
   quantity: item.quantity,
   includes: item.includes,
-  restaurant: BAMBOOZ_RESTAURANT,
+  restaurant: DIY_CHINESE_RESTAURANT,
 });
 
 interface RegularMealOptionTarget {
@@ -160,7 +160,7 @@ const regularMealsCategory = menu.menu.find(
 const regularMealItems =
   regularMealsCategory?.subcategories.flatMap((subcategory) => subcategory.items) ?? [];
 
-const toRegularMealOption = (item: BamboozItemInput): ComboOption => {
+const toRegularMealOption = (item: DiyChineseItemInput): ComboOption => {
   const target = regularMealOptionTargets[item.id] ?? {
     itemId: item.id,
     categoryId: "bamboocza-combos",
@@ -174,14 +174,14 @@ const toRegularMealOption = (item: BamboozItemInput): ComboOption => {
   };
 };
 
-export const bamboozCombos: Combo[] = regularMealsCategory
+export const diyChineseCombos: Combo[] = regularMealsCategory
   ? [
       {
         id: scopedId("regular-meal"),
-        restaurant: BAMBOOZ_RESTAURANT,
+        restaurant: DIY_CHINESE_RESTAURANT,
         name: regularMealsCategory.name,
         description: `Choose from ${regularMealItems.length} regular meals`,
-        image: getBamboozItemImage(regularMealItems[0]?.id ?? ""),
+        image: getDiyChineseItemImage(regularMealItems[0]?.id ?? ""),
         items: [],
         selectionGroups: [
           {
@@ -209,7 +209,7 @@ const hiddenCategoryIds = new Set([
   "special-combos",
 ]);
 
-export const bamboozCategories: Category[] = menu.menu
+export const diyChineseCategories: Category[] = menu.menu
   .filter((category) => !hiddenCategoryIds.has(category.id))
   .map((category) => {
     const subcategories = category.subcategories.flatMap((subcategory) =>
@@ -219,15 +219,15 @@ export const bamboozCategories: Category[] = menu.menu
       id: scopedId(category.id),
       name: category.name,
       image: subcategories.find((subcategory) => subcategory.image)?.image,
-      description: category.description ?? "Bambooz kitchen",
-      restaurant: BAMBOOZ_RESTAURANT,
+      description: category.description ?? "DIY Chinese kitchen",
+      restaurant: DIY_CHINESE_RESTAURANT,
       subcategories,
     };
   });
 
-export function isBamboozItem(subcategory: Subcategory): boolean {
+export function isDiyChineseItem(subcategory: Subcategory): boolean {
   return (
-    subcategory.restaurant === BAMBOOZ_RESTAURANT ||
-    subcategory.id.startsWith(`${BAMBOOZ_RESTAURANT}--`)
+    subcategory.restaurant === DIY_CHINESE_RESTAURANT ||
+    subcategory.id.startsWith(`${DIY_CHINESE_RESTAURANT}--`)
   );
 }

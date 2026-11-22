@@ -3,11 +3,11 @@ export const featureFlags = {
     showDescription: false,
   },
   menu: {
-    includeBambooz: true,
+    includeDiyChinese: true,
   },
 } as const;
 
-export type FeatureFlagKey = "categoryCard.showDescription" | "menu.includeBambooz";
+export type FeatureFlagKey = "categoryCard.showDescription" | "menu.includeDiyChinese";
 
 export function isFeatureEnabled(key: FeatureFlagKey): boolean {
   return key

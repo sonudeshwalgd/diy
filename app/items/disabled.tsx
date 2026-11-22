@@ -12,7 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { combos, coreCategories } from "../../data/products";
-import { bamboozCategories } from "../../data/products_bambooz";
+import { diyChineseCategories } from "../../data/products_diy_chineese";
 import {
   useDisabledItems,
   type DisabledScope,
@@ -62,25 +62,25 @@ export function DisabledItemsScreenView({
     syncNow,
   } = useDisabledItems(scope);
 
-  const isBambooz = scope === "bambooz";
+  const isDiyChinese = scope === "diy_chineese";
   const menuCategories = useMemo(
-    () => (isBambooz ? bamboozCategories : coreCategories),
-    [isBambooz]
+    () => (isDiyChinese ? diyChineseCategories : coreCategories),
+    [isDiyChinese]
   );
   const menuCombos = useMemo(
     () =>
       combos.filter((combo) =>
-        isBambooz
-          ? combo.restaurant === "bambooz"
-          : combo.restaurant !== "bambooz"
+        isDiyChinese
+          ? combo.restaurant === "diy_chineese"
+          : combo.restaurant !== "diy_chineese"
       ),
-    [isBambooz]
+    [isDiyChinese]
   );
-  const screenTitle = isBambooz
-    ? "Bambooz Availability"
+  const screenTitle = isDiyChinese
+    ? "DIY Chinese Availability"
     : "Item Availability";
-  const screenSubtitle = isBambooz
-    ? "Bambooz staff controls for out of stock items"
+  const screenSubtitle = isDiyChinese
+    ? "DIY Chinese staff controls for out of stock items"
     : "Staff controls for out of stock items";
 
   const [staffKey, setStaffKey] = useState("");
@@ -249,20 +249,20 @@ export function DisabledItemsScreenView({
               {screenSubtitle}
             </Text>
           </View>
-          {!isBambooz && (
+          {!isDiyChinese && (
             <Pressable
               onPress={() =>
                 router.push(
-                  "/items/disabled/bambooz" as unknown as Parameters<
+                  "/items/disabled/diy_chineese" as unknown as Parameters<
                     typeof router.push
                   >[0]
                 )
               }
               className="px-2.5 py-2 rounded-full bg-amber-100 active:opacity-80"
-              accessibilityLabel="Open Bambooz availability"
+              accessibilityLabel="Open DIY Chinese availability"
             >
               <Text className="text-[10px] font-sans-extrabold text-amber-700">
-                BAMBOOZ
+                DIY CHINESE
               </Text>
             </Pressable>
           )}

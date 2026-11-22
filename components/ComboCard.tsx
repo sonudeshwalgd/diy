@@ -26,9 +26,9 @@ interface Props {
 export default function ComboCard({ combo, onPress, index = 0 }: Props) {
   const { getComboQuantity, addItem, decrement, getItemQuantity } = useCart();
   const globalItemState = useDisabledItems();
-  const bamboozItemState = useDisabledItems("bambooz");
+  const diyChineseItemState = useDisabledItems("diy_chineese");
   const { getComboAvailability } =
-    combo.restaurant === "bambooz" ? bamboozItemState : globalItemState;
+    combo.restaurant === "diy_chineese" ? diyChineseItemState : globalItemState;
   const { cardWidth } = useResponsiveLayout();
   const itemCount = getComboItemCount(combo);
   const price = getComboStartingPrice(combo);

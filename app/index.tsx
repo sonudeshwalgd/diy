@@ -539,11 +539,11 @@ export default function HomeScreen() {
   const { itemCount } = useCart();
   const { activeOrders } = useActiveOrders();
   const globalItemState = useDisabledItems();
-  const bamboozItemState = useDisabledItems("bambooz");
+  const diyChineseItemState = useDisabledItems("diy_chineese");
   const stateFor = useCallback(
     (restaurant?: string) =>
-      restaurant === "bambooz" ? bamboozItemState : globalItemState,
-    [bamboozItemState, globalItemState]
+      restaurant === "diy_chineese" ? diyChineseItemState : globalItemState,
+    [diyChineseItemState, globalItemState]
   );
   const isItemDisabledFor = useCallback(
     (id: string, restaurant?: string) => stateFor(restaurant).isItemDisabled(id),

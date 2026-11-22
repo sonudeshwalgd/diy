@@ -398,8 +398,8 @@ function ItemSalesChart({ items }: { items: AnalyticsItem[] }) {
         result.push({
           name,
           category:
-            restaurant === "bambooz"
-              ? `Bambooz · ${category.name}`
+            restaurant === "diy_chineese"
+              ? `DIY Chinese · ${category.name}`
               : category.name,
           restaurant,
           quantity: matches.reduce((sum, item) => sum + item.quantity, 0),
@@ -418,7 +418,7 @@ function ItemSalesChart({ items }: { items: AnalyticsItem[] }) {
         result.push({
           name: item.name,
           category:
-            item.restaurant === "bambooz" ? "Bambooz" : "Other",
+            item.restaurant === "diy_chineese" ? "DIY Chinese" : "Other",
           restaurant: item.restaurant,
           quantity: item.quantity,
           revenue: item.revenue,

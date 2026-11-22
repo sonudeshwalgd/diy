@@ -15,7 +15,7 @@ import {
 } from "@expo-google-fonts/plus-jakarta-sans";
 import { CartProvider } from "../context/CartContext";
 import {
-  BamboozDisabledItemsProvider,
+  DiyChineseDisabledItemsProvider,
   DisabledItemsProvider,
 } from "../context/DisabledItemsContext";
 import { ActiveOrdersProvider } from "../context/ActiveOrdersContext";
@@ -61,7 +61,7 @@ export default function RootLayout() {
       <GestureHandlerRootView className="flex-1">
         <CartProvider>
           <DisabledItemsProvider>
-            <BamboozDisabledItemsProvider>
+            <DiyChineseDisabledItemsProvider>
               <ActiveOrdersProvider>
                 <ApiLogSync />
                 <ActivityTrackerSync />
@@ -73,11 +73,11 @@ export default function RootLayout() {
                   <Stack.Screen name="privacy" options={{ title: "Privacy Policy" }} />
                   <Stack.Screen name="feedback" options={{ title: "Feedback", headerShown: false }} />
                   <Stack.Screen name="items/disabled" options={{ headerShown: false }} />
-                  <Stack.Screen name="items/disabled/bambooz" options={{ headerShown: false }} />
+                  <Stack.Screen name="items/disabled/diy_chineese" options={{ headerShown: false }} />
                   <Stack.Screen name="orders" options={{ headerShown: false }} />
                 </Stack>
               </ActiveOrdersProvider>
-            </BamboozDisabledItemsProvider>
+            </DiyChineseDisabledItemsProvider>
           </DisabledItemsProvider>
         </CartProvider>
       </GestureHandlerRootView>

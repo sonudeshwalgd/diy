@@ -1,6 +1,6 @@
 import type { ImageSourcePropType } from "react-native";
 import { isFeatureEnabled } from "../config/featureFlags";
-import { bamboozCategories, bamboozCombos } from "./products_bambooz";
+import { diyChineseCategories, diyChineseCombos } from "./products_diy_chineese";
 import strawberryGlass from "../assets/DIY_Drinks_All_Item_Images/individual-items/strawberry/strawberry-glass/product";
 import strawberryBowl from "../assets/DIY_Drinks_All_Item_Images/individual-items/strawberry/strawberry-bowl/product";
 import strawberryStick from "../assets/DIY_Drinks_All_Item_Images/individual-items/strawberry/strawberry-stick/product";
@@ -715,10 +715,10 @@ export const coreCategories: Category[] = [...categoriesBase].sort(
   (a, b) => CATEGORY_ORDER.indexOf(a.id) - CATEGORY_ORDER.indexOf(b.id)
 );
 
-export const categories: Category[] = isFeatureEnabled("menu.includeBambooz")
+export const categories: Category[] = isFeatureEnabled("menu.includeDiyChinese")
   ? [
       ...coreCategories,
-      ...[...bamboozCategories].sort((a, b) => a.name.localeCompare(b.name)),
+      ...[...diyChineseCategories].sort((a, b) => a.name.localeCompare(b.name)),
     ]
   : coreCategories;
 
@@ -1142,8 +1142,8 @@ const coreCombos: Combo[] = combosBase
   })
   .sort((a, b) => COMBO_ORDER.indexOf(a.id) - COMBO_ORDER.indexOf(b.id));
 
-export const combos: Combo[] = isFeatureEnabled("menu.includeBambooz")
-  ? [...bamboozCombos, ...coreCombos]
+export const combos: Combo[] = isFeatureEnabled("menu.includeDiyChinese")
+  ? [...diyChineseCombos, ...coreCombos]
   : coreCombos;
 
 export const customComboRule: CustomComboRule = {

@@ -25,10 +25,10 @@ export default function ProductCard({
 }: Props) {
   const { getItemQuantity } = useCart();
   const globalItemState = useDisabledItems();
-  const bamboozItemState = useDisabledItems("bambooz");
+  const diyChineseItemState = useDisabledItems("diy_chineese");
   const { isItemDisabled } =
-    (product.restaurant ?? category.restaurant) === "bambooz"
-      ? bamboozItemState
+    (product.restaurant ?? category.restaurant) === "diy_chineese"
+      ? diyChineseItemState
       : globalItemState;
   const { cardWidth } = useResponsiveLayout();
   const quantity = getItemQuantity(product.id);

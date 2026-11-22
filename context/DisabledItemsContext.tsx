@@ -22,16 +22,16 @@ import {
   type ComboAvailability,
 } from "../utils/comboAvailability";
 
-export type DisabledScope = "global" | "bambooz";
+export type DisabledScope = "global" | "diy_chineese";
 
 const DISABLED_STORAGE_KEYS: Record<DisabledScope, string> = {
   global: "diy_disabled_items_v1",
-  bambooz: "diy_disabled_items_bambooz_v1",
+  diy_chineese: "diy_disabled_items_diy_chineese_v1",
 };
 
 const HIDDEN_STORAGE_KEYS: Record<DisabledScope, string> = {
   global: "diy_hidden_items_v1",
-  bambooz: "diy_hidden_items_bambooz_v1",
+  diy_chineese: "diy_hidden_items_diy_chineese_v1",
 };
 
 export type SyncStatus = "idle" | "syncing" | "saved" | "error";
@@ -71,7 +71,7 @@ const disabledItemsContexts: Record<
   Context<DisabledItemsContextType | undefined>
 > = {
   global: createContext<DisabledItemsContextType | undefined>(undefined),
-  bambooz: createContext<DisabledItemsContextType | undefined>(undefined),
+  diy_chineese: createContext<DisabledItemsContextType | undefined>(undefined),
 };
 
 const normalizeIds = (ids: string[]) =>
@@ -89,7 +89,7 @@ function DisabledItemsProviderImpl({
 }) {
   const disabledStorageKey = DISABLED_STORAGE_KEYS[scope];
   const hiddenStorageKey = HIDDEN_STORAGE_KEYS[scope];
-  const restaurant = scope === "bambooz" ? "bambooz" : undefined;
+  const restaurant = scope === "diy_chineese" ? "diy_chineese" : undefined;
 
   const [disabledIds, setDisabledIds] = useState<string[]>([]);
   const [hiddenIds, setHiddenIds] = useState<string[]>([]);
@@ -478,13 +478,13 @@ export function DisabledItemsProvider({
   );
 }
 
-export function BamboozDisabledItemsProvider({
+export function DiyChineseDisabledItemsProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <DisabledItemsProviderImpl scope="bambooz">
+    <DisabledItemsProviderImpl scope="diy_chineese">
       {children}
     </DisabledItemsProviderImpl>
   );

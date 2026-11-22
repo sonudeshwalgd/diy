@@ -13,7 +13,7 @@ import {
   type ComboOption,
   type ComboSelectionGroup,
 } from "../data/products";
-import { getBamboozItemImage } from "../data/products_bambooz";
+import { getDiyChineseItemImage } from "../data/products_diy_chineese";
 import { useCart } from "../context/CartContext";
 import { useDisabledItems } from "../context/DisabledItemsContext";
 import Sheet from "./Sheet";
@@ -58,9 +58,9 @@ function ComboSheetContent({
 }) {
   const { addItem, decrement, getComboQuantity, getItemQuantity } = useCart();
   const globalItemState = useDisabledItems();
-  const bamboozItemState = useDisabledItems("bambooz");
+  const diyChineseItemState = useDisabledItems("diy_chineese");
   const { getComboAvailability, isItemDisabled } =
-    combo.restaurant === "bambooz" ? bamboozItemState : globalItemState;
+    combo.restaurant === "diy_chineese" ? diyChineseItemState : globalItemState;
   const availability = useMemo(
     () => getComboAvailability(combo),
     [combo, getComboAvailability]
@@ -149,7 +149,7 @@ function ComboSheetContent({
     const cat = categories.find((c) => c.id === categoryId);
     return (
       cat?.subcategories.find((s) => s.id === itemId)?.image ??
-      getBamboozItemImage(itemId)
+      getDiyChineseItemImage(itemId)
     );
   };
 
