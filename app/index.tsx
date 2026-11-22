@@ -984,6 +984,10 @@ export default function HomeScreen() {
         sourceLabel={sourceLabel}
         queryParams={queryParams}
         insideRestaurant={insideRestaurant}
+        onViewOrder={(orderId) => {
+          setCartVisible(false);
+          setSelectedOrderId(orderId);
+        }}
       />
 
       <OrderBottomSheet

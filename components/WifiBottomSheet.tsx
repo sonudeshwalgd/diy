@@ -4,8 +4,8 @@ import { Ionicons } from "@expo/vector-icons";
 import QRCodeGenerator from "../utils/QRCodeGenerator";
 import Sheet from "./Sheet";
 
-const WIFI_SSID = "DIY_Shop";
-const WIFI_PASSWORD = "Nitio@123";
+const WIFI_SSID = "Airtel_Diydrinks.in";
+const WIFI_PASSWORD = "Diydrinks.in_1";
 const WIFI_QR_VALUE = `WIFI:T:WPA;S:${WIFI_SSID};P:${WIFI_PASSWORD};;`;
 
 interface Props {

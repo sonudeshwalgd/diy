@@ -29,11 +29,14 @@ import {
 } from "../services/activityTracker";
 import { PHONE_NUMBER } from "./OrderBottomSheet";
 import {
+  checkDuplicateOrder,
   getCustomer,
   placeOrder,
   COIN_EARN_RATE,
+  type AdminOrder,
   type CustomerInfo,
 } from "../services/api";
+import DuplicateOrderSheet from "./DuplicateOrderSheet";
 import Sheet from "./Sheet";
 
 interface CartSheetProps {
@@ -44,6 +47,7 @@ interface CartSheetProps {
   sourceLabel?: string;
   queryParams?: Record<string, string>;
   insideRestaurant?: boolean;
+  onViewOrder: (orderId: string) => void;
 }
 
 export default function CartSheet({
@@ -54,6 +58,7 @@ export default function CartSheet({
   sourceLabel,
   queryParams,
   insideRestaurant,
+  onViewOrder,
 }: CartSheetProps) {
   const { items, total, itemCount, increment, decrement, removeItem, clearCart } =
     useCart();
@@ -65,6 +70,7 @@ export default function CartSheet({
   const [loadingCustomer, setLoadingCustomer] = useState(false);
   const [coinsToUse, setCoinsToUse] = useState(0);
   const [placing, setPlacing] = useState(false);
+  const [duplicateOrder, setDuplicateOrder] = useState<AdminOrder | null>(null);
   const [showMobileInput, setShowMobileInput] = useState(false);
   const [loyaltyError, setLoyaltyError] = useState<string | null>(null);
   const pendingOrderIdRef = useRef<string | null>(null);
@@ -188,9 +194,27 @@ export default function CartSheet({
     return msg;
   };
 
-  const handlePlaceOrder = async () => {
-    if (items.length === 0 || placingRef.current) return;
+  const findDuplicateOrder = async (): Promise<AdminOrder | null> => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    try {
+      return await checkDuplicateOrder(
+        items.map((item) => ({
+          itemId: item.subcategory.id,
+          quantity: item.quantity,
+        })),
+        savedMobile || undefined,
+        controller.signal
+      );
+    } catch {
+      return null;
+    } finally {
+      clearTimeout(timeout);
+    }
+  };
 
+  const submitOrder = async () => {
+    if (placingRef.current) return;
     placingRef.current = true;
     setPlacing(true);
 
@@ -201,6 +225,7 @@ export default function CartSheet({
       orderId,
       customerMobile: savedMobile || undefined,
       items: items.map((i) => ({
+        itemId: i.subcategory.id,
         name: i.subcategory.name,
         price: getItemPrice(i.subcategory),
         quantity: i.quantity,
@@ -295,6 +320,37 @@ export default function CartSheet({
     setPlacing(false);
   };
 
+  const handlePlaceOrder = async () => {
+    if (items.length === 0 || placingRef.current) return;
+
+    placingRef.current = true;
+    setPlacing(true);
+
+    const duplicate = await findDuplicateOrder();
+    if (duplicate) {
+      placingRef.current = false;
+      setPlacing(false);
+      setDuplicateOrder(duplicate);
+      return;
+    }
+
+    placingRef.current = false;
+    setPlacing(false);
+    await submitOrder();
+  };
+
+  const handleViewPrevious = () => {
+    const order = duplicateOrder;
+    setDuplicateOrder(null);
+    closeSheet();
+    if (order) onViewOrder(order.orderId || order._id);
+  };
+
+  const handlePlaceNew = () => {
+    setDuplicateOrder(null);
+    void submitOrder();
+  };
+
   const renderItem = ({ item }: { item: CartItem }) => (
     <View className="flex-row items-center bg-white/85 rounded-3xl p-3 mb-3 mx-4 border border-white/80">
       <Image
@@ -345,6 +401,7 @@ export default function CartSheet({
   );
 
   return (
+    <>
     <Sheet
       visible={visible}
       onClose={handleClose}
@@ -661,5 +718,13 @@ export default function CartSheet({
               </>
             )}
     </Sheet>
+    <DuplicateOrderSheet
+      visible={!!duplicateOrder}
+      order={duplicateOrder}
+      onViewPrevious={handleViewPrevious}
+      onPlaceNew={handlePlaceNew}
+      onDismiss={() => setDuplicateOrder(null)}
+    />
+    </>
   );
 }

@@ -8,6 +8,7 @@ export const COIN_EARN_RATE = Number(process.env.EXPO_PUBLIC_COIN_EARN_RATE || 5
 export const FEEDBACK_POINTS = Number(process.env.EXPO_PUBLIC_FEEDBACK_POINTS || 5);
 
 export interface BackendOrderItem {
+  itemId?: string;
   name: string;
   price: number;
   quantity: number;
@@ -238,6 +239,30 @@ export const getOrderHistory = async (mobile: string): Promise<OrderHistoryRespo
     throw new Error(err.error || "Failed to fetch orders");
   }
   return res.json();
+};
+
+export interface DuplicateCheckItem {
+  itemId?: string;
+  quantity: number;
+}
+
+export const checkDuplicateOrder = async (
+  items: DuplicateCheckItem[],
+  mobile?: string,
+  signal?: AbortSignal
+): Promise<AdminOrder | null> => {
+  const res = await apiFetch("/orders/duplicate-check", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ items, customerMobile: mobile }),
+    signal,
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to check duplicate order");
+  }
+  const data: { order?: AdminOrder | null } = await res.json();
+  return data.order ?? null;
 };
 
 export const getTodaysOrders = async (

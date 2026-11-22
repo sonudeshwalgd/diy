@@ -2,7 +2,7 @@
   "expo": {
     "name": "diy",
     "slug": "diy",
-    "version": "1.4.21",
+    "version": "1.5.22",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -22,7 +22,7 @@
       "package": "com.sonudeshwal.diy"
     },
     "web": {
-      "favicon": "./assets/favicon.png",
+      "favicon": "./assets/favicon2.png",
       "bundler": "metro"
     },
     "plugins": [
