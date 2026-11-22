@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   FlatList,
@@ -43,7 +44,13 @@ import MenuSortSheet from "../components/MenuSortSheet";
 import { useCart } from "../context/CartContext";
 import { useDisabledItems } from "../context/DisabledItemsContext";
 import { useActiveOrders } from "../context/ActiveOrdersContext";
-import { getCustomer, getPopularItems } from "../services/api";
+import {
+  getComingSoonVotes,
+  getCustomer,
+  getPopularItems,
+  saveComingSoonVote,
+  type ComingSoonVoteValue,
+} from "../services/api";
 import {
   GRID_GAP,
   MAX_CONTENT_WIDTH,
@@ -108,7 +115,17 @@ for (const category of categories) {
   }
 }
 
-const COMING_SOON = [
+type ComingSoonVote = ComingSoonVoteValue;
+
+interface ComingSoonItem {
+  id: string;
+  name: string;
+  tagline: string;
+  emoji?: string;
+  icon?: keyof typeof Ionicons.glyphMap;
+}
+
+const COMING_SOON: ComingSoonItem[] = [
   {
     id: "brownie",
     name: "Brownie",
@@ -145,7 +162,67 @@ const COMING_SOON = [
     emoji: "🍓",
     tagline: "Fresh strawberries · soft bread",
   },
-] as const;
+  {
+    id: "momos",
+    name: "Momos",
+    icon: "restaurant-outline",
+    tagline: "Steamed pockets · spicy chutney",
+  },
+  {
+    id: "spring-rolls",
+    name: "Spring Rolls",
+    icon: "fast-food-outline",
+    tagline: "Crispy rolls · spicy dip",
+  },
+  {
+    id: "maggi",
+    name: "Maggi",
+    icon: "cafe-outline",
+    tagline: "Comfort noodles · loaded flavour",
+  },
+  {
+    id: "rajma-chawal",
+    name: "Rajma Chawal",
+    icon: "restaurant-outline",
+    tagline: "Rajma curry · steamed rice",
+  },
+  {
+    id: "kadhi-chawal",
+    name: "Kadhi Chawal",
+    icon: "restaurant-outline",
+    tagline: "Yogurt curry · steamed rice",
+  },
+  {
+    id: "pasta",
+    name: "Pasta",
+    icon: "fast-food-outline",
+    tagline: "Creamy, cheesy & classic",
+  },
+  {
+    id: "parathas",
+    name: "Parathas",
+    icon: "restaurant-outline",
+    tagline: "Flaky, stuffed & served hot",
+  },
+  {
+    id: "noodles",
+    name: "Noodles",
+    icon: "fast-food-outline",
+    tagline: "Wok tossed · spicy & savoury",
+  },
+  {
+    id: "fried-rice",
+    name: "Fried Rice",
+    icon: "restaurant-outline",
+    tagline: "Wok fried · smoky & hearty",
+  },
+  {
+    id: "laphing",
+    name: "Laphing",
+    icon: "fast-food-outline",
+    tagline: "Spicy cold noodle rolls",
+  },
+];
 
 function QuickPill({
   icon,
@@ -230,6 +307,84 @@ function CODStrip({
 function ComingSoonSection() {
   const viewportWidth = useRef(0);
   const [hasMore, setHasMore] = useState(true);
+  const [votes, setVotes] = useState<Record<string, ComingSoonVote>>({});
+  const [voteTotals, setVoteTotals] = useState<
+    Record<string, { up: number; down: number }>
+  >({});
+
+  const applyVoteSummary = useCallback(
+    (
+      summary: Record<
+        string,
+        { up: number; down: number; mine?: ComingSoonVote }
+      >
+    ) => {
+      const totals: Record<string, { up: number; down: number }> = {};
+      const mine: Record<string, ComingSoonVote> = {};
+      for (const [id, entry] of Object.entries(summary)) {
+        totals[id] = { up: entry.up, down: entry.down };
+        if (entry.mine) mine[id] = entry.mine;
+      }
+      setVoteTotals(totals);
+      setVotes(mine);
+      AsyncStorage.setItem("diy_coming_soon_votes_v1", JSON.stringify(mine)).catch(
+        () => {}
+      );
+    },
+    []
+  );
+
+  useEffect(() => {
+    let active = true;
+    AsyncStorage.getItem("diy_coming_soon_votes_v1")
+      .then((raw) => {
+        if (!raw || !active) return;
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          setVotes(parsed as Record<string, ComingSoonVote>);
+        }
+      })
+      .catch(() => {});
+
+    getComingSoonVotes()
+      .then((data) => {
+        if (active) applyVoteSummary(data.votes);
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+    };
+  }, [applyVoteSummary]);
+
+  const handleVote = (id: string, value: ComingSoonVote) => {
+    const nextValue = votes[id] === value ? null : value;
+    const nextVotes = { ...votes };
+    if (nextValue) {
+      nextVotes[id] = nextValue;
+    } else {
+      delete nextVotes[id];
+    }
+    setVotes(nextVotes);
+    AsyncStorage.setItem("diy_coming_soon_votes_v1", JSON.stringify(nextVotes)).catch(
+      () => {}
+    );
+
+    const previous = votes[id];
+    setVoteTotals((currentTotals) => {
+      const current = currentTotals[id] ?? { up: 0, down: 0 };
+      const updated = { ...current };
+      if (previous === "up") updated.up = Math.max(0, updated.up - 1);
+      if (previous === "down") updated.down = Math.max(0, updated.down - 1);
+      if (nextValue === "up") updated.up += 1;
+      if (nextValue === "down") updated.down += 1;
+      return { ...currentTotals, [id]: updated };
+    });
+
+    saveComingSoonVote(id, nextValue)
+      .then((data) => applyVoteSummary(data.votes))
+      .catch(() => {});
+  };
 
   const updateHasMore = (offsetX: number, contentWidth: number, layoutWidth: number) => {
     setHasMore(offsetX + layoutWidth < contentWidth - 8);
@@ -301,7 +456,15 @@ function ComingSoonSection() {
                       marginBottom: 12,
                     }}
                   >
-                    <Text style={{ fontSize: 28 }}>{item.emoji}</Text>
+                    {item.emoji ? (
+                      <Text style={{ fontSize: 28 }}>{item.emoji}</Text>
+                    ) : (
+                      <Ionicons
+                        name={item.icon ?? "restaurant-outline"}
+                        size={28}
+                        color="#EA580C"
+                      />
+                    )}
                   </LinearGradient>
                   <Text className="text-[15px] font-sans-bold text-stone-900">
                     {item.name}
@@ -309,10 +472,59 @@ function ComingSoonSection() {
                   <Text className="text-[11px] text-stone-500 mt-0.5 font-sans-medium leading-4">
                     {item.tagline}
                   </Text>
-                  <View className="mt-3 self-start bg-amber-100/90 rounded-full px-2.5 py-1">
-                    <Text className="text-[10px] font-sans-bold text-amber-700">
-                      Coming Soon
+                  <View className="mt-3 pt-3 border-t border-stone-100 flex-row items-center">
+                    <Text className="text-[10px] font-sans-extrabold uppercase tracking-wider text-stone-700">
+                      Vote
                     </Text>
+                    <View className="ml-1">
+                      <Ionicons name="arrow-forward" size={12} color="#EA580C" />
+                    </View>
+                    <View className="ml-auto flex-row items-center gap-2">
+                      <View className="flex-row items-center gap-1">
+                        <Pressable
+                          onPress={() => handleVote(item.id, "up")}
+                          className="p-1.5 rounded-full bg-emerald-50 active:opacity-70"
+                          accessibilityLabel={`Vote up for ${item.name}`}
+                        >
+                          <Ionicons
+                            name={
+                              votes[item.id] === "up"
+                                ? "thumbs-up"
+                                : "thumbs-up-outline"
+                            }
+                            size={17}
+                            color={
+                              votes[item.id] === "up" ? "#059669" : "#78716C"
+                            }
+                          />
+                        </Pressable>
+                        <Text className="text-[10px] font-sans-bold text-emerald-700">
+                          {voteTotals[item.id]?.up ?? 0}
+                        </Text>
+                      </View>
+                      <View className="flex-row items-center gap-1">
+                        <Pressable
+                          onPress={() => handleVote(item.id, "down")}
+                          className="p-1.5 rounded-full bg-red-50 active:opacity-70"
+                          accessibilityLabel={`Vote down for ${item.name}`}
+                        >
+                          <Ionicons
+                            name={
+                              votes[item.id] === "down"
+                                ? "thumbs-down"
+                                : "thumbs-down-outline"
+                            }
+                            size={17}
+                            color={
+                              votes[item.id] === "down" ? "#DC2626" : "#78716C"
+                            }
+                          />
+                        </Pressable>
+                        <Text className="text-[10px] font-sans-bold text-red-600">
+                          {voteTotals[item.id]?.down ?? 0}
+                        </Text>
+                      </View>
+                    </View>
                   </View>
                 </View>
               </BlurView>

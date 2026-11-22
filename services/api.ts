@@ -166,6 +166,18 @@ export interface HiddenItemsResponse {
   itemIds: string[];
 }
 
+export type ComingSoonVoteValue = "up" | "down";
+
+export interface ComingSoonVoteSummary {
+  up: number;
+  down: number;
+  mine?: ComingSoonVoteValue;
+}
+
+export interface ComingSoonVotesResponse {
+  votes: Record<string, ComingSoonVoteSummary>;
+}
+
 export interface PopularItemsResponse {
   items: { name: string; quantity: number }[];
 }
@@ -244,6 +256,31 @@ export const saveHiddenItems = async (
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.error || "Failed to save hidden items");
+  }
+  return res.json();
+};
+
+export const getComingSoonVotes = async (): Promise<ComingSoonVotesResponse> => {
+  const res = await apiFetch("/coming-soon/votes");
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to fetch votes");
+  }
+  return res.json();
+};
+
+export const saveComingSoonVote = async (
+  itemId: string,
+  value: ComingSoonVoteValue | null
+): Promise<ComingSoonVotesResponse> => {
+  const res = await apiFetch("/coming-soon/votes", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ itemId, value }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to save vote");
   }
   return res.json();
 };

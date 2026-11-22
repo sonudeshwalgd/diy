@@ -9,6 +9,14 @@ Format: `MAJOR.MINOR.PATCH`
 
 The current version lives in `app.json` and is displayed at the bottom of the sidebar.
 
+## 1.9.30
+
+- Added Momos, Spring Rolls, Maggi, Rajma Chawal, Kadhi Chawal, Pasta, Parathas, Noodles, Fried Rice, and Laphing to the Coming Soon section.
+- Added a Vote row to each Coming Soon card with an arrow, thumbs up, thumbs down, and live up/down counts.
+- Added backend vote storage through `GET /api/coming-soon/votes` and `PUT /api/coming-soon/votes`, with one vote per item per visitor token and support for switching or clearing a vote.
+- Added a Mongoose `ComingSoonVote` model with a unique `itemId + visitorId` index, vote aggregation, and visitor-specific vote lookup.
+- Kept a local device cache as an offline fallback while reconciling votes with backend totals on load and after each vote.
+
 ## 1.8.29
 
 - Renamed the secondary menu from the old name to `diy_chineese` / `DIY Chinese` everywhere: frontend and backend API routes, staff screen route, feature flag, restaurant tag, scoped storage keys, disabled/hidden scope values, ID prefix, React providers, data files, dashboard labels, and documentation.
