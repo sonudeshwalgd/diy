@@ -24,7 +24,12 @@ export default function ProductCard({
   index = 0,
 }: Props) {
   const { getItemQuantity } = useCart();
-  const { isItemDisabled } = useDisabledItems();
+  const globalItemState = useDisabledItems();
+  const bamboozItemState = useDisabledItems("bambooz");
+  const { isItemDisabled } =
+    (product.restaurant ?? category.restaurant) === "bambooz"
+      ? bamboozItemState
+      : globalItemState;
   const { cardWidth } = useResponsiveLayout();
   const quantity = getItemQuantity(product.id);
   const outOfStock = isItemDisabled(product.id);

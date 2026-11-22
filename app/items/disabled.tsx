@@ -11,14 +11,19 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { categories, combos } from "../../data/products";
-import { useDisabledItems } from "../../context/DisabledItemsContext";
+import { combos, coreCategories } from "../../data/products";
+import { bamboozCategories } from "../../data/products_bambooz";
+import {
+  useDisabledItems,
+  type DisabledScope,
+} from "../../context/DisabledItemsContext";
 
 interface StaffRow {
   id: string;
   name: string;
   subtitle?: string;
   disabled: boolean;
+  hidden: boolean;
   autoOutOfStock?: boolean;
   reason?: string;
 }
@@ -29,13 +34,23 @@ interface StaffGroup {
   rows: StaffRow[];
 }
 
-export default function DisabledItemsScreen() {
+export function DisabledItemsScreenView({
+  scope = "global",
+}: {
+  scope?: DisabledScope;
+}) {
   const router = useRouter();
   const {
     disabledCount,
+    hiddenCount,
     isItemDisabled,
+    isItemHidden,
+    isComboHidden,
     getComboAvailability,
     setItemDisabled,
+    setItemHidden,
+    setItemsDisabled,
+    setItemsHidden,
     unlock,
     lock,
     unlocked,
@@ -45,7 +60,28 @@ export default function DisabledItemsScreen() {
     lastSyncedAt,
     error,
     syncNow,
-  } = useDisabledItems();
+  } = useDisabledItems(scope);
+
+  const isBambooz = scope === "bambooz";
+  const menuCategories = useMemo(
+    () => (isBambooz ? bamboozCategories : coreCategories),
+    [isBambooz]
+  );
+  const menuCombos = useMemo(
+    () =>
+      combos.filter((combo) =>
+        isBambooz
+          ? combo.restaurant === "bambooz"
+          : combo.restaurant !== "bambooz"
+      ),
+    [isBambooz]
+  );
+  const screenTitle = isBambooz
+    ? "Bambooz Availability"
+    : "Item Availability";
+  const screenSubtitle = isBambooz
+    ? "Bambooz staff controls for out of stock items"
+    : "Staff controls for out of stock items";
 
   const [staffKey, setStaffKey] = useState("");
   const [unlockError, setUnlockError] = useState<string | null>(null);
@@ -60,7 +96,7 @@ export default function DisabledItemsScreen() {
   const groups = useMemo<StaffGroup[]>(() => {
     const search = query.trim().toLowerCase();
 
-    const itemGroups = categories.map((category) => ({
+    const itemGroups = menuCategories.map((category) => ({
       id: category.id,
       name: category.name,
       rows: category.subcategories.map((sub) => ({
@@ -70,13 +106,14 @@ export default function DisabledItemsScreen() {
           ? `${sub.variants.length} variants`
           : undefined,
         disabled: isItemDisabled(sub.id),
+        hidden: isItemHidden(sub.id),
       })),
     }));
 
     const comboGroup: StaffGroup = {
       id: "combos",
       name: "Combos & Meals",
-      rows: combos.map((combo) => {
+      rows: menuCombos.map((combo) => {
         const availability = getComboAvailability(combo);
         const directlyDisabled = isItemDisabled(`combo:${combo.id}`);
         const autoOutOfStock = availability.outOfStock && !directlyDisabled;
@@ -90,13 +127,14 @@ export default function DisabledItemsScreen() {
           name: combo.name,
           subtitle: combo.description,
           disabled: availability.outOfStock,
+          hidden: isComboHidden(combo.id),
           autoOutOfStock,
           reason,
         };
       }),
     };
 
-    const all = [...itemGroups, comboGroup];
+    const all = menuCombos.length > 0 ? [...itemGroups, comboGroup] : itemGroups;
 
     if (!search) return all;
 
@@ -110,16 +148,38 @@ export default function DisabledItemsScreen() {
         ),
       }))
       .filter((group) => group.rows.length > 0);
-  }, [getComboAvailability, isItemDisabled, query]);
+  }, [
+    getComboAvailability,
+    isComboHidden,
+    isItemDisabled,
+    isItemHidden,
+    menuCategories,
+    menuCombos,
+    query,
+  ]);
 
   const totalItemCount = useMemo(
     () =>
-      categories.reduce(
+      menuCategories.reduce(
         (sum, category) => sum + category.subcategories.length,
         0
-      ) + combos.length,
-    []
+      ) + menuCombos.length,
+    [menuCategories, menuCombos]
   );
+
+  const allMenuIds = useMemo(
+    () => [
+      ...menuCategories.flatMap((category) =>
+        category.subcategories.map((sub) => sub.id)
+      ),
+      ...menuCombos.map((combo) => `combo:${combo.id}`),
+    ],
+    [menuCategories, menuCombos]
+  );
+  const allDisabled =
+    allMenuIds.length > 0 && allMenuIds.every((id) => isItemDisabled(id));
+  const allHidden =
+    allMenuIds.length > 0 && allMenuIds.every((id) => isItemHidden(id));
 
   const handleUnlock = async () => {
     const ok = await unlock(staffKey);
@@ -183,12 +243,29 @@ export default function DisabledItemsScreen() {
           </Pressable>
           <View className="flex-1">
             <Text className="text-lg font-sans-extrabold text-stone-900 tracking-tight">
-              Item Availability
+              {screenTitle}
             </Text>
             <Text className="text-[11px] text-stone-500 font-sans-medium">
-              Staff controls for out of stock items
+              {screenSubtitle}
             </Text>
           </View>
+          {!isBambooz && (
+            <Pressable
+              onPress={() =>
+                router.push(
+                  "/items/disabled/bambooz" as unknown as Parameters<
+                    typeof router.push
+                  >[0]
+                )
+              }
+              className="px-2.5 py-2 rounded-full bg-amber-100 active:opacity-80"
+              accessibilityLabel="Open Bambooz availability"
+            >
+              <Text className="text-[10px] font-sans-extrabold text-amber-700">
+                BAMBOOZ
+              </Text>
+            </Pressable>
+          )}
           {unlocked && (
             <>
               <Pressable
@@ -232,8 +309,8 @@ export default function DisabledItemsScreen() {
               Staff access
             </Text>
             <Text className="text-sm text-stone-500 font-sans-medium mt-1 leading-5">
-              Enter your staff key to mark items out of stock or available
-              again. Changes are shared with every device.
+              Enter your staff key to hide items or mark them out of stock.
+              Changes are shared with every device.
             </Text>
 
             <TextInput
@@ -308,12 +385,64 @@ export default function DisabledItemsScreen() {
             </View>
             <View className="flex-1 bg-white rounded-2xl px-4 py-3 border border-white">
               <Text className="text-[10px] uppercase tracking-wider text-stone-400 font-sans-bold">
+                Hidden
+              </Text>
+              <Text className="text-2xl font-sans-extrabold text-violet-600 mt-0.5">
+                {hiddenCount}
+              </Text>
+            </View>
+            <View className="flex-1 bg-white rounded-2xl px-4 py-3 border border-white">
+              <Text className="text-[10px] uppercase tracking-wider text-stone-400 font-sans-bold">
                 Available
               </Text>
               <Text className="text-2xl font-sans-extrabold text-emerald-600 mt-0.5">
                 {Math.max(0, totalItemCount - disabledCount)}
               </Text>
             </View>
+          </View>
+
+          <View className="flex-row gap-3 mb-3">
+            <Pressable
+              onPress={() => setItemsDisabled(allMenuIds, !allDisabled)}
+              className="flex-1 bg-white rounded-2xl px-3.5 py-3 border border-stone-200 active:opacity-80 flex-row items-center"
+            >
+              <Ionicons
+                name={allDisabled ? "checkmark-circle" : "close-circle"}
+                size={19}
+                color={allDisabled ? "#059669" : "#DC2626"}
+              />
+              <View className="flex-1 ml-2">
+                <Text className="text-xs font-sans-extrabold text-stone-900">
+                  {allDisabled ? "Enable entire menu" : "Disable entire menu"}
+                </Text>
+                <Text className="text-[10px] text-stone-500 font-sans-medium mt-0.5">
+                  {allDisabled
+                    ? "Make every item available again"
+                    : `Mark all ${allMenuIds.length} items out of stock`}
+                </Text>
+              </View>
+            </Pressable>
+
+            <Pressable
+              onPress={() => setItemsHidden(allMenuIds, !allHidden)}
+              className="flex-1 bg-white rounded-2xl px-3.5 py-3 border border-stone-200 active:opacity-80 flex-row items-center"
+            >
+              <Ionicons
+                name={allHidden ? "eye-outline" : "eye-off-outline"}
+                size={19}
+                color={allHidden ? "#4F46E5" : "#6D28D9"}
+              />
+              <View className="flex-1 ml-2">
+                <Text className="text-xs font-sans-extrabold text-stone-900">
+                  {allHidden ? "Unhide entire menu" : "Hide entire menu"}
+                </Text>
+                <Text className="text-[10px] text-stone-500 font-sans-medium mt-0.5">
+                  {allHidden
+                    ? "Show every item on the menu again"
+                    : `Remove all ${allMenuIds.length} items from view`}
+                </Text>
+              </View>
+            </Pressable>
           </View>
 
           <View
@@ -407,9 +536,15 @@ export default function DisabledItemsScreen() {
                   {group.rows.map((row, index) => (
                     <View
                       key={row.id}
-                      className={`flex-row items-center gap-3 px-4 py-3 ${
-                        index > 0 ? "border-t border-stone-100" : ""
-                      } ${row.disabled ? "bg-red-50/40" : ""}`}
+                        className={`flex-row items-center gap-3 px-4 py-3 ${
+                          index > 0 ? "border-t border-stone-100" : ""
+                        } ${
+                          row.hidden
+                            ? "bg-violet-50/50"
+                            : row.disabled
+                            ? "bg-red-50/40"
+                            : ""
+                        }`}
                     >
                       <View
                         className={`w-9 h-9 rounded-xl items-center justify-center ${
@@ -445,21 +580,41 @@ export default function DisabledItemsScreen() {
                         >
                           {row.disabled ? "OUT OF STOCK" : "AVAILABLE"}
                         </Text>
+                        {row.hidden && (
+                          <Text className="text-[10px] font-sans-bold mt-0.5 text-violet-600">
+                            HIDDEN FROM MENU
+                          </Text>
+                        )}
                         {row.reason && (
                           <Text className="text-[10px] text-amber-600 font-sans-medium mt-0.5">
                             {row.reason}
                           </Text>
                         )}
                       </View>
-                      <Switch
-                        value={!row.disabled}
-                        disabled={row.autoOutOfStock}
-                        onValueChange={(availableNow) =>
-                          setItemDisabled(row.id, !availableNow)
-                        }
-                        trackColor={{ false: "#FCA5A5", true: "#6EE7B7" }}
-                        thumbColor={row.disabled ? "#DC2626" : "#059669"}
-                      />
+                      <View className="flex-row items-center gap-2">
+                        <Pressable
+                          onPress={() => setItemHidden(row.id, !row.hidden)}
+                          className="p-2 rounded-full bg-violet-100 active:opacity-80"
+                          accessibilityLabel={
+                            row.hidden ? "Show item on menu" : "Hide item from menu"
+                          }
+                        >
+                          <Ionicons
+                            name={row.hidden ? "eye-outline" : "eye-off-outline"}
+                            size={18}
+                            color={row.hidden ? "#4F46E5" : "#6D28D9"}
+                          />
+                        </Pressable>
+                        <Switch
+                          value={!row.disabled}
+                          disabled={row.autoOutOfStock}
+                          onValueChange={(availableNow) =>
+                            setItemDisabled(row.id, !availableNow)
+                          }
+                          trackColor={{ false: "#FCA5A5", true: "#6EE7B7" }}
+                          thumbColor={row.disabled ? "#DC2626" : "#059669"}
+                        />
+                      </View>
                     </View>
                   ))}
                 </View>
@@ -479,8 +634,9 @@ export default function DisabledItemsScreen() {
           <View className="flex-row items-start gap-2 px-2 mt-1">
             <Ionicons name="information-circle-outline" size={16} color="#78716C" />
             <Text className="text-[11px] text-stone-500 font-sans-medium flex-1 leading-4">
-              When every item inside a category is out of stock, that category’s
-              card on the main menu is marked out of stock too. Combos are
+              Hiding an item removes it from the customer menu but keeps its
+              availability unchanged. Disabling an item keeps it visible and marks
+              it out of stock. The two controls are independent. Combos are
               disabled automatically when a fixed item is out of stock or when
               every option in a choice is out of stock.
             </Text>
@@ -489,4 +645,8 @@ export default function DisabledItemsScreen() {
       )}
     </View>
   );
+}
+
+export default function DisabledItemsScreen() {
+  return <DisabledItemsScreenView />;
 }

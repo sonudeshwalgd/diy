@@ -375,6 +375,7 @@ function ItemSalesChart({ items }: { items: AnalyticsItem[] }) {
     const result: {
       name: string;
       category: string;
+      restaurant?: string;
       quantity: number;
       revenue: number;
     }[] = [];
@@ -382,11 +383,25 @@ function ItemSalesChart({ items }: { items: AnalyticsItem[] }) {
     for (const category of [...categories, combosCategory]) {
       for (const sub of category.subcategories) {
         const name = baseName(sub.name);
-        if (result.some((row) => row.name === name)) continue;
-        const matches = items.filter((item) => baseName(item.name) === name);
+        const restaurant = sub.restaurant ?? category.restaurant;
+        if (
+          result.some(
+            (row) => row.name === name && row.restaurant === restaurant
+          )
+        ) {
+          continue;
+        }
+        const matches = items.filter(
+          (item) =>
+            baseName(item.name) === name && item.restaurant === restaurant
+        );
         result.push({
           name,
-          category: category.name,
+          category:
+            restaurant === "bambooz"
+              ? `Bambooz · ${category.name}`
+              : category.name,
+          restaurant,
           quantity: matches.reduce((sum, item) => sum + item.quantity, 0),
           revenue: matches.reduce((sum, item) => sum + item.revenue, 0),
         });
@@ -394,10 +409,17 @@ function ItemSalesChart({ items }: { items: AnalyticsItem[] }) {
     }
 
     for (const item of items) {
-      if (!result.some((row) => row.name === baseName(item.name))) {
+      const name = baseName(item.name);
+      if (
+        !result.some(
+          (row) => row.name === name && row.restaurant === item.restaurant
+        )
+      ) {
         result.push({
           name: item.name,
-          category: "Other",
+          category:
+            item.restaurant === "bambooz" ? "Bambooz" : "Other",
+          restaurant: item.restaurant,
           quantity: item.quantity,
           revenue: item.revenue,
         });
@@ -435,7 +457,7 @@ function ItemSalesChart({ items }: { items: AnalyticsItem[] }) {
             const quantityHeight = (row.quantity / maxQuantity) * plotHeight;
             const revenueHeight = (row.revenue / maxRevenue) * plotHeight;
             return (
-              <Fragment key={`${row.category}-${row.name}`}>
+              <Fragment key={`${row.restaurant ?? "core"}-${row.name}`}>
                 <Rect
                   x={left + 8}
                   y={plotHeight - quantityHeight}

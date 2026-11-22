@@ -1,4 +1,6 @@
 import type { ImageSourcePropType } from "react-native";
+import { isFeatureEnabled } from "../config/featureFlags";
+import { bamboozCategories, bamboozCombos } from "./products_bambooz";
 import strawberryGlass from "../assets/DIY_Drinks_All_Item_Images/individual-items/strawberry/strawberry-glass/product";
 import strawberryBowl from "../assets/DIY_Drinks_All_Item_Images/individual-items/strawberry/strawberry-bowl/product";
 import strawberryStick from "../assets/DIY_Drinks_All_Item_Images/individual-items/strawberry/strawberry-stick/product";
@@ -23,6 +25,9 @@ export interface Subcategory {
   variants?: Variant[];
   variantLabel?: string;
   maxOneVariant?: boolean;
+  quantity?: string;
+  includes?: string[];
+  restaurant?: string;
 }
 
 export function getItemPrice(sub: Subcategory): number {
@@ -35,6 +40,7 @@ export interface Category {
   image?: ImageSourcePropType;
   description: string;
   subcategories: Subcategory[];
+  restaurant?: string;
 }
 
 export interface ComboFixedItem {
@@ -85,6 +91,7 @@ export interface Combo {
   selectionGroups: ComboSelectionGroup[];
   pricing: ComboPricing;
   discountRuleId?: string;
+  restaurant?: string;
 }
 
 export interface CustomComboRule {
@@ -183,6 +190,7 @@ export function buildComboCartItem(
     name,
     price: total,
     image: combo.image,
+    restaurant: combo.restaurant,
   };
 }
 
@@ -703,9 +711,16 @@ const CATEGORY_ORDER = [
   "ice-cream",
 ];
 
-export const categories: Category[] = [...categoriesBase].sort(
+export const coreCategories: Category[] = [...categoriesBase].sort(
   (a, b) => CATEGORY_ORDER.indexOf(a.id) - CATEGORY_ORDER.indexOf(b.id)
 );
+
+export const categories: Category[] = isFeatureEnabled("menu.includeBambooz")
+  ? [
+      ...coreCategories,
+      ...[...bamboozCategories].sort((a, b) => a.name.localeCompare(b.name)),
+    ]
+  : coreCategories;
 
 const combosBase: Combo[] = [
   {
@@ -1118,7 +1133,7 @@ const COMBO_ORDER = [
   "triple-chocolate-combo",
 ];
 
-export const combos: Combo[] = combosBase
+const coreCombos: Combo[] = combosBase
   .map((combo) => {
     const promotion = COMBO_PROMOTIONS[combo.id];
     return promotion
@@ -1126,6 +1141,10 @@ export const combos: Combo[] = combosBase
       : combo;
   })
   .sort((a, b) => COMBO_ORDER.indexOf(a.id) - COMBO_ORDER.indexOf(b.id));
+
+export const combos: Combo[] = isFeatureEnabled("menu.includeBambooz")
+  ? [...bamboozCombos, ...coreCombos]
+  : coreCombos;
 
 export const customComboRule: CustomComboRule = {
   id: "custom-combo-discount",

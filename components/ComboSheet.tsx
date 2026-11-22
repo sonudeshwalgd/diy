@@ -13,6 +13,7 @@ import {
   type ComboOption,
   type ComboSelectionGroup,
 } from "../data/products";
+import { getBamboozItemImage } from "../data/products_bambooz";
 import { useCart } from "../context/CartContext";
 import { useDisabledItems } from "../context/DisabledItemsContext";
 import Sheet from "./Sheet";
@@ -56,7 +57,10 @@ function ComboSheetContent({
   onClose: () => void;
 }) {
   const { addItem, decrement, getComboQuantity, getItemQuantity } = useCart();
-  const { getComboAvailability, isItemDisabled } = useDisabledItems();
+  const globalItemState = useDisabledItems();
+  const bamboozItemState = useDisabledItems("bambooz");
+  const { getComboAvailability, isItemDisabled } =
+    combo.restaurant === "bambooz" ? bamboozItemState : globalItemState;
   const availability = useMemo(
     () => getComboAvailability(combo),
     [combo, getComboAvailability]
@@ -143,7 +147,10 @@ function ComboSheetContent({
   const itemImage = (categoryId: string, itemId?: string) => {
     if (!itemId) return undefined;
     const cat = categories.find((c) => c.id === categoryId);
-    return cat?.subcategories.find((s) => s.id === itemId)?.image;
+    return (
+      cat?.subcategories.find((s) => s.id === itemId)?.image ??
+      getBamboozItemImage(itemId)
+    );
   };
 
   const selectedOptions: ComboOption[] = [];

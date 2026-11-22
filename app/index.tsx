@@ -538,7 +538,34 @@ export default function HomeScreen() {
   const sourceLabel = orderSource.sourceLabel;
   const { itemCount } = useCart();
   const { activeOrders } = useActiveOrders();
-  const { isItemDisabled } = useDisabledItems();
+  const globalItemState = useDisabledItems();
+  const bamboozItemState = useDisabledItems("bambooz");
+  const stateFor = useCallback(
+    (restaurant?: string) =>
+      restaurant === "bambooz" ? bamboozItemState : globalItemState,
+    [bamboozItemState, globalItemState]
+  );
+  const isItemDisabledFor = useCallback(
+    (id: string, restaurant?: string) => stateFor(restaurant).isItemDisabled(id),
+    [stateFor]
+  );
+  const isItemHiddenFor = useCallback(
+    (id: string, restaurant?: string) => stateFor(restaurant).isItemHidden(id),
+    [stateFor]
+  );
+  const isComboHiddenFor = useCallback(
+    (combo: Combo) => stateFor(combo.restaurant).isComboHidden(combo.id),
+    [stateFor]
+  );
+  const isCategoryHidden = useCallback(
+    (category: Category) =>
+      isItemHiddenFor(category.id, category.restaurant) ||
+      (category.subcategories.length > 0 &&
+        category.subcategories.every((sub) =>
+          isItemHiddenFor(sub.id, category.restaurant)
+        )),
+    [isItemHiddenFor]
+  );
   const { columns } = useResponsiveLayout();
 
   useEffect(() => {
@@ -579,13 +606,19 @@ export default function HomeScreen() {
   }, [cartVisible, historyVisible]);
 
   const orderedMenuItems = useMemo(() => {
-    let items = [...menuItems];
+    let items = menuItems.filter((item) =>
+      item.kind === "product"
+        ? !isItemHiddenFor(item.product.id, item.category.restaurant)
+        : !isCategoryHidden(item.category)
+    );
 
     if (menuSort === "available") {
       const isAvailable = (item: MenuItem) =>
         item.kind === "product"
-          ? !isItemDisabled(item.product.id)
-          : isCategoryAvailable(item.category, isItemDisabled);
+          ? !isItemDisabledFor(item.product.id, item.category.restaurant)
+          : isCategoryAvailable(item.category, (id) =>
+              isItemDisabledFor(id, item.category.restaurant)
+            );
       items = [
         ...items.filter(isAvailable),
         ...items.filter((item) => !isAvailable(item)),
@@ -602,8 +635,12 @@ export default function HomeScreen() {
     if (menuSort === "cheap") {
       items.sort(
         (a, b) =>
-          getAvailableLowestPrice(a.category, isItemDisabled) -
-          getAvailableLowestPrice(b.category, isItemDisabled)
+          getAvailableLowestPrice(a.category, (id) =>
+            isItemDisabledFor(id, a.category.restaurant)
+          ) -
+          getAvailableLowestPrice(b.category, (id) =>
+            isItemDisabledFor(id, b.category.restaurant)
+          )
       );
     } else if (menuSort === "popular") {
       items.sort(
@@ -613,7 +650,18 @@ export default function HomeScreen() {
     }
 
     return items;
-  }, [isItemDisabled, menuSort, popularity]);
+  }, [
+    isCategoryHidden,
+    isItemDisabledFor,
+    isItemHiddenFor,
+    menuSort,
+    popularity,
+  ]);
+
+  const visibleCombos = useMemo(
+    () => combos.filter((combo) => !isComboHiddenFor(combo)),
+    [isComboHiddenFor]
+  );
 
   const activeSort =
     MENU_SORT_OPTIONS.find((option) => option.id === menuSort) ??
@@ -937,8 +985,9 @@ export default function HomeScreen() {
         }
         ListFooterComponent={
           <View>
-            <Animated.View entering={FadeInDown.duration(450).delay(60)}>
-              <View className="px-4 mt-6 mb-2 flex-row items-end justify-between">
+            {visibleCombos.length > 0 && (
+              <Animated.View entering={FadeInDown.duration(450).delay(60)}>
+                <View className="px-4 mt-6 mb-2 flex-row items-end justify-between">
                 <View className="flex-row items-center gap-2.5">
                   <LinearGradient
                     colors={["#FB923C", "#EA580C"]}
@@ -963,16 +1012,17 @@ export default function HomeScreen() {
                 className="flex-row flex-wrap items-stretch px-4"
                 style={{ gap: GRID_GAP }}
               >
-                {combos.map((combo, index) => (
-                  <ComboCard
-                    key={combo.id}
-                    combo={combo}
-                    index={index}
-                    onPress={handleComboPress}
-                  />
-                ))}
-              </View>
-            </Animated.View>
+                  {visibleCombos.map((combo, index) => (
+                    <ComboCard
+                      key={combo.id}
+                      combo={combo}
+                      index={index}
+                      onPress={handleComboPress}
+                    />
+                  ))}
+                </View>
+              </Animated.View>
+            )}
             <ComingSoonSection />
             <Footer insideRestaurant={insideRestaurant} sourceLabel={sourceLabel} />
           </View>

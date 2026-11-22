@@ -1,0 +1,333 @@
+{
+  "menu": [
+    {
+      "id": "momos",
+      "name": "Momos",
+      "subcategories": [
+        {
+          "name": "Veg",
+          "items": [
+            {
+              "id": "veg-steamed-momos",
+              "name": "Veg Steamed",
+              "variants": [
+                { "quantity": "5 pcs", "price": 50 },
+                { "quantity": "10 pcs", "price": 70 }
+              ]
+            },
+            {
+              "id": "veg-fried-momos",
+              "name": "Veg Fried",
+              "variants": [
+                { "quantity": "5 pcs", "price": 55 },
+                { "quantity": "10 pcs", "price": 85 }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Paneer",
+          "items": [
+            {
+              "id": "paneer-steamed-momos",
+              "name": "Paneer Steamed",
+              "variants": [
+                { "quantity": "5 pcs", "price": 55 },
+                { "quantity": "10 pcs", "price": 85 }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "spring-rolls",
+      "name": "Spring Rolls",
+      "subcategories": [
+        {
+          "name": "Veg",
+          "items": [
+            {
+              "id": "veg-spring-roll",
+              "name": "Veg Spring Roll",
+              "variants": [
+                { "quantity": "2 pcs", "price": 70 },
+                { "quantity": "4 pcs", "price": 120 }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Paneer",
+          "items": [
+            {
+              "id": "paneer-spring-roll",
+              "name": "Paneer Spring Roll",
+              "variants": [
+                { "quantity": "2 pcs", "price": 80 },
+                { "quantity": "4 pcs", "price": 140 }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "maggi",
+      "name": "Maggi",
+      "subcategories": [
+        {
+          "name": "Maggi",
+          "items": [
+            { "id": "classic-masala-maggi", "name": "Classic Masala", "price": 70 },
+            { "id": "veg-loaded-maggi", "name": "Veg Loaded", "price": 80 },
+            { "id": "cheese-maggi", "name": "Cheese Maggi", "price": 100 },
+            { "id": "peri-peri-maggi", "name": "Peri-Peri Maggi", "price": 90 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sandwiches",
+      "name": "Sandwiches",
+      "subcategories": [
+        {
+          "name": "Sandwiches",
+          "items": [
+            { "id": "veg-grilled-sandwich", "name": "Veg Grilled Sandwich", "price": 109 },
+            { "id": "cheese-corn-sandwich", "name": "Cheese Corn Sandwich", "price": 139 },
+            { "id": "paneer-tikka-sandwich", "name": "Paneer Tikka Sandwich", "price": 149 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chawal-meals",
+      "name": "Chawal Meals",
+      "subcategories": [
+        {
+          "name": "Rice Meals",
+          "items": [
+            {
+              "id": "rajma-chawal",
+              "name": "Rajma Chawal",
+              "variants": [
+                { "quantity": "Half", "price": 50 },
+                { "quantity": "Full", "price": 80 }
+              ]
+            },
+            {
+              "id": "kadhi-chawal",
+              "name": "Kadhi Chawal",
+              "variants": [
+                { "quantity": "Half", "price": 60 },
+                { "quantity": "Full", "price": 90 }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pasta",
+      "name": "Pasta",
+      "subcategories": [
+        {
+          "name": "Pasta",
+          "items": [
+            { "id": "red-sauce-pasta", "name": "Red Sauce Pasta", "price": 139 },
+            { "id": "white-sauce-pasta", "name": "White Sauce Pasta", "price": 149 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "parathas",
+      "name": "Parathas",
+      "description": "Served with butter and achaar",
+      "subcategories": [
+        {
+          "name": "Parathas",
+          "items": [
+            { "id": "aloo-paratha", "name": "Aloo Paratha", "price": 60 },
+            { "id": "aloo-pyaz-paratha", "name": "Aloo Pyaz Paratha", "price": 70 },
+            { "id": "paneer-paratha", "name": "Paneer Paratha", "price": 80 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "noodles-rice",
+      "name": "Noodles & Rice",
+      "subcategories": [
+        {
+          "name": "Noodles",
+          "items": [
+            {
+              "id": "hakka-noodles",
+              "name": "Hakka Noodles",
+              "variants": [
+                { "quantity": "Half", "price": 55 },
+                { "quantity": "Full", "price": 90 }
+              ]
+            },
+            {
+              "id": "schezwan-noodles",
+              "name": "Schezwan Noodles",
+              "variants": [
+                { "quantity": "Half", "price": 60 },
+                { "quantity": "Full", "price": 100 }
+              ]
+            },
+            { "id": "chilli-garlic-noodles", "name": "Chilli Garlic Noodles", "price": 100 }
+          ]
+        },
+        {
+          "name": "Rice",
+          "items": [
+            {
+              "id": "veg-fried-rice",
+              "name": "Veg Fried Rice",
+              "variants": [
+                { "quantity": "Half", "price": 60 },
+                { "quantity": "Full", "price": 100 }
+              ]
+            },
+            {
+              "id": "egg-fried-rice",
+              "name": "Egg Fried Rice",
+              "variants": [
+                { "quantity": "Half", "price": 70 },
+                { "quantity": "Full", "price": 110 }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chai-coffee",
+      "name": "Chai & Coffee",
+      "subcategories": [
+        {
+          "name": "Tea",
+          "items": [
+            { "id": "chai", "name": "Chai", "price": 30 },
+            { "id": "masala-adrak-chai", "name": "Masala / Adrak Chai", "price": 35 }
+          ]
+        },
+        {
+          "name": "Coffee",
+          "items": [
+            { "id": "hot-coffee", "name": "Hot Coffee", "price": 50 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cold-coffee",
+      "name": "Cold Coffee",
+      "subcategories": [
+        {
+          "name": "Cold Coffee",
+          "items": [
+            { "id": "classic-cold-coffee", "name": "Classic", "price": 80 },
+            { "id": "ice-cream-cold-coffee", "name": "With Ice Cream", "price": 100 },
+            { "id": "hazelnut-cold-coffee", "name": "Hazelnut", "price": 110 },
+            { "id": "chocolate-cold-coffee", "name": "Chocolate", "price": 110 },
+            { "id": "oreo-cold-coffee", "name": "Oreo", "price": 120 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "laphing",
+      "name": "Laphing",
+      "subcategories": [
+        {
+          "name": "Laphing",
+          "items": [
+            { "id": "dry-wai-wai", "name": "Dry Wai Wai", "price": 99 },
+            { "id": "soya-laphing", "name": "Soya", "price": 89 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bamboocza-combos",
+      "name": "Regular Meal",
+      "subcategories": [
+        {
+          "name": "Regular Meal",
+          "items": [
+            {
+              "id": "chai-paratha-combo",
+              "name": "Chai + Aloo Paratha",
+              "price": 75,
+              "quantity": "1 Combo",
+              "includes": ["Chai", "Aloo Paratha"]
+            },
+            {
+              "id": "momos-chai-combo",
+              "name": "Veg Steamed Momos + Chai",
+              "price": 70,
+              "quantity": "1 Combo",
+              "includes": ["Veg Steamed Momos", "Chai"]
+            },
+            {
+              "id": "maggi-cold-coffee-combo",
+              "name": "Classic Masala Maggi + Cold Coffee",
+              "price": 129,
+              "quantity": "1 Combo",
+              "includes": ["Classic Masala Maggi", "Cold Coffee"]
+            },
+            {
+              "id": "momos-cold-coffee-combo",
+              "name": "Veg Steamed Momos + Cold Coffee",
+              "price": 129,
+              "quantity": "1 Combo",
+              "includes": ["Veg Steamed Momos", "Cold Coffee"]
+            },
+            {
+              "id": "fried-rice-momos-combo",
+              "name": "Veg Fried Rice + Veg Steamed Momos",
+              "price": 129,
+              "quantity": "1 Combo",
+              "includes": ["Veg Fried Rice", "Veg Steamed Momos"]
+            },
+            {
+              "id": "fried-rice-cold-coffee-combo",
+              "name": "Veg Fried Rice + Cold Coffee",
+              "price": 139,
+              "quantity": "1 Combo",
+              "includes": ["Veg Fried Rice", "Cold Coffee"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "special-combos",
+      "name": "Special Combos",
+      "subcategories": [
+        {
+          "name": "Group Combos",
+          "items": [
+            {
+              "id": "gang-platter-for-4",
+              "name": "Gang Platter for 4",
+              "price": 309,
+              "quantity": "Serves 4",
+              "includes": [
+                "Veg Steamed Momos",
+                "Classic Masala Maggi",
+                "Hakka Noodles",
+                "4 Chai"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

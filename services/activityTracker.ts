@@ -27,6 +27,7 @@ export interface ActivityEventData {
   categoryName?: string;
   productId?: string;
   productName?: string;
+  restaurant?: string;
   price?: number;
   quantity?: number;
   value?: number;
@@ -284,7 +285,13 @@ export function trackCheckoutStart(input: ActivityEventData = {}): void {
 
 export async function markOrderPlaced(input: {
   orderId: string;
-  items: { id?: string; name: string; price: number; quantity: number }[];
+  items: {
+    id?: string;
+    name: string;
+    price: number;
+    quantity: number;
+    restaurant?: string;
+  }[];
   total: number;
   itemCount: number;
 }): Promise<void> {

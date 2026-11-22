@@ -2,9 +2,12 @@ export const featureFlags = {
   categoryCard: {
     showDescription: false,
   },
+  menu: {
+    includeBambooz: true,
+  },
 } as const;
 
-export type FeatureFlagKey = "categoryCard.showDescription";
+export type FeatureFlagKey = "categoryCard.showDescription" | "menu.includeBambooz";
 
 export function isFeatureEnabled(key: FeatureFlagKey): boolean {
   return key

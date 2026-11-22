@@ -12,6 +12,7 @@ export interface BackendOrderItem {
   name: string;
   price: number;
   quantity: number;
+  restaurant?: string;
 }
 
 export interface PlaceOrderPayload {
@@ -111,6 +112,7 @@ export interface AnalyticsItem {
   name: string;
   quantity: number;
   revenue: number;
+  restaurant?: string;
 }
 
 export interface OrderAnalytics {
@@ -160,12 +162,24 @@ export interface DisabledItemsResponse {
   itemIds: string[];
 }
 
+export interface HiddenItemsResponse {
+  itemIds: string[];
+}
+
 export interface PopularItemsResponse {
   items: { name: string; quantity: number }[];
 }
 
-export const getDisabledItems = async (): Promise<DisabledItemsResponse> => {
-  const res = await apiFetch("/items/disabled");
+const disabledItemsPath = (restaurant?: string) =>
+  restaurant === "bambooz" ? "/items/disabled/bambooz" : "/items/disabled";
+
+const hiddenItemsPath = (restaurant?: string) =>
+  restaurant === "bambooz" ? "/items/hidden/bambooz" : "/items/hidden";
+
+export const getDisabledItems = async (
+  restaurant?: string
+): Promise<DisabledItemsResponse> => {
+  const res = await apiFetch(disabledItemsPath(restaurant));
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.error || "Failed to fetch disabled items");
@@ -173,8 +187,11 @@ export const getDisabledItems = async (): Promise<DisabledItemsResponse> => {
   return res.json();
 };
 
-export const verifyStaffKey = async (staffKey: string): Promise<boolean> => {
-  const res = await apiFetch("/items/disabled/verify", {
+export const verifyStaffKey = async (
+  staffKey: string,
+  restaurant?: string
+): Promise<boolean> => {
+  const res = await apiFetch(`${disabledItemsPath(restaurant)}/verify`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ staffKey }),
@@ -188,9 +205,10 @@ export const verifyStaffKey = async (staffKey: string): Promise<boolean> => {
 
 export const saveDisabledItems = async (
   itemIds: string[],
-  staffKey: string
+  staffKey: string,
+  restaurant?: string
 ): Promise<DisabledItemsResponse> => {
-  const res = await apiFetch("/items/disabled", {
+  const res = await apiFetch(disabledItemsPath(restaurant), {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ itemIds, staffKey }),
@@ -198,6 +216,34 @@ export const saveDisabledItems = async (
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.error || "Failed to save disabled items");
+  }
+  return res.json();
+};
+
+export const getHiddenItems = async (
+  restaurant?: string
+): Promise<HiddenItemsResponse> => {
+  const res = await apiFetch(hiddenItemsPath(restaurant));
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to fetch hidden items");
+  }
+  return res.json();
+};
+
+export const saveHiddenItems = async (
+  itemIds: string[],
+  staffKey: string,
+  restaurant?: string
+): Promise<HiddenItemsResponse> => {
+  const res = await apiFetch(hiddenItemsPath(restaurant), {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ itemIds, staffKey }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to save hidden items");
   }
   return res.json();
 };
@@ -244,6 +290,7 @@ export const getOrderHistory = async (mobile: string): Promise<OrderHistoryRespo
 export interface DuplicateCheckItem {
   itemId?: string;
   quantity: number;
+  restaurant?: string;
 }
 
 export const checkDuplicateOrder = async (

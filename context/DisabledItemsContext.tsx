@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
+  type Context,
   createContext,
   useCallback,
   useContext,
@@ -10,7 +11,9 @@ import {
 } from "react";
 import {
   getDisabledItems,
+  getHiddenItems,
   saveDisabledItems,
+  saveHiddenItems,
   verifyStaffKey,
 } from "../services/api";
 import type { Combo } from "../data/products";
@@ -19,18 +22,38 @@ import {
   type ComboAvailability,
 } from "../utils/comboAvailability";
 
-const STORAGE_KEY = "diy_disabled_items_v1";
+export type DisabledScope = "global" | "bambooz";
+
+const DISABLED_STORAGE_KEYS: Record<DisabledScope, string> = {
+  global: "diy_disabled_items_v1",
+  bambooz: "diy_disabled_items_bambooz_v1",
+};
+
+const HIDDEN_STORAGE_KEYS: Record<DisabledScope, string> = {
+  global: "diy_hidden_items_v1",
+  bambooz: "diy_hidden_items_bambooz_v1",
+};
 
 export type SyncStatus = "idle" | "syncing" | "saved" | "error";
+
+type ItemStateMode = "disabled" | "hidden";
 
 interface DisabledItemsContextType {
   disabledIds: string[];
   disabledCount: number;
+  hiddenIds: string[];
+  hiddenCount: number;
   isItemDisabled: (id: string) => boolean;
   isComboDisabled: (comboId: string) => boolean;
+  isItemHidden: (id: string) => boolean;
+  isComboHidden: (comboId: string) => boolean;
   getComboAvailability: (combo: Combo) => ComboAvailability;
   setItemDisabled: (id: string, disabled: boolean) => void;
+  setItemHidden: (id: string, hidden: boolean) => void;
+  setItemsDisabled: (ids: string[], disabled: boolean) => void;
+  setItemsHidden: (ids: string[], hidden: boolean) => void;
   toggleItem: (id: string) => void;
+  toggleItemHidden: (id: string) => void;
   refresh: () => Promise<void>;
   syncNow: () => Promise<void>;
   unlock: (staffKey: string) => Promise<boolean>;
@@ -43,16 +66,33 @@ interface DisabledItemsContextType {
   error: string | null;
 }
 
-const DisabledItemsContext = createContext<
-  DisabledItemsContextType | undefined
->(undefined);
+const disabledItemsContexts: Record<
+  DisabledScope,
+  Context<DisabledItemsContextType | undefined>
+> = {
+  global: createContext<DisabledItemsContextType | undefined>(undefined),
+  bambooz: createContext<DisabledItemsContextType | undefined>(undefined),
+};
 
-export function DisabledItemsProvider({
+const normalizeIds = (ids: string[]) =>
+  [...new Set(ids.map((id) => id.trim()).filter(Boolean))].sort();
+
+const sameIds = (a: string[], b: string[]) =>
+  a.length === b.length && a.every((id, index) => id === b[index]);
+
+function DisabledItemsProviderImpl({
+  scope,
   children,
 }: {
+  scope: DisabledScope;
   children: React.ReactNode;
 }) {
+  const disabledStorageKey = DISABLED_STORAGE_KEYS[scope];
+  const hiddenStorageKey = HIDDEN_STORAGE_KEYS[scope];
+  const restaurant = scope === "bambooz" ? "bambooz" : undefined;
+
   const [disabledIds, setDisabledIds] = useState<string[]>([]);
+  const [hiddenIds, setHiddenIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<SyncStatus>("idle");
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
@@ -60,57 +100,104 @@ export function DisabledItemsProvider({
   const [unlocked, setUnlocked] = useState(false);
   const [verifying, setVerifying] = useState(false);
 
-  const idsRef = useRef<string[]>([]);
-  const dirtyRef = useRef(false);
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const disabledIdsRef = useRef<string[]>([]);
+  const hiddenIdsRef = useRef<string[]>([]);
+  const disabledDirtyRef = useRef(false);
+  const hiddenDirtyRef = useRef(false);
+  const disabledSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hiddenSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const staffKeyRef = useRef("");
 
-  const applyIds = useCallback((ids: string[]) => {
-    idsRef.current = ids;
-    setDisabledIds(ids);
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(ids)).catch(() => {});
-  }, []);
+  const applyDisabledIds = useCallback(
+    (ids: string[]) => {
+      disabledIdsRef.current = ids;
+      setDisabledIds(ids);
+      AsyncStorage.setItem(disabledStorageKey, JSON.stringify(ids)).catch(
+        () => {}
+      );
+    },
+    [disabledStorageKey]
+  );
+
+  const applyHiddenIds = useCallback(
+    (ids: string[]) => {
+      hiddenIdsRef.current = ids;
+      setHiddenIds(ids);
+      AsyncStorage.setItem(hiddenStorageKey, JSON.stringify(ids)).catch(
+        () => {}
+      );
+    },
+    [hiddenStorageKey]
+  );
 
   const hydrateFromCache = useCallback(async () => {
     try {
-      const raw = await AsyncStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) return;
-      const cached = parsed.filter(
-        (id): id is string => typeof id === "string"
-      );
-      idsRef.current = cached;
-      setDisabledIds(cached);
+      const [disabledRaw, hiddenRaw] = await Promise.all([
+        AsyncStorage.getItem(disabledStorageKey),
+        AsyncStorage.getItem(hiddenStorageKey),
+      ]);
+      if (disabledRaw) {
+        const parsed = JSON.parse(disabledRaw);
+        if (Array.isArray(parsed)) {
+          applyDisabledIds(
+            parsed.filter((id): id is string => typeof id === "string")
+          );
+        }
+      }
+      if (hiddenRaw) {
+        const parsed = JSON.parse(hiddenRaw);
+        if (Array.isArray(parsed)) {
+          applyHiddenIds(
+            parsed.filter((id): id is string => typeof id === "string")
+          );
+        }
+      }
     } catch {
       return;
     }
-  }, []);
+  }, [applyDisabledIds, applyHiddenIds, disabledStorageKey, hiddenStorageKey]);
 
   const fetchRemote = useCallback(async () => {
-    try {
-      const data = await getDisabledItems();
-      const ids = Array.isArray(data.itemIds) ? data.itemIds : [];
-      if (!dirtyRef.current) {
-        applyIds(ids);
-      }
-      setLastSyncedAt(new Date().toISOString());
-      setError(null);
-      setStatus("saved");
-    } catch (err) {
-      setStatus("error");
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Could not load item availability"
-      );
-    }
-  }, [applyIds]);
+    let failed = false;
+    let message = "Could not load item availability";
 
-  const flush = useCallback(async () => {
-    if (saveTimer.current) {
-      clearTimeout(saveTimer.current);
-      saveTimer.current = null;
+    try {
+      const data = await getDisabledItems(restaurant);
+      const ids = normalizeIds(
+        Array.isArray(data.itemIds) ? data.itemIds : []
+      );
+      if (!disabledDirtyRef.current) applyDisabledIds(ids);
+    } catch (err) {
+      failed = true;
+      message = err instanceof Error ? err.message : message;
+    }
+
+    try {
+      const data = await getHiddenItems(restaurant);
+      const ids = normalizeIds(
+        Array.isArray(data.itemIds) ? data.itemIds : []
+      );
+      if (!hiddenDirtyRef.current) applyHiddenIds(ids);
+    } catch (err) {
+      failed = true;
+      message = err instanceof Error ? err.message : message;
+    }
+
+    if (failed) {
+      setStatus("error");
+      setError(message);
+      return;
+    }
+
+    setLastSyncedAt(new Date().toISOString());
+    setError(null);
+    setStatus("saved");
+  }, [applyDisabledIds, applyHiddenIds, restaurant]);
+
+  const flushDisabled = useCallback(async () => {
+    if (disabledSaveTimer.current) {
+      clearTimeout(disabledSaveTimer.current);
+      disabledSaveTimer.current = null;
     }
 
     if (!staffKeyRef.current) {
@@ -119,14 +206,12 @@ export function DisabledItemsProvider({
       return;
     }
 
-    const ids = idsRef.current;
+    const ids = disabledIdsRef.current;
     setStatus("syncing");
     setError(null);
     try {
-      await saveDisabledItems(ids, staffKeyRef.current);
-      if (idsRef.current === ids) {
-        dirtyRef.current = false;
-      }
+      await saveDisabledItems(ids, staffKeyRef.current, restaurant);
+      if (disabledIdsRef.current === ids) disabledDirtyRef.current = false;
       setLastSyncedAt(new Date().toISOString());
       setStatus("saved");
     } catch (err) {
@@ -137,16 +222,50 @@ export function DisabledItemsProvider({
           : "Could not save. Your changes are saved locally."
       );
     }
-  }, []);
+  }, [restaurant]);
 
-  const queueSave = useCallback(() => {
-    if (saveTimer.current) {
-      clearTimeout(saveTimer.current);
+  const flushHidden = useCallback(async () => {
+    if (hiddenSaveTimer.current) {
+      clearTimeout(hiddenSaveTimer.current);
+      hiddenSaveTimer.current = null;
     }
-    saveTimer.current = setTimeout(() => {
-      void flush();
-    }, 500);
-  }, [flush]);
+
+    if (!staffKeyRef.current) {
+      setStatus("error");
+      setError("Enter your staff key to save changes");
+      return;
+    }
+
+    const ids = hiddenIdsRef.current;
+    setStatus("syncing");
+    setError(null);
+    try {
+      await saveHiddenItems(ids, staffKeyRef.current, restaurant);
+      if (hiddenIdsRef.current === ids) hiddenDirtyRef.current = false;
+      setLastSyncedAt(new Date().toISOString());
+      setStatus("saved");
+    } catch (err) {
+      setStatus("error");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Could not save. Your changes are saved locally."
+      );
+    }
+  }, [restaurant]);
+
+  const queueSave = useCallback(
+    (mode: ItemStateMode) => {
+      const timer =
+        mode === "disabled" ? disabledSaveTimer : hiddenSaveTimer;
+      const flushFn = mode === "disabled" ? flushDisabled : flushHidden;
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = setTimeout(() => {
+        void flushFn();
+      }, 500);
+    },
+    [flushDisabled, flushHidden]
+  );
 
   useEffect(() => {
     let active = true;
@@ -159,79 +278,114 @@ export function DisabledItemsProvider({
     })();
     return () => {
       active = false;
-      if (saveTimer.current) {
-        clearTimeout(saveTimer.current);
-      }
+      if (disabledSaveTimer.current) clearTimeout(disabledSaveTimer.current);
+      if (hiddenSaveTimer.current) clearTimeout(hiddenSaveTimer.current);
     };
-  }, [hydrateFromCache, fetchRemote]);
+  }, [fetchRemote, hydrateFromCache]);
 
-  const unlock = useCallback(async (staffKey: string) => {
-    const key = staffKey.trim();
-    if (!key) return false;
+  const unlock = useCallback(
+    async (staffKey: string) => {
+      const key = staffKey.trim();
+      if (!key) return false;
 
-    setVerifying(true);
-    setError(null);
-    try {
-      const valid = await verifyStaffKey(key);
-      if (!valid) {
-        setError("Invalid staff key");
+      setVerifying(true);
+      setError(null);
+      try {
+        const valid = await verifyStaffKey(key, restaurant);
+        if (!valid) {
+          setError("Invalid staff key");
+          return false;
+        }
+        staffKeyRef.current = key;
+        setUnlocked(true);
+        return true;
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Could not verify staff key"
+        );
         return false;
+      } finally {
+        setVerifying(false);
       }
-      staffKeyRef.current = key;
-      setUnlocked(true);
-      return true;
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Could not verify staff key"
-      );
-      return false;
-    } finally {
-      setVerifying(false);
-    }
-  }, []);
+    },
+    [restaurant]
+  );
 
   const lock = useCallback(async () => {
     if (staffKeyRef.current) {
-      await flush();
+      await Promise.all([flushDisabled(), flushHidden()]);
     }
     staffKeyRef.current = "";
     setUnlocked(false);
-  }, [flush]);
+  }, [flushDisabled, flushHidden]);
 
-  const setItemDisabled = useCallback(
-    (id: string, disabled: boolean) => {
+  const setItems = useCallback(
+    (ids: string[], active: boolean, mode: ItemStateMode) => {
       if (!staffKeyRef.current) {
         setError("Enter your staff key to make changes");
         return;
       }
 
-      const current = idsRef.current;
-      if (disabled && current.includes(id)) return;
-      if (!disabled && !current.includes(id)) return;
+      const current = mode === "disabled" ? disabledIdsRef.current : hiddenIdsRef.current;
+      const targets = normalizeIds(ids);
+      const targetSet = new Set(targets);
+      const next = active
+        ? [...new Set([...current, ...targets])].sort()
+        : current.filter((id) => !targetSet.has(id));
 
-      const next = disabled
-        ? [...current, id]
-        : current.filter((itemId) => itemId !== id);
+      if (sameIds(current, next)) return;
 
-      dirtyRef.current = true;
-      applyIds(next);
+      if (mode === "disabled") {
+        disabledDirtyRef.current = true;
+        applyDisabledIds(next);
+      } else {
+        hiddenDirtyRef.current = true;
+        applyHiddenIds(next);
+      }
       setStatus("syncing");
       setError(null);
-      queueSave();
+      queueSave(mode);
     },
-    [applyIds, queueSave]
+    [applyDisabledIds, applyHiddenIds, queueSave]
+  );
+
+  const setItemDisabled = useCallback(
+    (id: string, disabled: boolean) => setItems([id], disabled, "disabled"),
+    [setItems]
+  );
+
+  const setItemHidden = useCallback(
+    (id: string, hidden: boolean) => setItems([id], hidden, "hidden"),
+    [setItems]
+  );
+
+  const setItemsDisabled = useCallback(
+    (ids: string[], disabled: boolean) => setItems(ids, disabled, "disabled"),
+    [setItems]
+  );
+
+  const setItemsHidden = useCallback(
+    (ids: string[], hidden: boolean) => setItems(ids, hidden, "hidden"),
+    [setItems]
   );
 
   const toggleItem = useCallback(
     (id: string) => {
-      setItemDisabled(id, !idsRef.current.includes(id));
+      setItemDisabled(id, !disabledIdsRef.current.includes(id));
     },
     [setItemDisabled]
   );
 
+  const toggleItemHidden = useCallback(
+    (id: string) => {
+      setItemHidden(id, !hiddenIdsRef.current.includes(id));
+    },
+    [setItemHidden]
+  );
+
   const syncNow = useCallback(async () => {
-    await flush();
-  }, [flush]);
+    await Promise.all([flushDisabled(), flushHidden()]);
+  }, [flushDisabled, flushHidden]);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -239,21 +393,34 @@ export function DisabledItemsProvider({
     setLoading(false);
   }, [fetchRemote]);
 
-  const idSet = useMemo(() => new Set(disabledIds), [disabledIds]);
+  const disabledIdSet = useMemo(() => new Set(disabledIds), [disabledIds]);
+  const hiddenIdSet = useMemo(() => new Set(hiddenIds), [hiddenIds]);
+
+  const matchesIdOrBase = useCallback((set: Set<string>, id: string) => {
+    if (set.has(id)) return true;
+    const baseId = id.split(":")[0];
+    return baseId !== id && set.has(baseId);
+  }, []);
 
   const isItemDisabled = useCallback(
-    (id: string) => {
-      if (idSet.has(id)) return true;
-      const baseId = id.split(":")[0];
-      return baseId !== id && idSet.has(baseId);
-    },
-    [idSet]
+    (id: string) => matchesIdOrBase(disabledIdSet, id),
+    [disabledIdSet, matchesIdOrBase]
+  );
+
+  const isItemHidden = useCallback(
+    (id: string) => matchesIdOrBase(hiddenIdSet, id),
+    [hiddenIdSet, matchesIdOrBase]
   );
 
   const isComboDisabled = useCallback(
     (comboId: string) =>
-      idSet.has(`combo:${comboId}`) || idSet.has(comboId),
-    [idSet]
+      matchesIdOrBase(disabledIdSet, `combo:${comboId}`),
+    [disabledIdSet, matchesIdOrBase]
+  );
+
+  const isComboHidden = useCallback(
+    (comboId: string) => matchesIdOrBase(hiddenIdSet, `combo:${comboId}`),
+    [hiddenIdSet, matchesIdOrBase]
   );
 
   const getComboAvailability = useCallback(
@@ -262,16 +429,26 @@ export function DisabledItemsProvider({
     [isComboDisabled, isItemDisabled]
   );
 
+  const Context = disabledItemsContexts[scope];
+
   return (
-    <DisabledItemsContext.Provider
+    <Context.Provider
       value={{
         disabledIds,
         disabledCount: disabledIds.length,
+        hiddenIds,
+        hiddenCount: hiddenIds.length,
         isItemDisabled,
         isComboDisabled,
+        isItemHidden,
+        isComboHidden,
         getComboAvailability,
         setItemDisabled,
+        setItemHidden,
+        setItemsDisabled,
+        setItemsHidden,
         toggleItem,
+        toggleItemHidden,
         refresh,
         syncNow,
         unlock,
@@ -285,14 +462,40 @@ export function DisabledItemsProvider({
       }}
     >
       {children}
-    </DisabledItemsContext.Provider>
+    </Context.Provider>
   );
 }
 
-export function useDisabledItems() {
-  const context = useContext(DisabledItemsContext);
+export function DisabledItemsProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <DisabledItemsProviderImpl scope="global">
+      {children}
+    </DisabledItemsProviderImpl>
+  );
+}
+
+export function BamboozDisabledItemsProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <DisabledItemsProviderImpl scope="bambooz">
+      {children}
+    </DisabledItemsProviderImpl>
+  );
+}
+
+export function useDisabledItems(scope: DisabledScope = "global") {
+  const context = useContext(disabledItemsContexts[scope]);
   if (!context) {
-    throw new Error("useDisabledItems must be used within DisabledItemsProvider");
+    throw new Error(
+      `useDisabledItems must be used within DisabledItemsProvider (${scope})`
+    );
   }
   return context;
 }
