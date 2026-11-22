@@ -23,6 +23,7 @@ const MUTATION_TIMEOUT_MS = 20_000;
 
 interface ApiFetchOptions {
   silentStatuses?: number[];
+  allowInBackground?: boolean;
 }
 
 export class ApiError extends Error {
@@ -86,6 +87,8 @@ export async function apiFetch(
   const requestHeaders = sanitizeHeaders(headers);
   const requestBody = sanitizeBody(init.body);
   const silentStatuses = new Set(options.silentStatuses ?? []);
+  const canRunInBackground = options.allowInBackground === true;
+  const isActive = () => canRunInBackground || isAppForeground();
   const attempts: ApiAttemptLog[] = [];
 
   let lastError: unknown = null;
@@ -93,7 +96,7 @@ export async function apiFetch(
   let callerAborted = false;
 
   for (let attempt = 1; attempt <= MAX_API_ATTEMPTS; attempt += 1) {
-    if (!isAppForeground()) break;
+    if (!isActive()) break;
 
     const startedAt = Date.now();
     const timed = withRequestTimeout(init.signal, timeoutMs);
@@ -163,7 +166,7 @@ export async function apiFetch(
       timed.cleanup();
     }
 
-    if (!retryable || attempt >= MAX_API_ATTEMPTS || !isAppForeground()) break;
+    if (!retryable || attempt >= MAX_API_ATTEMPTS || !isActive()) break;
     await sleep(RETRY_BASE_MS * 2 ** (attempt - 1));
   }
 

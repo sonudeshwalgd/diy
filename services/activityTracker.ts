@@ -334,11 +334,15 @@ export async function flushActivityEvents(): Promise<{
   flushing = true;
   try {
     const batch = events.slice(0, MAX_BATCH_EVENTS);
-    const response = await apiFetch("/activity-events", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ events: batch }),
-    });
+    const response = await apiFetch(
+      "/activity-events",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ events: batch }),
+      },
+      { allowInBackground: true }
+    );
     if (!response.ok) {
       return { uploaded: 0, remaining: events.length };
     }
@@ -347,6 +351,8 @@ export async function flushActivityEvents(): Promise<{
     const remaining = events.filter((event) => !sentIds.has(event.id));
     await writeEvents(remaining);
     return { uploaded: batch.length, remaining: remaining.length };
+  } catch {
+    return { uploaded: 0, remaining: events.length };
   } finally {
     flushing = false;
   }
