@@ -2,7 +2,7 @@
   "expo": {
     "name": "diy",
     "slug": "diy",
-    "version": "1.4.20",
+    "version": "1.4.21",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -31,6 +31,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "08a3eaca-8afc-4b34-93a4-0812e7acc5e9"
+      }
+    },
+    "owner": "sonudeshwal"
   }
 }

@@ -45,7 +45,7 @@ import {
 
 const REFRESH_SECONDS = 30;
 const ALERT_DURATION_MS = 60_000;
-const ALERT_SOUND = require("../assets/sound/notification.wav");
+const ALERT_SOUND = require("../assets/sound/high_pitch_bird.mp3");
 
 type TabKey = "new" | "accepted" | "delivered" | "cancelled";
 
