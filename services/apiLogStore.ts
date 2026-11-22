@@ -60,6 +60,8 @@ export interface ApiLogContextSnapshot {
   } | null;
   lastLogUploadAt?: number | null;
   lastLogUploadError?: string | null;
+  lastAppErrorUploadAt?: number | null;
+  lastAppErrorUploadError?: string | null;
   extra?: Record<string, unknown>;
 }
 

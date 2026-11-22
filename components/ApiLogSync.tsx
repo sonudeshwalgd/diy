@@ -5,6 +5,7 @@ import { usePathname } from "expo-router";
 import { useCart } from "../context/CartContext";
 import { useActiveOrders } from "../context/ActiveOrdersContext";
 import { flushApiLogs, setApiLogContext } from "../services/apiLogStore";
+import { flushAppErrorLogs } from "../services/appErrorStore";
 import { CUSTOMER_MOBILE_KEY, LAST_ORDER_ID_KEY } from "../utils/orderId";
 
 const FOCUS_THROTTLE_MS = 750;
@@ -57,6 +58,7 @@ export default function ApiLogSync() {
         isOnline: nav?.onLine ?? null,
       });
       void flushApiLogs();
+      void flushAppErrorLogs();
     };
 
     const handleAppState = (nextState: AppStateStatus) => {
