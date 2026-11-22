@@ -228,6 +228,13 @@ function CODStrip({
 }
 
 function ComingSoonSection() {
+  const viewportWidth = useRef(0);
+  const [hasMore, setHasMore] = useState(true);
+
+  const updateHasMore = (offsetX: number, contentWidth: number, layoutWidth: number) => {
+    setHasMore(offsetX + layoutWidth < contentWidth - 8);
+  };
+
   return (
     <Animated.View entering={FadeInDown.duration(450).delay(180)} className="mt-6">
       <View className="px-4 mb-3 flex-row items-center gap-2">
@@ -237,60 +244,112 @@ function ComingSoonSection() {
         <Text className="text-lg font-sans-extrabold text-stone-900 tracking-tight">
           Coming Soon
         </Text>
+        <View className="ml-auto flex-row items-center gap-1 bg-orange-50 border border-orange-200 rounded-full px-2.5 py-1">
+          <Text className="text-[10px] font-sans-bold text-orange-700">Swipe</Text>
+          <Ionicons name="arrow-forward" size={11} color="#C2410C" />
+        </View>
       </View>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
-      >
-        {COMING_SOON.map((item, index) => (
-          <Animated.View
-            key={item.id}
-            entering={FadeInDown.duration(400).delay(220 + index * 80)}
-            className="w-44 rounded-3xl overflow-hidden border border-white/80"
+      <View className="relative">
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          scrollEventThrottle={16}
+          onLayout={(event) => {
+            viewportWidth.current = event.nativeEvent.layout.width;
+          }}
+          onContentSizeChange={(contentWidth) => {
+            updateHasMore(0, contentWidth, viewportWidth.current);
+          }}
+          onScroll={(event) => {
+            const { contentOffset, contentSize, layoutMeasurement } =
+              event.nativeEvent;
+            updateHasMore(
+              contentOffset.x,
+              contentSize.width,
+              layoutMeasurement.width
+            );
+          }}
+          contentContainerStyle={{ paddingLeft: 16, paddingRight: 56, gap: 12 }}
+        >
+          {COMING_SOON.map((item, index) => (
+            <Animated.View
+              key={item.id}
+              entering={FadeInDown.duration(400).delay(220 + index * 80)}
+              className="w-52 rounded-3xl overflow-hidden border border-white/80"
+              style={{
+                shadowColor: "#78716C",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.08,
+                shadowRadius: 8,
+                elevation: 2,
+              }}
+            >
+              <BlurView
+                intensity={70}
+                tint="light"
+                experimentalBlurMethod="dimezisBlurView"
+              >
+                <View className="bg-white/70 p-4">
+                  <LinearGradient
+                    colors={["#FFF7ED", "#FFEDD5"]}
+                    style={{
+                      width: 56,
+                      height: 56,
+                      borderRadius: 16,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginBottom: 12,
+                    }}
+                  >
+                    <Text style={{ fontSize: 28 }}>{item.emoji}</Text>
+                  </LinearGradient>
+                  <Text className="text-[15px] font-sans-bold text-stone-900">
+                    {item.name}
+                  </Text>
+                  <Text className="text-[11px] text-stone-500 mt-0.5 font-sans-medium leading-4">
+                    {item.tagline}
+                  </Text>
+                  <View className="mt-3 self-start bg-amber-100/90 rounded-full px-2.5 py-1">
+                    <Text className="text-[10px] font-sans-bold text-amber-700">
+                      Coming Soon
+                    </Text>
+                  </View>
+                </View>
+              </BlurView>
+            </Animated.View>
+          ))}
+        </ScrollView>
+        {hasMore && (
+          <LinearGradient
+            pointerEvents="none"
+            colors={["rgba(245,245,244,0)", "rgba(245,245,244,0.98)"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
             style={{
-              shadowColor: "#78716C",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.08,
-              shadowRadius: 8,
-              elevation: 2,
+              position: "absolute",
+              right: 0,
+              top: 0,
+              bottom: 0,
+              width: 56,
             }}
           >
-            <BlurView
-              intensity={70}
-              tint="light"
-              experimentalBlurMethod="dimezisBlurView"
-            >
-              <View className="bg-white/70 p-4">
-                <LinearGradient
-                  colors={["#FFF7ED", "#FFEDD5"]}
-                  style={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: 16,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: 12,
-                  }}
-                >
-                  <Text style={{ fontSize: 28 }}>{item.emoji}</Text>
-                </LinearGradient>
-                <Text className="text-[15px] font-sans-bold text-stone-900">
-                  {item.name}
-                </Text>
-                <Text className="text-[11px] text-stone-500 mt-0.5 font-sans-medium leading-4">
-                  {item.tagline}
-                </Text>
-                <View className="mt-3 self-start bg-amber-100/90 rounded-full px-2.5 py-1">
-                  <Text className="text-[10px] font-sans-bold text-amber-700">
-                    Coming Soon
-                  </Text>
-                </View>
+            <View className="flex-1 items-center justify-end pb-4">
+              <View
+                className="w-8 h-8 rounded-full bg-white border border-orange-200 items-center justify-center"
+                style={{
+                  shadowColor: "#EA580C",
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.15,
+                  shadowRadius: 4,
+                  elevation: 2,
+                }}
+              >
+                <Ionicons name="chevron-forward" size={17} color="#EA580C" />
               </View>
-            </BlurView>
-          </Animated.View>
-        ))}
-      </ScrollView>
+            </View>
+          </LinearGradient>
+        )}
+      </View>
     </Animated.View>
   );
 }
