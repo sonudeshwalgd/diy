@@ -9,6 +9,10 @@ Format: `MAJOR.MINOR.PATCH`
 
 The current version lives in `app.json` and is displayed at the bottom of the sidebar.
 
+## 1.12.5
+
+- Removed the "Entire bill · UPI" batch payment verification panel from the Orders screen.
+
 ## 1.12.4
 
 - Moved the Coming Soon vote section above Combos & Meals.

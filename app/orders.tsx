@@ -37,7 +37,6 @@ import {
 import { isAppForeground } from "../services/apiLogStore";
 import Sheet from "../components/Sheet";
 import StaffPaymentVerification from "../components/StaffPaymentVerification";
-import StaffBillVerification from "../components/StaffBillVerification";
 import {
   formatOrderDuration,
   getOrderElapsedMs,
@@ -1215,12 +1214,6 @@ export default function OrdersScreen() {
           ) : null}
 
           <StatsPanel stats={stats} />
-
-          <StaffBillVerification
-            orders={orders}
-            staffKey={staffKey}
-            onVerified={() => void refreshOrders(true)}
-          />
 
           <View className="flex-row mx-4 mb-2 mt-3 bg-white rounded-2xl p-1 border border-stone-200">
             {TABS.map((tab) => {
