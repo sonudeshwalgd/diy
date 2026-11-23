@@ -4,10 +4,10 @@ export const featureFlags = {
   },
   menu: {
     includeDiyChinese: true,
-    showOrderHistory: true,
-    showRateUs: true,
-    showWifi: true,
-    showFeedback: true,
+    showOrderHistory: false,
+    showRateUs: false,
+    showWifi: false,
+    showFeedback: false,
   },
 } as const;
 
