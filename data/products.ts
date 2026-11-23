@@ -22,6 +22,7 @@ export interface Subcategory {
   name: string;
   price?: number;
   image?: ImageSourcePropType;
+  flavourImages?: Record<string, ImageSourcePropType>;
   variants?: Variant[];
   variantLabel?: string;
   maxOneVariant?: boolean;
@@ -223,6 +224,12 @@ const categoriesBase: Category[] = [
       name: "Single Chocolate Waffle",
       price: p(79),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/waffles/single-chocolate-waffle.webp"),
+      variantLabel: "Choose your chocolate type",
+      variants: [
+        { id: "milk-chocolate", name: "Milk Chocolate", price: p(79) },
+        { id: "dark-chocolate", name: "Dark Chocolate", price: p(79) },
+        { id: "white-chocolate", name: "White Chocolate", price: p(89) },
+      ],
     },
     {
       id: "double-chocolate",
@@ -339,7 +346,7 @@ const categoriesBase: Category[] = [
   subcategories: [
     {
       id: "grilled-burger",
-      name: "Grilled Burger",
+      name: "VEGI TIKKI BURGER",
       price: p(39),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/burgers/grilled-burger.webp"),
     },
@@ -358,13 +365,13 @@ const categoriesBase: Category[] = [
     {
       id: "paneer-burger",
       name: "Paneer Burger",
-      price: p(69),
+      price: p(79),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/burgers/paneer-burger.webp"),
     },
     {
       id: "cheesy-paneer-burger",
       name: "Cheesy Paneer Burger",
-      price: p(79),
+      price: p(89),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/burgers/cheesy-paneer-burger.webp"),
     },
   ],
@@ -391,13 +398,13 @@ const categoriesBase: Category[] = [
     {
       id: "paneer-sandwich",
       name: "Paneer Sandwich",
-      price: p(79),
+      price: p(89),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/sandwiches/paneer-sandwich.webp"),
     },
     {
       id: "cheesy-paneer-sandwich",
       name: "Cheesy Paneer Sandwich",
-      price: p(89),
+      price: p(99),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/sandwiches/cheesy-paneer-sandwich.webp"),
     },
   ],
@@ -424,6 +431,23 @@ const categoriesBase: Category[] = [
           "id": "12-pcs",
           "name": "12 Pcs",
           "price": p(119)
+        }
+      ]
+    },
+    {
+      "id": "double-chocolate-pancake",
+      "name": "Double Chocolate Pancake",
+      "image": require("../assets/DIY_Drinks_All_Item_Images/individual-items/pancakes/choco-chips-pancake.webp"),
+      "variants": [
+        {
+          "id": "8-pcs",
+          "name": "8 Pieces",
+          "price": p(109)
+        },
+        {
+          "id": "12-pcs",
+          "name": "12 Pieces",
+          "price": p(149)
         }
       ]
     },
@@ -667,13 +691,17 @@ const categoriesBase: Category[] = [
   id: "ice-cream",
   name: "DIY Ice Cream",
   image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/ice-cream/double-delight.webp"),
-  description: "Cone, Double Delight & Dry Fruit",
+  description: "Single Cone, Double Delight & Dry Fruit",
   subcategories: [
     {
       id: "ice-cream-cone",
-      name: "Cone",
+      name: "Single Cone",
       price: p(30),
       image: require("../assets/DIY_Drinks_All_Item_Images/individual-items/ice-cream/cone.webp"),
+      flavourImages: {
+        chocolate: require("../assets/DIY_Drinks_All_Item_Images/individual-items/ice-cream/cone.webp"),
+        vanilla: require("../assets/DIY_Drinks_All_Item_Images/individual-items/ice-cream/cone-vanilla.webp"),
+      },
     },
     {
       id: "ice-cream-double-delight",

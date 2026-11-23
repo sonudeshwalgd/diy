@@ -109,6 +109,10 @@ export default function IceCreamSheet({ visible, category, onClose }: Props) {
         {category.subcategories.map((sub) => {
           const scoopCount = SCOOPS[sub.id] ?? 1;
           const selection = getSelection(sub.id);
+          const image =
+            sub.flavourImages?.[selection.flavours[0]] ??
+            sub.image ??
+            category.image;
           const price = getItemPrice(sub);
           const outOfStock = isItemDisabled(sub.id);
           const cartPrefix = `${sub.id}:`;
@@ -127,7 +131,7 @@ export default function IceCreamSheet({ visible, category, onClose }: Props) {
             >
               <View className="flex-row p-3">
                 <Image
-                  source={sub.image ?? category.image}
+                  source={image}
                   style={{
                     width: 88,
                     height: 88,

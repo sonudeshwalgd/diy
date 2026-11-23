@@ -9,6 +9,18 @@ Format: `MAJOR.MINOR.PATCH`
 
 The current version lives in `app.json` and is displayed at the bottom of the sidebar.
 
+## 1.10.36
+
+- Added `(Made with Real Strawberries)` to the strawberry shake and crusher product names.
+- Added Milk Chocolate, Dark Chocolate, and White Chocolate (₹10 extra) options to Single Chocolate Waffle.
+- Added Double Chocolate Pancake with 8 Pieces (₹109) and 12 Pieces (₹149) options.
+- Renamed the ₹39 Grilled Burger to `VEGI TIKKI BURGER` and updated Paneer Burger to ₹79 and Cheesy Paneer Burger to ₹89.
+- Updated Paneer Sandwich to ₹89 and Cheesy Paneer Sandwich to ₹99.
+- Added flavour-based image switching for Single Cone while keeping Double Delight and Dry Fruit images unchanged, using the supplied vanilla cone image for vanilla and the original cone image for chocolate.
+- Added Real Strawberry Honey Pancake to the Coming Soon list.
+- Made the Coming Soon arrow indicators tappable in both directions, with each arrow shown only when scrolling is possible.
+- Updated dashboard item categorization for the renamed and new item names.
+
 ## 1.10.31
 
 - Shortened order IDs to `XXXXXXXX-CCCC`, removing the date and `DIY` prefix.

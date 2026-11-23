@@ -164,6 +164,12 @@ const COMING_SOON: ComingSoonItem[] = [
     tagline: "Fresh strawberries · soft bread",
   },
   {
+    id: "real-strawberry-honey-pancake",
+    name: "Real Strawberry Honey Pancake",
+    emoji: "🍓",
+    tagline: "Real strawberries · sweet honey drizzle",
+  },
+  {
     id: "momos",
     name: "Momos",
     icon: "restaurant-outline",
@@ -305,8 +311,14 @@ function CODStrip({
   );
 }
 
+const COMING_SOON_CARD_STEP = 220;
+
 function ComingSoonSection() {
+  const scrollRef = useRef<ScrollView>(null);
   const viewportWidth = useRef(0);
+  const contentWidth = useRef(0);
+  const scrollX = useRef(0);
+  const [canScrollBack, setCanScrollBack] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [votes, setVotes] = useState<Record<string, ComingSoonVote>>({});
   const [voteTotals, setVoteTotals] = useState<
@@ -387,8 +399,23 @@ function ComingSoonSection() {
       .catch(() => {});
   };
 
-  const updateHasMore = (offsetX: number, contentWidth: number, layoutWidth: number) => {
-    setHasMore(offsetX + layoutWidth < contentWidth - 8);
+  const updateArrows = (
+    offsetX: number,
+    totalWidth: number,
+    layoutWidth: number
+  ) => {
+    scrollX.current = offsetX;
+    setCanScrollBack(offsetX > 8);
+    setHasMore(offsetX + layoutWidth < totalWidth - 8);
+  };
+
+  const scrollByCards = (direction: -1 | 1) => {
+    const maxOffset = Math.max(0, contentWidth.current - viewportWidth.current);
+    const nextOffset = Math.min(
+      maxOffset,
+      Math.max(0, scrollX.current + direction * COMING_SOON_CARD_STEP)
+    );
+    scrollRef.current?.scrollTo({ x: nextOffset, animated: true });
   };
 
   return (
@@ -401,25 +428,29 @@ function ComingSoonSection() {
           Coming Soon
         </Text>
         <View className="ml-auto flex-row items-center gap-1 bg-orange-50 border border-orange-200 rounded-full px-2.5 py-1">
+          <Ionicons name="arrow-back" size={11} color="#C2410C" />
           <Text className="text-[10px] font-sans-bold text-orange-700">Swipe</Text>
           <Ionicons name="arrow-forward" size={11} color="#C2410C" />
         </View>
       </View>
       <View className="relative">
         <ScrollView
+          ref={scrollRef}
           horizontal
           showsHorizontalScrollIndicator={false}
           scrollEventThrottle={16}
           onLayout={(event) => {
             viewportWidth.current = event.nativeEvent.layout.width;
+            updateArrows(scrollX.current, contentWidth.current, viewportWidth.current);
           }}
-          onContentSizeChange={(contentWidth) => {
-            updateHasMore(0, contentWidth, viewportWidth.current);
+          onContentSizeChange={(width) => {
+            contentWidth.current = width;
+            updateArrows(scrollX.current, width, viewportWidth.current);
           }}
           onScroll={(event) => {
             const { contentOffset, contentSize, layoutMeasurement } =
               event.nativeEvent;
-            updateHasMore(
+            updateArrows(
               contentOffset.x,
               contentSize.width,
               layoutMeasurement.width
@@ -532,9 +563,42 @@ function ComingSoonSection() {
             </Animated.View>
           ))}
         </ScrollView>
+        {canScrollBack && (
+          <LinearGradient
+            pointerEvents="box-none"
+            colors={["rgba(245,245,244,0.98)", "rgba(245,245,244,0)"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={{
+              position: "absolute",
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: 56,
+            }}
+          >
+            <View className="flex-1 items-center justify-end pb-4">
+              <Pressable
+                onPress={() => scrollByCards(-1)}
+                accessibilityLabel="Scroll Coming Soon left"
+                hitSlop={8}
+                className="w-8 h-8 rounded-full bg-white border border-orange-200 items-center justify-center"
+                style={{
+                  shadowColor: "#EA580C",
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.15,
+                  shadowRadius: 4,
+                  elevation: 2,
+                }}
+              >
+                <Ionicons name="chevron-back" size={17} color="#EA580C" />
+              </Pressable>
+            </View>
+          </LinearGradient>
+        )}
         {hasMore && (
           <LinearGradient
-            pointerEvents="none"
+            pointerEvents="box-none"
             colors={["rgba(245,245,244,0)", "rgba(245,245,244,0.98)"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
@@ -547,7 +611,10 @@ function ComingSoonSection() {
             }}
           >
             <View className="flex-1 items-center justify-end pb-4">
-              <View
+              <Pressable
+                onPress={() => scrollByCards(1)}
+                accessibilityLabel="Scroll Coming Soon right"
+                hitSlop={8}
                 className="w-8 h-8 rounded-full bg-white border border-orange-200 items-center justify-center"
                 style={{
                   shadowColor: "#EA580C",
@@ -558,7 +625,7 @@ function ComingSoonSection() {
                 }}
               >
                 <Ionicons name="chevron-forward" size={17} color="#EA580C" />
-              </View>
+              </Pressable>
             </View>
           </LinearGradient>
         )}
