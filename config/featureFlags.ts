@@ -9,6 +9,12 @@ export const featureFlags = {
     showWifi: false,
     showFeedback: false,
   },
+  sidebar: {
+    showOrderHistory: true,
+    showRateUs: true,
+    showWifi: true,
+    showFeedback: true,
+  },
 } as const;
 
 export type FeatureFlagKey =
@@ -17,7 +23,11 @@ export type FeatureFlagKey =
   | "menu.showOrderHistory"
   | "menu.showRateUs"
   | "menu.showWifi"
-  | "menu.showFeedback";
+  | "menu.showFeedback"
+  | "sidebar.showOrderHistory"
+  | "sidebar.showRateUs"
+  | "sidebar.showWifi"
+  | "sidebar.showFeedback";
 
 export function isFeatureEnabled(key: FeatureFlagKey): boolean {
   return key

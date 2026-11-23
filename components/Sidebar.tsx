@@ -92,10 +92,10 @@ export default function Sidebar({
     if (visible) void syncOrders(true);
   }, [visible, syncOrders]);
 
-  const showOrderHistory = isFeatureEnabled("menu.showOrderHistory");
-  const showRateUs = isFeatureEnabled("menu.showRateUs");
-  const showWifi = isFeatureEnabled("menu.showWifi");
-  const showFeedback = isFeatureEnabled("menu.showFeedback");
+  const showOrderHistory = isFeatureEnabled("sidebar.showOrderHistory");
+  const showRateUs = isFeatureEnabled("sidebar.showRateUs");
+  const showWifi = isFeatureEnabled("sidebar.showWifi");
+  const showFeedback = isFeatureEnabled("sidebar.showFeedback");
 
   const runAction = (action: () => void) => {
     onClose();
