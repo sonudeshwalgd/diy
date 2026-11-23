@@ -73,6 +73,7 @@ import {
   isMenuTagSort,
   type MenuSortId,
 } from "../utils/menuSort";
+import { isFeatureEnabled } from "../config/featureFlags";
 
 const OUTLET_MAPS_URL =
   "https://www.google.com/maps/place/DIY+Drinks/data=!4m2!3m1!1s0x0:0xb1c683b845157dec?sa=X&ved=1t:2428&ictx=111";
@@ -1116,40 +1117,56 @@ export default function HomeScreen() {
         ListHeaderComponent={
           <View>
             <View className="px-4 pt-2">
-              <View className="flex-row items-center gap-2">
-                <QuickPill
-                  icon={<Ionicons name="receipt-outline" size={15} color="#7C3AED" />}
-                  label="Order History"
-                  color="#7C3AED"
-                  onPress={() => setHistoryVisible(true)}
-                />
-                <QuickPill
-                  icon={<Ionicons name="star" size={15} color="#D97706" />}
-                  label="Rate us"
-                  color="#D97706"
-                  onPress={() => Linking.openURL(RATE_US_URL)}
-                />
-              </View>
-              <View className="flex-row items-center gap-2 mt-2">
-                <QuickPill
-                  icon={<Ionicons name="wifi" size={15} color="#2563EB" />}
-                  label="Wi-Fi"
-                  color="#2563EB"
-                  onPress={() => setWifiVisible(true)}
-                />
-                <QuickPill
-                  icon={
-                    <Ionicons
-                      name="chatbubble-ellipses-outline"
-                      size={15}
-                      color="#4F46E5"
+              {(isFeatureEnabled("menu.showOrderHistory") ||
+                isFeatureEnabled("menu.showRateUs")) && (
+                <View className="flex-row items-center gap-2">
+                  {isFeatureEnabled("menu.showOrderHistory") && (
+                    <QuickPill
+                      icon={
+                        <Ionicons name="receipt-outline" size={15} color="#7C3AED" />
+                      }
+                      label="Order History"
+                      color="#7C3AED"
+                      onPress={() => setHistoryVisible(true)}
                     />
-                  }
-                  label="Feedback"
-                  color="#4F46E5"
-                  onPress={() => setFeedbackVisible(true)}
-                />
-              </View>
+                  )}
+                  {isFeatureEnabled("menu.showRateUs") && (
+                    <QuickPill
+                      icon={<Ionicons name="star" size={15} color="#D97706" />}
+                      label="Rate us"
+                      color="#D97706"
+                      onPress={() => Linking.openURL(RATE_US_URL)}
+                    />
+                  )}
+                </View>
+              )}
+              {(isFeatureEnabled("menu.showWifi") ||
+                isFeatureEnabled("menu.showFeedback")) && (
+                <View className="flex-row items-center gap-2 mt-2">
+                  {isFeatureEnabled("menu.showWifi") && (
+                    <QuickPill
+                      icon={<Ionicons name="wifi" size={15} color="#2563EB" />}
+                      label="Wi-Fi"
+                      color="#2563EB"
+                      onPress={() => setWifiVisible(true)}
+                    />
+                  )}
+                  {isFeatureEnabled("menu.showFeedback") && (
+                    <QuickPill
+                      icon={
+                        <Ionicons
+                          name="chatbubble-ellipses-outline"
+                          size={15}
+                          color="#4F46E5"
+                        />
+                      }
+                      label="Feedback"
+                      color="#4F46E5"
+                      onPress={() => setFeedbackVisible(true)}
+                    />
+                  )}
+                </View>
+              )}
             </View>
 
             <Animated.View
@@ -1350,6 +1367,10 @@ export default function HomeScreen() {
         visible={sidebarVisible}
         onClose={() => setSidebarVisible(false)}
         onOpenOrder={setSelectedOrderId}
+        onOpenOrderHistory={() => setHistoryVisible(true)}
+        onOpenWifi={() => setWifiVisible(true)}
+        onOpenFeedback={() => setFeedbackVisible(true)}
+        onRateUs={() => void Linking.openURL(RATE_US_URL)}
       />
     </View>
   );

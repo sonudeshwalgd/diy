@@ -4,10 +4,20 @@ export const featureFlags = {
   },
   menu: {
     includeDiyChinese: true,
+    showOrderHistory: true,
+    showRateUs: true,
+    showWifi: true,
+    showFeedback: true,
   },
 } as const;
 
-export type FeatureFlagKey = "categoryCard.showDescription" | "menu.includeDiyChinese";
+export type FeatureFlagKey =
+  | "categoryCard.showDescription"
+  | "menu.includeDiyChinese"
+  | "menu.showOrderHistory"
+  | "menu.showRateUs"
+  | "menu.showWifi"
+  | "menu.showFeedback";
 
 export function isFeatureEnabled(key: FeatureFlagKey): boolean {
   return key

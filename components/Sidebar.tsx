@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import {
   ActivityIndicator,
   Modal,
@@ -19,6 +19,7 @@ import {
   getOrderDisplayId,
 } from "../utils/orderDisplay";
 import { PHONE_NUMBER } from "./OrderBottomSheet";
+import { isFeatureEnabled } from "../config/featureFlags";
 
 const CONTACT_NUMBER = `+${PHONE_NUMBER.slice(0, 2)} ${PHONE_NUMBER.slice(
   2,
@@ -30,15 +31,76 @@ interface Props {
   visible: boolean;
   onClose: () => void;
   onOpenOrder: (orderId: string) => void;
+  onOpenOrderHistory: () => void;
+  onOpenWifi: () => void;
+  onOpenFeedback: () => void;
+  onRateUs: () => void;
 }
 
-export default function Sidebar({ visible, onClose, onOpenOrder }: Props) {
+function SidebarAction({
+  icon,
+  label,
+  color,
+  onPress,
+}: {
+  icon: ReactNode;
+  label: string;
+  color: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      className="flex-1 flex-row items-center gap-2 bg-white rounded-2xl border border-stone-100 px-3 py-3 active:opacity-80"
+      style={{
+        shadowColor: "#78716C",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.06,
+        shadowRadius: 4,
+        elevation: 1,
+      }}
+    >
+      <View
+        className="w-8 h-8 rounded-xl items-center justify-center"
+        style={{ backgroundColor: `${color}1A` }}
+      >
+        {icon}
+      </View>
+      <Text
+        className="text-[12px] font-sans-bold text-stone-700 flex-1"
+        numberOfLines={2}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+export default function Sidebar({
+  visible,
+  onClose,
+  onOpenOrder,
+  onOpenOrderHistory,
+  onOpenWifi,
+  onOpenFeedback,
+  onRateUs,
+}: Props) {
   const { activeOrders, isSyncing, lastSyncedAt, syncOrders } =
     useActiveOrders();
 
   useEffect(() => {
     if (visible) void syncOrders(true);
   }, [visible, syncOrders]);
+
+  const showOrderHistory = isFeatureEnabled("menu.showOrderHistory");
+  const showRateUs = isFeatureEnabled("menu.showRateUs");
+  const showWifi = isFeatureEnabled("menu.showWifi");
+  const showFeedback = isFeatureEnabled("menu.showFeedback");
+
+  const runAction = (action: () => void) => {
+    onClose();
+    action();
+  };
 
   const renderOrder = (order: AdminOrder) => (
     <Pressable
@@ -152,6 +214,65 @@ export default function Sidebar({ visible, onClose, onOpenOrder }: Props) {
               contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12 }}
               showsVerticalScrollIndicator
             >
+              {(showOrderHistory || showRateUs || showWifi || showFeedback) && (
+                <View className="mb-4">
+                  <Text className="text-[11px] font-sans-bold uppercase tracking-widest text-stone-400 mb-2">
+                    Quick actions
+                  </Text>
+                  {(showOrderHistory || showRateUs) && (
+                    <View className="flex-row gap-2">
+                      {showOrderHistory && (
+                        <SidebarAction
+                          icon={
+                            <Ionicons
+                              name="receipt-outline"
+                              size={16}
+                              color="#7C3AED"
+                            />
+                          }
+                          label="Order History"
+                          color="#7C3AED"
+                          onPress={() => runAction(onOpenOrderHistory)}
+                        />
+                      )}
+                      {showRateUs && (
+                        <SidebarAction
+                          icon={<Ionicons name="star" size={16} color="#D97706" />}
+                          label="Rate us"
+                          color="#D97706"
+                          onPress={() => runAction(onRateUs)}
+                        />
+                      )}
+                    </View>
+                  )}
+                  {(showWifi || showFeedback) && (
+                    <View className="flex-row gap-2 mt-2">
+                      {showWifi && (
+                        <SidebarAction
+                          icon={<Ionicons name="wifi" size={16} color="#2563EB" />}
+                          label="Wi-Fi"
+                          color="#2563EB"
+                          onPress={() => runAction(onOpenWifi)}
+                        />
+                      )}
+                      {showFeedback && (
+                        <SidebarAction
+                          icon={
+                            <Ionicons
+                              name="chatbubble-ellipses-outline"
+                              size={16}
+                              color="#4F46E5"
+                            />
+                          }
+                          label="Feedback"
+                          color="#4F46E5"
+                          onPress={() => runAction(onOpenFeedback)}
+                        />
+                      )}
+                    </View>
+                  )}
+                </View>
+              )}
               {isSyncing && activeOrders.length === 0 ? (
                 <View className="items-center py-14">
                   <ActivityIndicator size="large" color="#EA580C" />
