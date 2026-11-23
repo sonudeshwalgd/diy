@@ -13,7 +13,7 @@ The current version lives in `app.json` and is displayed at the bottom of the si
 
 - Added `(Made with Real Strawberries)` to the strawberry shake and crusher product names.
 - Added Milk Chocolate, Dark Chocolate, and White Chocolate (₹10 extra) options to Single Chocolate Waffle.
-- Added Double Chocolate Pancake with 8 Pieces (₹109) and 12 Pieces (₹149) options.
+- Added Double Chocolate Pancake with 8 Pieces (₹109) and 12 Pieces (₹149) options and its supplied image.
 - Renamed the ₹39 Grilled Burger to `VEGI TIKKI BURGER` and updated Paneer Burger to ₹79 and Cheesy Paneer Burger to ₹89.
 - Updated Paneer Sandwich to ₹89 and Cheesy Paneer Sandwich to ₹99.
 - Added flavour-based image switching for Single Cone while keeping Double Delight and Dry Fruit images unchanged, using the supplied vanilla cone image for vanilla and the original cone image for chocolate.

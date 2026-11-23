@@ -437,7 +437,7 @@ const categoriesBase: Category[] = [
     {
       "id": "double-chocolate-pancake",
       "name": "Double Chocolate Pancake",
-      "image": require("../assets/DIY_Drinks_All_Item_Images/individual-items/pancakes/choco-chips-pancake.webp"),
+      "image": require("../assets/DIY_Drinks_All_Item_Images/individual-items/pancakes/double-chocolate-pancake.webp"),
       "variants": [
         {
           "id": "8-pcs",
