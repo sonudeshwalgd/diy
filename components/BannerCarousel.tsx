@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Image,
   Pressable,
@@ -45,16 +45,28 @@ export default function BannerCarousel({ onComboPress }: Props) {
   const scrollRef = useRef<ScrollView>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const { getComboAvailability } = useDisabledItems();
+  const diyChineseItemState = useDisabledItems("diy_chineese");
   const { width } = useWindowDimensions();
+  const hideDiyChinese =
+    diyChineseItemState.loading || diyChineseItemState.hiddenUnavailable;
+  const visibleCombos = useMemo(
+    () =>
+      combos.filter(
+        (combo) =>
+          !(hideDiyChinese && combo.restaurant === "diy_chineese")
+      ),
+    [hideDiyChinese]
+  );
   const bannerWidth = Math.min(
     Math.min(width, MAX_CONTENT_WIDTH) - PAGE_PADDING * 2,
     BANNER_MAX_WIDTH
   );
 
   useEffect(() => {
+    if (visibleCombos.length === 0) return;
     const interval = setInterval(() => {
       setActiveIndex((prev) => {
-        const next = (prev + 1) % combos.length;
+        const next = (prev + 1) % visibleCombos.length;
         scrollRef.current?.scrollTo({
           x: next * (bannerWidth + 12),
           animated: true,
@@ -63,12 +75,12 @@ export default function BannerCarousel({ onComboPress }: Props) {
       });
     }, 3000);
     return () => clearInterval(interval);
-  }, [bannerWidth]);
+  }, [bannerWidth, visibleCombos.length]);
 
   const onScroll = (e: any) => {
     const offsetX = e.nativeEvent.contentOffset.x;
     const idx = Math.round(offsetX / (bannerWidth + 12));
-    if (idx >= 0 && idx < combos.length) {
+    if (idx >= 0 && idx < visibleCombos.length) {
       setActiveIndex(idx);
     }
   };
@@ -86,7 +98,7 @@ export default function BannerCarousel({ onComboPress }: Props) {
         scrollEventThrottle={16}
         contentContainerStyle={{ paddingHorizontal: PAGE_PADDING }}
       >
-        {combos.map((combo, index) => {
+        {visibleCombos.map((combo, index) => {
           const outOfStock = getComboAvailability(combo).outOfStock;
           return (
           <Pressable
@@ -200,7 +212,7 @@ export default function BannerCarousel({ onComboPress }: Props) {
 
       {/* Dots */}
       <View className="flex-row justify-center mt-3 gap-1.5">
-        {combos.map((_, i) => (
+        {visibleCombos.map((_, i) => (
           <View
             key={i}
             className={`h-1.5 rounded-full ${

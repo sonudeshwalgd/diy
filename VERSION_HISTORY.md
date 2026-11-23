@@ -9,6 +9,15 @@ Format: `MAJOR.MINOR.PATCH`
 
 The current version lives in `app.json` and is displayed at the bottom of the sidebar.
 
+## 1.12.4
+
+- Moved the Coming Soon vote section above Combos & Meals.
+- Hid the DIY Chinese menu when the hidden-items API fails and no valid local snapshot is available, including menu cards, combos, and banner combos.
+
+## 1.12.3
+
+- Removed public up/down vote counts from Coming Soon cards; every customer sees all items, and each customer sees only their own vote.
+
 ## 1.12.2
 
 - Added a "Do you want to pack the food?" checkbox in Your Cart above the WhatsApp order button for non-delivery (inside-restaurant) orders, and included the packing request in the WhatsApp message when checked.

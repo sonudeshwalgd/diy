@@ -61,6 +61,7 @@ interface DisabledItemsContextType {
   unlocked: boolean;
   verifying: boolean;
   loading: boolean;
+  hiddenUnavailable: boolean;
   status: SyncStatus;
   lastSyncedAt: string | null;
   error: string | null;
@@ -94,6 +95,7 @@ function DisabledItemsProviderImpl({
   const [disabledIds, setDisabledIds] = useState<string[]>([]);
   const [hiddenIds, setHiddenIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hiddenUnavailable, setHiddenUnavailable] = useState(false);
   const [status, setStatus] = useState<SyncStatus>("idle");
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -104,6 +106,7 @@ function DisabledItemsProviderImpl({
   const hiddenIdsRef = useRef<string[]>([]);
   const disabledDirtyRef = useRef(false);
   const hiddenDirtyRef = useRef(false);
+  const hiddenSnapshotAvailableRef = useRef(false);
   const disabledSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hiddenSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const staffKeyRef = useRef("");
@@ -131,30 +134,36 @@ function DisabledItemsProviderImpl({
   );
 
   const hydrateFromCache = useCallback(async () => {
+    let hiddenSnapshotAvailable = false;
     try {
       const [disabledRaw, hiddenRaw] = await Promise.all([
         AsyncStorage.getItem(disabledStorageKey),
         AsyncStorage.getItem(hiddenStorageKey),
       ]);
       if (disabledRaw) {
-        const parsed = JSON.parse(disabledRaw);
-        if (Array.isArray(parsed)) {
-          applyDisabledIds(
-            parsed.filter((id): id is string => typeof id === "string")
-          );
-        }
+        try {
+          const parsed = JSON.parse(disabledRaw);
+          if (Array.isArray(parsed)) {
+            applyDisabledIds(
+              parsed.filter((id): id is string => typeof id === "string")
+            );
+          }
+        } catch {}
       }
       if (hiddenRaw) {
-        const parsed = JSON.parse(hiddenRaw);
-        if (Array.isArray(parsed)) {
-          applyHiddenIds(
-            parsed.filter((id): id is string => typeof id === "string")
-          );
-        }
+        try {
+          const parsed = JSON.parse(hiddenRaw);
+          if (Array.isArray(parsed)) {
+            hiddenSnapshotAvailable = true;
+            applyHiddenIds(
+              parsed.filter((id): id is string => typeof id === "string")
+            );
+          }
+        } catch {}
       }
-    } catch {
-      return;
-    }
+    } catch {}
+    hiddenSnapshotAvailableRef.current = hiddenSnapshotAvailable;
+    return hiddenSnapshotAvailable;
   }, [applyDisabledIds, applyHiddenIds, disabledStorageKey, hiddenStorageKey]);
 
   const fetchRemote = useCallback(async () => {
@@ -178,9 +187,18 @@ function DisabledItemsProviderImpl({
         Array.isArray(data.itemIds) ? data.itemIds : []
       );
       if (!hiddenDirtyRef.current) applyHiddenIds(ids);
+      hiddenSnapshotAvailableRef.current = true;
+      setHiddenUnavailable(false);
     } catch (err) {
       failed = true;
       message = err instanceof Error ? err.message : message;
+      if (
+        scope === "diy_chineese" &&
+        !hiddenSnapshotAvailableRef.current &&
+        !hiddenDirtyRef.current
+      ) {
+        setHiddenUnavailable(true);
+      }
     }
 
     if (failed) {
@@ -192,7 +210,7 @@ function DisabledItemsProviderImpl({
     setLastSyncedAt(new Date().toISOString());
     setError(null);
     setStatus("saved");
-  }, [applyDisabledIds, applyHiddenIds, restaurant]);
+  }, [applyDisabledIds, applyHiddenIds, restaurant, scope]);
 
   const flushDisabled = useCallback(async () => {
     if (disabledSaveTimer.current) {
@@ -456,6 +474,7 @@ function DisabledItemsProviderImpl({
         unlocked,
         verifying,
         loading,
+        hiddenUnavailable,
         status,
         lastSyncedAt,
         error,

@@ -321,9 +321,6 @@ function ComingSoonSection() {
   const [canScrollBack, setCanScrollBack] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [votes, setVotes] = useState<Record<string, ComingSoonVote>>({});
-  const [voteTotals, setVoteTotals] = useState<
-    Record<string, { up: number; down: number }>
-  >({});
 
   const applyVoteSummary = useCallback(
     (
@@ -332,13 +329,10 @@ function ComingSoonSection() {
         { up: number; down: number; mine?: ComingSoonVote }
       >
     ) => {
-      const totals: Record<string, { up: number; down: number }> = {};
       const mine: Record<string, ComingSoonVote> = {};
       for (const [id, entry] of Object.entries(summary)) {
-        totals[id] = { up: entry.up, down: entry.down };
         if (entry.mine) mine[id] = entry.mine;
       }
-      setVoteTotals(totals);
       setVotes(mine);
       AsyncStorage.setItem("diy_coming_soon_votes_v1", JSON.stringify(mine)).catch(
         () => {}
@@ -382,17 +376,6 @@ function ComingSoonSection() {
     AsyncStorage.setItem("diy_coming_soon_votes_v1", JSON.stringify(nextVotes)).catch(
       () => {}
     );
-
-    const previous = votes[id];
-    setVoteTotals((currentTotals) => {
-      const current = currentTotals[id] ?? { up: 0, down: 0 };
-      const updated = { ...current };
-      if (previous === "up") updated.up = Math.max(0, updated.up - 1);
-      if (previous === "down") updated.down = Math.max(0, updated.down - 1);
-      if (nextValue === "up") updated.up += 1;
-      if (nextValue === "down") updated.down += 1;
-      return { ...currentTotals, [id]: updated };
-    });
 
     saveComingSoonVote(id, nextValue)
       .then((data) => applyVoteSummary(data.votes))
@@ -530,9 +513,11 @@ function ComingSoonSection() {
                             }
                           />
                         </Pressable>
-                        <Text className="text-[10px] font-sans-bold text-emerald-700">
-                          {voteTotals[item.id]?.up ?? 0}
-                        </Text>
+                        {votes[item.id] === "up" ? (
+                          <Text className="text-[10px] font-sans-bold text-emerald-700">
+                            1
+                          </Text>
+                        ) : null}
                       </View>
                       <View className="flex-row items-center gap-1">
                         <Pressable
@@ -552,9 +537,11 @@ function ComingSoonSection() {
                             }
                           />
                         </Pressable>
-                        <Text className="text-[10px] font-sans-bold text-red-600">
-                          {voteTotals[item.id]?.down ?? 0}
-                        </Text>
+                        {votes[item.id] === "down" ? (
+                          <Text className="text-[10px] font-sans-bold text-red-600">
+                            1
+                          </Text>
+                        ) : null}
                       </View>
                     </View>
                   </View>
@@ -820,6 +807,8 @@ export default function HomeScreen() {
   const { activeOrders } = useActiveOrders();
   const globalItemState = useDisabledItems();
   const diyChineseItemState = useDisabledItems("diy_chineese");
+  const hideDiyChinese =
+    diyChineseItemState.loading || diyChineseItemState.hiddenUnavailable;
   const stateFor = useCallback(
     (restaurant?: string) =>
       restaurant === "diy_chineese" ? diyChineseItemState : globalItemState,
@@ -886,11 +875,14 @@ export default function HomeScreen() {
   }, [cartVisible, historyVisible]);
 
   const orderedMenuItems = useMemo(() => {
-    let items = menuItems.filter((item) =>
-      item.kind === "product"
+    let items = menuItems.filter((item) => {
+      if (hideDiyChinese && item.category.restaurant === "diy_chineese") {
+        return false;
+      }
+      return item.kind === "product"
         ? !isItemHiddenFor(item.product.id, item.category.restaurant)
-        : !isCategoryHidden(item.category)
-    );
+        : !isCategoryHidden(item.category);
+    });
 
     if (menuSort === "available") {
       const isAvailable = (item: MenuItem) =>
@@ -931,6 +923,7 @@ export default function HomeScreen() {
 
     return items;
   }, [
+    hideDiyChinese,
     isCategoryHidden,
     isItemDisabledFor,
     isItemHiddenFor,
@@ -939,8 +932,13 @@ export default function HomeScreen() {
   ]);
 
   const visibleCombos = useMemo(
-    () => combos.filter((combo) => !isComboHiddenFor(combo)),
-    [isComboHiddenFor]
+    () =>
+      combos.filter(
+        (combo) =>
+          !(hideDiyChinese && combo.restaurant === "diy_chineese") &&
+          !isComboHiddenFor(combo)
+      ),
+    [hideDiyChinese, isComboHiddenFor]
   );
 
   const activeSort =
@@ -1281,6 +1279,7 @@ export default function HomeScreen() {
         }
         ListFooterComponent={
           <View>
+            <ComingSoonSection />
             {visibleCombos.length > 0 && (
               <Animated.View entering={FadeInDown.duration(450).delay(60)}>
                 <View className="px-4 mt-6 mb-2 flex-row items-end justify-between">
@@ -1319,7 +1318,6 @@ export default function HomeScreen() {
                 </View>
               </Animated.View>
             )}
-            <ComingSoonSection />
             <Footer insideRestaurant={insideRestaurant} sourceLabel={sourceLabel} />
           </View>
         }
