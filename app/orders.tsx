@@ -36,6 +36,8 @@ import {
 } from "../services/api";
 import { isAppForeground } from "../services/apiLogStore";
 import Sheet from "../components/Sheet";
+import StaffPaymentVerification from "../components/StaffPaymentVerification";
+import StaffBillVerification from "../components/StaffBillVerification";
 import {
   formatOrderDuration,
   getOrderElapsedMs,
@@ -683,11 +685,13 @@ function ItemRow({ item }: { item: BackendOrderItem }) {
 
 function OrderDetailSheet({
   order,
+  staffKey,
   onClose,
   onStatusUpdate,
   updatingId,
 }: {
   order: AdminOrder | null;
+  staffKey: string;
   onClose: () => void;
   onStatusUpdate: (order: AdminOrder, status: OrderStatus) => void;
   updatingId: string | null;
@@ -780,6 +784,13 @@ function OrderDetailSheet({
             <Text className="text-base font-sans-extrabold text-orange-600">₹{order.finalAmount}</Text>
           </View>
         </View>
+
+        <StaffPaymentVerification
+          key={order._id}
+          orderId={order._id}
+          staffKey={staffKey}
+          onVerified={() => {}}
+        />
 
         <View className="flex-row gap-2 mt-4 flex-wrap">
           {STATUS_ACTIONS.map((action) => {
@@ -1205,6 +1216,12 @@ export default function OrdersScreen() {
 
           <StatsPanel stats={stats} />
 
+          <StaffBillVerification
+            orders={orders}
+            staffKey={staffKey}
+            onVerified={() => void refreshOrders(true)}
+          />
+
           <View className="flex-row mx-4 mb-2 mt-3 bg-white rounded-2xl p-1 border border-stone-200">
             {TABS.map((tab) => {
               const active = activeTab === tab.key;
@@ -1346,6 +1363,7 @@ export default function OrdersScreen() {
 
       <OrderDetailSheet
         order={selectedOrder}
+        staffKey={staffKey}
         onClose={() => setSelectedOrderId(null)}
         onStatusUpdate={(order, status) => void handleStatusUpdate(order, status)}
         updatingId={updatingId}

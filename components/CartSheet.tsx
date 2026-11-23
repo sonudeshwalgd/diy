@@ -73,6 +73,7 @@ export default function CartSheet({
   const [duplicateOrder, setDuplicateOrder] = useState<AdminOrder | null>(null);
   const [showMobileInput, setShowMobileInput] = useState(false);
   const [loyaltyError, setLoyaltyError] = useState<string | null>(null);
+  const [wantPack, setWantPack] = useState(false);
   const pendingOrderIdRef = useRef<string | null>(null);
   const placingRef = useRef(false);
 
@@ -144,6 +145,11 @@ export default function CartSheet({
     });
   }, [visible, fetchCustomer, total, itemCount]);
 
+  useEffect(() => {
+    if (!visible) return;
+    void Promise.resolve().then(() => setWantPack(false));
+  }, [visible]);
+
   const handleMobileSubmit = async () => {
     const cleaned = mobile.trim();
     if (cleaned.length !== 10 || !/^\d{10}$/.test(cleaned)) {
@@ -171,6 +177,9 @@ export default function CartSheet({
     }
     if (counterNumber) {
       msg += `🔢 *Counter No:* ${counterNumber}\n`;
+    }
+    if (insideRestaurant && wantPack) {
+      msg += "🎒 *Packing:* Please pack the food\n";
     }
     msg += "\n━━━━━━━━━━━━━━━━\n";
     items.forEach((item, idx) => {
@@ -701,6 +710,25 @@ export default function CartSheet({
                         : "Cash on Delivery & ₹0 delivery fee above ₹149 in Graphic Era"}
                     </Text>
                   </View>
+
+                  {insideRestaurant ? (
+                    <Pressable
+                      onPress={() => setWantPack((checked) => !checked)}
+                      className="flex-row items-center gap-2 mb-3"
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: wantPack }}
+                      accessibilityLabel="Do you want to pack the food?"
+                    >
+                      <Ionicons
+                        name={wantPack ? "checkbox" : "square-outline"}
+                        size={18}
+                        color="#EA580C"
+                      />
+                      <Text className="text-xs text-stone-600 font-sans-medium">
+                        Do you want to pack the food?
+                      </Text>
+                    </Pressable>
+                  ) : null}
 
                   <Pressable
                     onPress={handlePlaceOrder}

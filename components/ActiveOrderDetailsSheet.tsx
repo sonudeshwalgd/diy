@@ -1,19 +1,28 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  AppState,
   Pressable,
   ScrollView,
   Text,
   View,
+  type AppStateStatus,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { ApiError, getOrderById, type AdminOrder } from "../services/api";
+import {
+  ApiError,
+  getOrderById,
+  getOrderPayment,
+  type AdminOrder,
+  type OrderPaymentDetails,
+} from "../services/api";
 import { useActiveOrders } from "../context/ActiveOrdersContext";
 import {
   formatOrderDate,
   getOrderDisplayId,
 } from "../utils/orderDisplay";
 import { removeStoredOrderIds } from "../utils/orderId";
+import { isPaymentComplete, startEntireBillPayment } from "../utils/upi";
 import { trackImpression } from "../services/activityTracker";
 import Sheet from "./Sheet";
 
@@ -28,54 +37,116 @@ export default function ActiveOrderDetailsSheet({
   orderId,
   onClose,
 }: Props) {
-  const { syncOrders } = useActiveOrders();
+  const { activeOrders, syncOrders } = useActiveOrders();
   const [order, setOrder] = useState<AdminOrder | null>(null);
+  const [payment, setPayment] = useState<OrderPaymentDetails | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [payLoading, setPayLoading] = useState(false);
+  const [payError, setPayError] = useState<string | null>(null);
+  const requestRef = useRef(0);
 
-  useEffect(() => {
-    if (!visible || !orderId) return;
-    let active = true;
-    trackImpression({
-      type: "order_status_check",
-      name: "Checked order status",
-      metadata: { orderId },
-    });
-    void Promise.resolve().then(async () => {
-      setOrder(null);
+  const loadOrder = useCallback(
+    async (targetId: string, showSpinner = false) => {
+      const requestId = requestRef.current + 1;
+      requestRef.current = requestId;
+      if (showSpinner) setLoading(true);
       setError(null);
-      setLoading(true);
       try {
-        const data = await getOrderById(orderId, { silentNotFound: true });
-        if (active) {
-          setOrder(data.order);
-          trackImpression({
-            type: "order_status_viewed",
-            name: "Viewed order status",
-            metadata: { orderId, status: data.order.orderStatus ?? null },
-          });
+        const data = await getOrderById(targetId, { silentNotFound: true });
+        let nextPayment: OrderPaymentDetails | null = null;
+        try {
+          nextPayment = await getOrderPayment(targetId);
+        } catch {
+          nextPayment = null;
         }
+        if (requestId !== requestRef.current) return;
+        setOrder(data.order);
+        setPayment(nextPayment);
       } catch (err: unknown) {
-        if (!active) return;
+        if (requestId !== requestRef.current) return;
         trackImpression({
           type: "order_status_failed",
           name: "Order status check failed",
-          metadata: { orderId },
+          metadata: { orderId: targetId },
         });
         setError(
           err instanceof Error ? err.message : "Could not load order details"
         );
         if (err instanceof ApiError && err.status === 404) {
-          void removeStoredOrderIds([orderId]).then(() => syncOrders(true));
+          void removeStoredOrderIds([targetId]).then(() => syncOrders(true));
         }
       } finally {
-        if (active) setLoading(false);
+        if (requestId === requestRef.current && showSpinner) setLoading(false);
       }
+    },
+    [syncOrders]
+  );
+
+  useEffect(() => {
+    if (!visible || !orderId) return;
+    trackImpression({
+      type: "order_status_check",
+      name: "Checked order status",
+      metadata: { orderId },
+    });
+    void Promise.resolve().then(() => {
+      setOrder(null);
+      setPayment(null);
+      setPayError(null);
+      void loadOrder(orderId, true);
     });
     return () => {
-      active = false;
+      requestRef.current += 1;
     };
-  }, [visible, orderId, syncOrders]);
+  }, [visible, orderId, loadOrder]);
+
+  useEffect(() => {
+    if (!visible || !orderId) return;
+    const handleAppState = (state: AppStateStatus) => {
+      if (state === "active") void loadOrder(orderId);
+    };
+    const subscription = AppState.addEventListener("change", handleAppState);
+    const handleFocus = () => void loadOrder(orderId);
+    const interval = setInterval(() => void loadOrder(orderId), 10000);
+    if (typeof window !== "undefined") {
+      window.addEventListener("focus", handleFocus);
+    }
+    return () => {
+      subscription.remove();
+      clearInterval(interval);
+      if (typeof window !== "undefined") {
+        window.removeEventListener("focus", handleFocus);
+      }
+    };
+  }, [visible, orderId, loadOrder]);
+
+  const handlePayNow = async () => {
+    if (!orderId) return;
+    setPayLoading(true);
+    setPayError(null);
+    try {
+      const orderIds = activeOrders.map((item) => item.orderId || item._id);
+      const result = await startEntireBillPayment(orderIds);
+      trackImpression({
+        type: "order_status_viewed",
+        name: "Viewed order status",
+        metadata: { orderId, status: order?.orderStatus ?? null },
+      });
+      if (result.total <= 0) void syncOrders(true);
+      void loadOrder(orderId);
+    } catch (err: unknown) {
+      setPayError(
+        err instanceof Error ? err.message : "Could not open UPI app"
+      );
+    } finally {
+      setPayLoading(false);
+    }
+  };
+
+  const complete = isPaymentComplete(payment, order);
+  const cancelled = order?.orderStatus?.toUpperCase() === "CANCELLED";
+  const canPay = !!order && !complete && !cancelled;
 
   return (
     <Sheet visible={visible} onClose={onClose} sheetStyle={{ maxHeight: "88%" }}>
@@ -128,6 +199,27 @@ export default function ActiveOrderDetailsSheet({
                   {order.items.length} {order.items.length === 1 ? "item" : "items"}
                 </Text>
               </View>
+              {complete ? (
+                <View className="bg-emerald-50 rounded-full px-2.5 py-1">
+                  <Text className="text-[10px] font-sans-bold text-emerald-700">
+                    Paid
+                  </Text>
+                </View>
+              ) : payment?.paymentStatus === "failed" ? (
+                <View className="bg-red-50 rounded-full px-2.5 py-1">
+                  <Text className="text-[10px] font-sans-bold text-red-700">
+                    Payment failed
+                  </Text>
+                </View>
+              ) : canPay ? (
+                <View className="bg-amber-50 rounded-full px-2.5 py-1">
+                  <Text className="text-[10px] font-sans-bold text-amber-700">
+                    {payment?.verificationStatus === "submitted"
+                      ? "Verification pending"
+                      : "Payment pending"}
+                  </Text>
+                </View>
+              ) : null}
             </View>
 
             <Text className="text-[11px] text-stone-400 font-sans-bold uppercase tracking-wide mb-1">
@@ -179,6 +271,33 @@ export default function ActiveOrderDetailsSheet({
                 </Text>
               </View>
             </View>
+
+            {canPay ? (
+              <View className="mt-4">
+                {payError ? (
+                  <Text className="text-[11px] text-red-600 font-sans-medium mb-2">
+                    {payError}
+                  </Text>
+                ) : null}
+                <Pressable
+                  onPress={() => void handlePayNow()}
+                  disabled={payLoading}
+                  className="w-full flex-row items-center justify-center gap-2 bg-emerald-600 rounded-2xl py-3.5 active:opacity-80"
+                >
+                  {payLoading ? (
+                    <ActivityIndicator size="small" color="white" />
+                  ) : (
+                    <Ionicons name="card-outline" size={18} color="white" />
+                  )}
+                  <Text className="text-white text-sm font-sans-extrabold">
+                    {payLoading ? "Opening UPI app..." : "Pay Bill"}
+                  </Text>
+                </Pressable>
+                <Text className="text-[10px] text-stone-400 font-sans-medium text-center mt-2">
+                  Includes all unpaid active orders · amount fetched from server
+                </Text>
+              </View>
+            ) : null}
           </>
         )}
       </ScrollView>

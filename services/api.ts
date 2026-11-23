@@ -95,6 +95,39 @@ export interface AdminOrder extends OrderHistoryOrder {
   insideRestaurant?: boolean;
   orderSource?: string;
   whatsappMessage?: string;
+  paymentStatus?: string;
+  paidAmount?: number;
+  remainingAmount?: number;
+  paymentReference?: string;
+  paymentTransactionId?: string;
+}
+
+export type PaymentStatus = "pending" | "paid" | "failed";
+
+export interface BatchPaymentResult {
+  payments: OrderPaymentDetails[];
+  totalPaid: number;
+  remainingAmount: number;
+}
+
+export interface OrderPaymentDetails {
+  orderId: string;
+  paymentStatus: PaymentStatus;
+  paymentMethod: string;
+  verificationStatus: string;
+  totalAmount: number;
+  paidAmount: number;
+  remainingAmount: number;
+  payableAmount: number;
+  paymentReference: string | null;
+  paymentTransactionId: string | null;
+  paymentSubmittedAt: string | null;
+  paymentVerifiedAt: string | null;
+  upi: {
+    vpa: string;
+    merchantName: string;
+    merchantCode: string;
+  };
 }
 
 export interface AdminOrdersResponse {
@@ -414,6 +447,97 @@ export const getOrderById = async (
   if (!res.ok) {
     const err = await res.json();
     throw new ApiError(err.error || "Failed to fetch order", res.status);
+  }
+  return res.json();
+};
+
+export const getOrderPayment = async (
+  orderId: string
+): Promise<OrderPaymentDetails> => {
+  const res = await apiFetch(`/orders/${encodeURIComponent(orderId)}/payment`);
+  if (!res.ok) {
+    const err = await res.json();
+    throw new ApiError(err.error || "Failed to fetch payment details", res.status);
+  }
+  const data: { payment: OrderPaymentDetails } = await res.json();
+  return data.payment;
+};
+
+export const submitPaymentReference = async (
+  orderId: string,
+  transactionId: string
+): Promise<OrderPaymentDetails> => {
+  const res = await apiFetch(
+    `/orders/${encodeURIComponent(orderId)}/payment/reference`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ transactionId }),
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to submit payment reference");
+  }
+  const data: { payment: OrderPaymentDetails } = await res.json();
+  return data.payment;
+};
+
+export const verifyOrderPayment = async (
+  orderId: string,
+  input: {
+    staffKey: string;
+    approved: boolean;
+    receivedAmount?: number;
+    transactionId?: string;
+  }
+): Promise<OrderPaymentDetails> => {
+  const res = await apiFetch(
+    `/orders/${encodeURIComponent(orderId)}/payment/verify`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "x-staff-key": input.staffKey,
+      },
+      body: JSON.stringify({
+        approved: input.approved,
+        receivedAmount: input.receivedAmount,
+        transactionId: input.transactionId,
+      }),
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to verify payment");
+  }
+  const data: { payment: OrderPaymentDetails } = await res.json();
+  return data.payment;
+};
+
+export const verifyBatchOrderPayment = async (input: {
+  staffKey: string;
+  orderIds: string[];
+  approved: boolean;
+  receivedAmount?: number;
+  transactionId?: string;
+}): Promise<BatchPaymentResult> => {
+  const res = await apiFetch("/orders/payment/verify-batch", {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      "x-staff-key": input.staffKey,
+    },
+    body: JSON.stringify({
+      orderIds: input.orderIds,
+      approved: input.approved,
+      receivedAmount: input.receivedAmount,
+      transactionId: input.transactionId,
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to verify bill payment");
   }
   return res.json();
 };

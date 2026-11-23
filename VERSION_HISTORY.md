@@ -9,6 +9,29 @@ Format: `MAJOR.MINOR.PATCH`
 
 The current version lives in `app.json` and is displayed at the bottom of the sidebar.
 
+## 1.12.2
+
+- Added a "Do you want to pack the food?" checkbox in Your Cart above the WhatsApp order button for non-delivery (inside-restaurant) orders, and included the packing request in the WhatsApp message when checked.
+
+## 1.12.1
+
+- Added a QR-code icon button beside the `Pay Entire Bill` button; it has no label and opens a popup with an amount-prefilled UPI QR for the whole outstanding bill.
+
+## 1.12.0
+
+- Moved the `Pay Now` entry point inside the existing Active Orders floating widget; there is no separate floating button above it.
+- The active-orders `Pay Now` sheet now shows one `Pay Entire Bill` button with the combined outstanding amount instead of a button for each order.
+- `Pay Now` in order details also pays the entire outstanding bill in one UPI intent; the amount is fetched from the backend and prefilled.
+- Added backend batch verification and a staff `Entire bill · UPI` panel that allocates one received amount and UPI transaction ID across all unpaid orders before marking them Paid.
+
+## 1.11.0
+
+- Added a compact floating `Pay Now` button to the menu screen that opens a bottom sheet of active orders, each with its order ID, date, items, total, payment status, and an individual `Pay Now` button.
+- Added a conditional `Pay Now` button to the existing active-order details sheet for unpaid or failed orders; paid orders no longer show it, and partially paid orders show only the remaining amount.
+- `Pay Now` fetches the latest order and payable amount from the backend, then opens the UPI intent directly so the operating system presents the available UPI app chooser with the amount prefilled. Customers are not asked to scan a QR, pick an app, or submit a transaction ID.
+- Added backend payment-status endpoints and staff-only verification of the received amount before an order is marked Paid; order details refresh when the customer returns so `Pay Now` disappears once payment is verified.
+- Added UPI payment status, paid amount, remaining amount, and transaction reference fields to stored orders without changing checkout, cart, Place Order, or the WhatsApp ordering flow.
+
 ## 1.10.36
 
 - Added `(Made with Real Strawberries)` to the strawberry shake and crusher product names.

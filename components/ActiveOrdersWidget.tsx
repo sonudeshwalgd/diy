@@ -25,6 +25,8 @@ import {
   getOrderDisplayId,
   LATE_ORDER_AFTER_MS,
 } from "../utils/orderDisplay";
+import { isPaymentComplete } from "../utils/upi";
+import PayNowOrdersSheet from "./PayNowOrdersSheet";
 import Sheet from "./Sheet";
 
 interface Props {
@@ -38,9 +40,15 @@ function orderFetchId(order: AdminOrder): string {
 export default function ActiveOrdersWidget({ onOpenOrder }: Props) {
   const { activeOrders, isSyncing, syncOrders } = useActiveOrders();
   const [listVisible, setListVisible] = useState(false);
+  const [payNowVisible, setPayNowVisible] = useState(false);
   const progress = useSharedValue(0);
   const shimmer = useSharedValue(0);
   const latestCreatedAt = activeOrders[0]?.createdAt ?? null;
+  const hasPayableOrder = activeOrders.some(
+    (order) =>
+      order.orderStatus?.toUpperCase() !== "CANCELLED" &&
+      !isPaymentComplete(null, order)
+  );
 
   useEffect(() => {
     if (!latestCreatedAt) return;
@@ -141,6 +149,19 @@ export default function ActiveOrdersWidget({ onOpenOrder }: Props) {
               </View>
               <Ionicons name="chevron-forward" size={15} color="#A8A29E" />
             </Pressable>
+
+            {hasPayableOrder ? (
+              <Pressable
+                onPress={() => setPayNowVisible(true)}
+                className="flex-row items-center gap-1 bg-emerald-600 rounded-full px-2.5 py-1.5 active:opacity-70"
+                accessibilityLabel="Pay entire bill"
+              >
+                <Ionicons name="card-outline" size={12} color="white" />
+                <Text className="text-[10px] font-sans-extrabold text-white">
+                  Pay Now
+                </Text>
+              </Pressable>
+            ) : null}
 
             <Pressable
               onPress={() => void syncOrders(true)}
@@ -252,6 +273,11 @@ export default function ActiveOrdersWidget({ onOpenOrder }: Props) {
           })}
         </ScrollView>
       </Sheet>
+
+      <PayNowOrdersSheet
+        visible={payNowVisible}
+        onClose={() => setPayNowVisible(false)}
+      />
     </>
   );
 }
