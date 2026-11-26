@@ -9,6 +9,13 @@ Format: `MAJOR.MINOR.PATCH`
 
 The current version lives in `app.json` and is displayed at the bottom of the sidebar.
 
+## 1.13.0
+
+- Added restaurant-scoped staff keys with multiple keys per restaurant and server-side enforcement that a staff key belongs to only one restaurant.
+- Moved staff availability and kitchen order screens to per-restaurant routes with per-restaurant verification; removed cross-restaurant switching from the disabled/availability screen.
+- Disabled Expo Router sitemap generation to avoid exposing route listings.
+- Added multi-restaurant backend support for restaurant menu/availability/order APIs and restaurant-key authorization.
+
 ## 1.12.5
 
 - Removed the "Entire bill · UPI" batch payment verification panel from the Orders screen.

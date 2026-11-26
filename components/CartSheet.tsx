@@ -210,7 +210,9 @@ export default function CartSheet({
         items.map((item) => ({
           itemId: item.subcategory.id,
           quantity: item.quantity,
-          restaurant: item.subcategory.restaurant,
+          restaurant: item.subcategory.restaurantId ?? item.subcategory.restaurant,
+          restaurantId:
+            item.subcategory.restaurantId ?? item.subcategory.restaurant,
         })),
         savedMobile || undefined,
         controller.signal
@@ -238,7 +240,8 @@ export default function CartSheet({
         name: i.subcategory.name,
         price: getItemPrice(i.subcategory),
         quantity: i.quantity,
-        restaurant: i.subcategory.restaurant,
+        restaurant: i.subcategory.restaurantId ?? i.subcategory.restaurant,
+        restaurantId: i.subcategory.restaurantId ?? i.subcategory.restaurant,
       })),
       subtotal: total,
       totalAmount: total + deliveryCharge,
@@ -298,7 +301,9 @@ export default function CartSheet({
         name: item.subcategory.name,
         price: getItemPrice(item.subcategory),
         quantity: item.quantity,
-        restaurant: item.subcategory.restaurant,
+        restaurant: item.subcategory.restaurantId ?? item.subcategory.restaurant,
+        restaurantId:
+          item.subcategory.restaurantId ?? item.subcategory.restaurant,
       })),
       total: finalTotal,
       itemCount,

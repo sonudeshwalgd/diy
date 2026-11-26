@@ -3,7 +3,6 @@ export const featureFlags = {
     showDescription: false,
   },
   menu: {
-    includeDiyChinese: true,
     showOrderHistory: false,
     showRateUs: false,
     showWifi: false,
@@ -19,7 +18,6 @@ export const featureFlags = {
 
 export type FeatureFlagKey =
   | "categoryCard.showDescription"
-  | "menu.includeDiyChinese"
   | "menu.showOrderHistory"
   | "menu.showRateUs"
   | "menu.showWifi"

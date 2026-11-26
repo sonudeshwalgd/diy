@@ -17,13 +17,12 @@ import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import {
-  categories,
-  combos,
-  type Category,
-  type Combo,
-  type Subcategory,
+import type {
+  Category,
+  Combo,
+  Subcategory,
 } from "../data/products";
+import { useMenu } from "../context/MenuContext";
 import CategoryCard from "../components/CategoryCard";
 import ProductCard from "../components/ProductCard";
 import SubcategorySheet from "../components/SubcategorySheet";
@@ -96,25 +95,23 @@ type MenuItem =
 
 const PRODUCT_MENU_CATEGORY_IDS = new Set(["tiramisu"]);
 
-const menuItems: MenuItem[] = [];
-for (const category of categories) {
-  if (PRODUCT_MENU_CATEGORY_IDS.has(category.id)) {
-    for (const product of category.subcategories) {
-      menuItems.push({
-        kind: "product",
-        key: `product:${product.id}`,
-        product,
-        category,
-      });
-    }
-  } else {
-    menuItems.push({
-      kind: "category",
-      key: `category:${category.id}`,
-      category,
-    });
-  }
-}
+const buildMenuItems = (categories: Category[]): MenuItem[] =>
+  categories.flatMap<MenuItem>((category) =>
+    PRODUCT_MENU_CATEGORY_IDS.has(category.id)
+      ? category.subcategories.map((product) => ({
+          kind: "product" as const,
+          key: `product:${product.id}`,
+          product,
+          category,
+        }))
+      : [
+          {
+            kind: "category" as const,
+            key: `category:${category.id}`,
+            category,
+          },
+        ]
+  );
 
 type ComingSoonVote = ComingSoonVoteValue;
 
@@ -805,35 +802,16 @@ export default function HomeScreen() {
   const sourceLabel = orderSource.sourceLabel;
   const { itemCount } = useCart();
   const { activeOrders } = useActiveOrders();
-  const globalItemState = useDisabledItems();
-  const diyChineseItemState = useDisabledItems("diy_chineese");
-  const hideDiyChinese =
-    diyChineseItemState.loading || diyChineseItemState.hiddenUnavailable;
-  const stateFor = useCallback(
-    (restaurant?: string) =>
-      restaurant === "diy_chineese" ? diyChineseItemState : globalItemState,
-    [diyChineseItemState, globalItemState]
-  );
-  const isItemDisabledFor = useCallback(
-    (id: string, restaurant?: string) => stateFor(restaurant).isItemDisabled(id),
-    [stateFor]
-  );
-  const isItemHiddenFor = useCallback(
-    (id: string, restaurant?: string) => stateFor(restaurant).isItemHidden(id),
-    [stateFor]
-  );
-  const isComboHiddenFor = useCallback(
-    (combo: Combo) => stateFor(combo.restaurant).isComboHidden(combo.id),
-    [stateFor]
-  );
+  const { categories, combos } = useMenu();
+  const menuItems = useMemo(() => buildMenuItems(categories), [categories]);
+  const { isItemDisabled, isItemHidden, isComboHidden } =
+    useDisabledItems("");
   const isCategoryHidden = useCallback(
     (category: Category) =>
-      isItemHiddenFor(category.id, category.restaurant) ||
+      isItemHidden(category.id) ||
       (category.subcategories.length > 0 &&
-        category.subcategories.every((sub) =>
-          isItemHiddenFor(sub.id, category.restaurant)
-        )),
-    [isItemHiddenFor]
+        category.subcategories.every((sub) => isItemHidden(sub.id))),
+    [isItemHidden]
   );
   const { columns } = useResponsiveLayout();
 
@@ -849,7 +827,7 @@ export default function HomeScreen() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [categories]);
 
   useEffect(() => {
     let active = true;
@@ -875,22 +853,17 @@ export default function HomeScreen() {
   }, [cartVisible, historyVisible]);
 
   const orderedMenuItems = useMemo(() => {
-    let items = menuItems.filter((item) => {
-      if (hideDiyChinese && item.category.restaurant === "diy_chineese") {
-        return false;
-      }
-      return item.kind === "product"
-        ? !isItemHiddenFor(item.product.id, item.category.restaurant)
-        : !isCategoryHidden(item.category);
-    });
+    let items = menuItems.filter((item) =>
+      item.kind === "product"
+        ? !isItemHidden(item.product.id)
+        : !isCategoryHidden(item.category)
+    );
 
     if (menuSort === "available") {
       const isAvailable = (item: MenuItem) =>
         item.kind === "product"
-          ? !isItemDisabledFor(item.product.id, item.category.restaurant)
-          : isCategoryAvailable(item.category, (id) =>
-              isItemDisabledFor(id, item.category.restaurant)
-            );
+          ? !isItemDisabled(item.product.id)
+          : isCategoryAvailable(item.category, isItemDisabled);
       items = [
         ...items.filter(isAvailable),
         ...items.filter((item) => !isAvailable(item)),
@@ -907,12 +880,8 @@ export default function HomeScreen() {
     if (menuSort === "cheap") {
       items.sort(
         (a, b) =>
-          getAvailableLowestPrice(a.category, (id) =>
-            isItemDisabledFor(id, a.category.restaurant)
-          ) -
-          getAvailableLowestPrice(b.category, (id) =>
-            isItemDisabledFor(id, b.category.restaurant)
-          )
+          getAvailableLowestPrice(a.category, isItemDisabled) -
+          getAvailableLowestPrice(b.category, isItemDisabled)
       );
     } else if (menuSort === "popular") {
       items.sort(
@@ -923,22 +892,17 @@ export default function HomeScreen() {
 
     return items;
   }, [
-    hideDiyChinese,
     isCategoryHidden,
-    isItemDisabledFor,
-    isItemHiddenFor,
+    isItemDisabled,
+    isItemHidden,
+    menuItems,
     menuSort,
     popularity,
   ]);
 
   const visibleCombos = useMemo(
-    () =>
-      combos.filter(
-        (combo) =>
-          !(hideDiyChinese && combo.restaurant === "diy_chineese") &&
-          !isComboHiddenFor(combo)
-      ),
-    [hideDiyChinese, isComboHiddenFor]
+    () => combos.filter((combo) => !isComboHidden(combo.id)),
+    [combos, isComboHidden]
   );
 
   const activeSort =

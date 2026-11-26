@@ -11,7 +11,6 @@ import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import {
-  combos,
   getComboDiscountAmount,
   getComboItemCount,
   getComboOriginalPrice,
@@ -22,6 +21,7 @@ import {
   MAX_CONTENT_WIDTH,
   PAGE_PADDING,
 } from "../utils/responsive";
+import { useMenu } from "../context/MenuContext";
 import { useDisabledItems } from "../context/DisabledItemsContext";
 
 const BANNER_MAX_WIDTH = 560;
@@ -44,18 +44,12 @@ interface Props {
 export default function BannerCarousel({ onComboPress }: Props) {
   const scrollRef = useRef<ScrollView>(null);
   const [activeIndex, setActiveIndex] = useState(0);
-  const { getComboAvailability } = useDisabledItems();
-  const diyChineseItemState = useDisabledItems("diy_chineese");
+  const { combos } = useMenu();
+  const { getComboAvailability, isComboHidden } = useDisabledItems("");
   const { width } = useWindowDimensions();
-  const hideDiyChinese =
-    diyChineseItemState.loading || diyChineseItemState.hiddenUnavailable;
   const visibleCombos = useMemo(
-    () =>
-      combos.filter(
-        (combo) =>
-          !(hideDiyChinese && combo.restaurant === "diy_chineese")
-      ),
-    [hideDiyChinese]
+    () => combos.filter((combo) => !isComboHidden(combo.id)),
+    [combos, isComboHidden]
   );
   const bannerWidth = Math.min(
     Math.min(width, MAX_CONTENT_WIDTH) - PAGE_PADDING * 2,

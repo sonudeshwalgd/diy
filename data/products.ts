@@ -1,6 +1,4 @@
 import type { ImageSourcePropType } from "react-native";
-import { isFeatureEnabled } from "../config/featureFlags";
-import { diyChineseCategories, diyChineseCombos } from "./products_diy_chineese";
 import strawberryGlass from "../assets/DIY_Drinks_All_Item_Images/individual-items/strawberry/strawberry-glass/product";
 import strawberryBowl from "../assets/DIY_Drinks_All_Item_Images/individual-items/strawberry/strawberry-bowl/product";
 import strawberryStick from "../assets/DIY_Drinks_All_Item_Images/individual-items/strawberry/strawberry-stick/product";
@@ -29,6 +27,7 @@ export interface Subcategory {
   quantity?: string;
   includes?: string[];
   restaurant?: string;
+  restaurantId?: string;
 }
 
 export function getItemPrice(sub: Subcategory): number {
@@ -42,6 +41,7 @@ export interface Category {
   description: string;
   subcategories: Subcategory[];
   restaurant?: string;
+  restaurantId?: string;
 }
 
 export interface ComboFixedItem {
@@ -93,6 +93,7 @@ export interface Combo {
   pricing: ComboPricing;
   discountRuleId?: string;
   restaurant?: string;
+  restaurantId?: string;
 }
 
 export interface CustomComboRule {
@@ -743,12 +744,7 @@ export const coreCategories: Category[] = [...categoriesBase].sort(
   (a, b) => CATEGORY_ORDER.indexOf(a.id) - CATEGORY_ORDER.indexOf(b.id)
 );
 
-export const categories: Category[] = isFeatureEnabled("menu.includeDiyChinese")
-  ? [
-      ...coreCategories,
-      ...[...diyChineseCategories].sort((a, b) => a.name.localeCompare(b.name)),
-    ]
-  : coreCategories;
+export const categories: Category[] = coreCategories;
 
 const combosBase: Combo[] = [
   {
@@ -1161,7 +1157,7 @@ const COMBO_ORDER = [
   "triple-chocolate-combo",
 ];
 
-const coreCombos: Combo[] = combosBase
+export const coreCombos: Combo[] = combosBase
   .map((combo) => {
     const promotion = COMBO_PROMOTIONS[combo.id];
     return promotion
@@ -1170,9 +1166,7 @@ const coreCombos: Combo[] = combosBase
   })
   .sort((a, b) => COMBO_ORDER.indexOf(a.id) - COMBO_ORDER.indexOf(b.id));
 
-export const combos: Combo[] = isFeatureEnabled("menu.includeDiyChinese")
-  ? [...diyChineseCombos, ...coreCombos]
-  : coreCombos;
+export const combos: Combo[] = coreCombos;
 
 export const customComboRule: CustomComboRule = {
   id: "custom-combo-discount",

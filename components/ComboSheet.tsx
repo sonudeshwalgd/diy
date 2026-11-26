@@ -3,8 +3,6 @@ import { Image, Pressable, ScrollView, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
   buildComboCartItem,
-  categories,
-  combosCategory,
   customComboRule,
   getComboDiscountAmount,
   getDefaultComboSelections,
@@ -13,8 +11,8 @@ import {
   type ComboOption,
   type ComboSelectionGroup,
 } from "../data/products";
-import { getDiyChineseItemImage } from "../data/products_diy_chineese";
 import { useCart } from "../context/CartContext";
+import { useMenu } from "../context/MenuContext";
 import { useDisabledItems } from "../context/DisabledItemsContext";
 import Sheet from "./Sheet";
 
@@ -57,10 +55,8 @@ function ComboSheetContent({
   onClose: () => void;
 }) {
   const { addItem, decrement, getComboQuantity, getItemQuantity } = useCart();
-  const globalItemState = useDisabledItems();
-  const diyChineseItemState = useDisabledItems("diy_chineese");
-  const { getComboAvailability, isItemDisabled } =
-    combo.restaurant === "diy_chineese" ? diyChineseItemState : globalItemState;
+  const { categories, combosCategory } = useMenu();
+  const { getComboAvailability, isItemDisabled } = useDisabledItems("");
   const availability = useMemo(
     () => getComboAvailability(combo),
     [combo, getComboAvailability]
@@ -132,7 +128,7 @@ function ComboSheetContent({
       }
     }
     return list;
-  }, []);
+  }, [categories, combosCategory.id]);
 
   const customByCategory = useMemo(() => {
     const map = new Map<string, CustomItem[]>();
@@ -147,10 +143,7 @@ function ComboSheetContent({
   const itemImage = (categoryId: string, itemId?: string) => {
     if (!itemId) return undefined;
     const cat = categories.find((c) => c.id === categoryId);
-    return (
-      cat?.subcategories.find((s) => s.id === itemId)?.image ??
-      getDiyChineseItemImage(itemId)
-    );
+      return cat?.subcategories.find((s) => s.id === itemId)?.image;
   };
 
   const selectedOptions: ComboOption[] = [];

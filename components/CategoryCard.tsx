@@ -16,10 +16,7 @@ interface Props {
 
 export default function CategoryCard({ category, onPress, index = 0 }: Props) {
   const { getCategoryCount } = useCart();
-  const globalItemState = useDisabledItems();
-  const diyChineseItemState = useDisabledItems("diy_chineese");
-  const { isItemDisabled } =
-    category.restaurant === "diy_chineese" ? diyChineseItemState : globalItemState;
+  const { isItemDisabled } = useDisabledItems("");
   const { cardWidth } = useResponsiveLayout();
   const count = getCategoryCount(category.id);
   const availableItems = category.subcategories.filter(

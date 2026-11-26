@@ -13,6 +13,7 @@ export interface BackendOrderItem {
   price: number;
   quantity: number;
   restaurant?: string;
+  restaurantId?: string;
 }
 
 export interface PlaceOrderPayload {
@@ -85,6 +86,11 @@ export interface OrderHistoryResponse {
 }
 
 export interface AdminOrder extends OrderHistoryOrder {
+  restaurantStatuses?: {
+    restaurantId: string;
+    status: "accepted" | "preparing" | "ready";
+  }[];
+  restaurantStatus?: "accepted" | "preparing" | "ready";
   customerMobile?: string;
   customerName?: string;
   subtotal?: number;
@@ -145,7 +151,7 @@ export interface AnalyticsItem {
   name: string;
   quantity: number;
   revenue: number;
-  restaurant?: string;
+  restaurantId?: string;
 }
 
 export interface OrderAnalytics {
@@ -215,16 +221,58 @@ export interface PopularItemsResponse {
   items: { name: string; quantity: number }[];
 }
 
-const disabledItemsPath = (restaurant?: string) =>
-  restaurant === "diy_chineese" ? "/items/disabled/diy_chineese" : "/items/disabled";
+export interface RestaurantInfo {
+  id: string;
+  name: string;
+  slug: string;
+  enabled: boolean;
+  menuSource: "static" | "database";
+}
 
-const hiddenItemsPath = (restaurant?: string) =>
-  restaurant === "diy_chineese" ? "/items/hidden/diy_chineese" : "/items/hidden";
+export interface MenuResponse {
+  restaurants: RestaurantInfo[];
+  categories: Record<string, unknown>[];
+  combos: Record<string, unknown>[];
+}
 
-export const getDisabledItems = async (
-  restaurant?: string
-): Promise<DisabledItemsResponse> => {
-  const res = await apiFetch(disabledItemsPath(restaurant));
+export const getRestaurants = async (): Promise<RestaurantInfo[]> => {
+  const res = await apiFetch("/restaurants");
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to fetch restaurants");
+  }
+  const data: { restaurants: RestaurantInfo[] } = await res.json();
+  return data.restaurants;
+};
+
+export const getMenu = async (): Promise<MenuResponse> => {
+  const res = await apiFetch("/menu");
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to fetch menu");
+  }
+  return res.json();
+};
+
+const disabledItemsPath = (slug: string) =>
+  `/restaurants/${encodeURIComponent(slug)}/items/disabled`;
+
+const hiddenItemsPath = (slug: string) =>
+  `/restaurants/${encodeURIComponent(slug)}/items/hidden`;
+
+const verifyJson = async (path: string, staffKey: string): Promise<boolean> => {
+  const res = await apiFetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ staffKey }),
+  });
+  if (!res.ok) throw new Error("Could not verify staff key");
+  const data: { valid: boolean } = await res.json();
+  return Boolean(data.valid);
+};
+
+export const getDisabledItems = async (slug: string): Promise<DisabledItemsResponse> => {
+  const res = await apiFetch(disabledItemsPath(slug));
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.error || "Failed to fetch disabled items");
@@ -234,26 +282,18 @@ export const getDisabledItems = async (
 
 export const verifyStaffKey = async (
   staffKey: string,
-  restaurant?: string
-): Promise<boolean> => {
-  const res = await apiFetch(`${disabledItemsPath(restaurant)}/verify`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ staffKey }),
-  });
-  if (!res.ok) {
-    throw new Error("Could not verify staff key");
-  }
-  const data = await res.json();
-  return Boolean(data.valid);
-};
+  slug: string
+): Promise<boolean> => verifyJson(`/restaurants/${encodeURIComponent(slug)}/auth/verify`, staffKey);
+
+export const verifyAdminKey = async (staffKey: string): Promise<boolean> =>
+  verifyJson("/admin/auth/verify", staffKey);
 
 export const saveDisabledItems = async (
   itemIds: string[],
   staffKey: string,
-  restaurant?: string
+  slug: string
 ): Promise<DisabledItemsResponse> => {
-  const res = await apiFetch(disabledItemsPath(restaurant), {
+  const res = await apiFetch(disabledItemsPath(slug), {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ itemIds, staffKey }),
@@ -265,10 +305,8 @@ export const saveDisabledItems = async (
   return res.json();
 };
 
-export const getHiddenItems = async (
-  restaurant?: string
-): Promise<HiddenItemsResponse> => {
-  const res = await apiFetch(hiddenItemsPath(restaurant));
+export const getHiddenItems = async (slug: string): Promise<HiddenItemsResponse> => {
+  const res = await apiFetch(hiddenItemsPath(slug));
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.error || "Failed to fetch hidden items");
@@ -279,9 +317,9 @@ export const getHiddenItems = async (
 export const saveHiddenItems = async (
   itemIds: string[],
   staffKey: string,
-  restaurant?: string
+  slug: string
 ): Promise<HiddenItemsResponse> => {
-  const res = await apiFetch(hiddenItemsPath(restaurant), {
+  const res = await apiFetch(hiddenItemsPath(slug), {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ itemIds, staffKey }),
@@ -361,6 +399,7 @@ export interface DuplicateCheckItem {
   itemId?: string;
   quantity: number;
   restaurant?: string;
+  restaurantId?: string;
 }
 
 export const checkDuplicateOrder = async (
@@ -410,7 +449,8 @@ export const getOrderAnalytics = async (
   return res.json();
 };
 
-export type OrderStatus = "placed" | "accepted" | "cancelled" | "delivered";
+export type OrderStatus = "accepted" | "cancelled" | "delivered";
+export type PreparationStatus = "accepted" | "preparing" | "ready";
 
 export const updateOrderStatus = async (
   orderId: string,
@@ -419,6 +459,48 @@ export const updateOrderStatus = async (
 ): Promise<{ order: AdminOrder }> => {
   const res = await apiFetch(
     `/orders/${encodeURIComponent(orderId)}/status`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "x-staff-key": staffKey,
+      },
+      body: JSON.stringify({ status }),
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to update order");
+  }
+  return res.json();
+};
+
+export const getRestaurantOrders = async (
+  slug: string,
+  staffKey: string
+): Promise<AdminOrdersResponse> => {
+  const res = await apiFetch(
+    `/restaurants/${encodeURIComponent(slug)}/orders`,
+    {
+      cache: "no-store",
+      headers: { "x-staff-key": staffKey },
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to fetch orders");
+  }
+  return res.json();
+};
+
+export const updateRestaurantOrderStatus = async (
+  slug: string,
+  orderId: string,
+  staffKey: string,
+  status: PreparationStatus
+): Promise<{ order: AdminOrder }> => {
+  const res = await apiFetch(
+    `/restaurants/${encodeURIComponent(slug)}/orders/${encodeURIComponent(orderId)}/status`,
     {
       method: "PATCH",
       headers: {

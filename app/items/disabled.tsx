@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -11,12 +11,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { combos, coreCategories } from "../../data/products";
-import { diyChineseCategories } from "../../data/products_diy_chineese";
-import {
-  useDisabledItems,
-  type DisabledScope,
-} from "../../context/DisabledItemsContext";
+import { useMenu } from "../../context/MenuContext";
+import { useDisabledItems } from "../../context/DisabledItemsContext";
 
 interface StaffRow {
   id: string;
@@ -35,11 +31,12 @@ interface StaffGroup {
 }
 
 export function DisabledItemsScreenView({
-  scope = "global",
+  restaurantId = "diy-main",
 }: {
-  scope?: DisabledScope;
+  restaurantId?: string;
 }) {
   const router = useRouter();
+  const { categories, combos, restaurants } = useMenu();
   const {
     disabledCount,
     hiddenCount,
@@ -60,38 +57,33 @@ export function DisabledItemsScreenView({
     lastSyncedAt,
     error,
     syncNow,
-  } = useDisabledItems(scope);
+  } = useDisabledItems(restaurantId);
 
-  const isDiyChinese = scope === "diy_chineese";
   const menuCategories = useMemo(
-    () => (isDiyChinese ? diyChineseCategories : coreCategories),
-    [isDiyChinese]
+    () =>
+      categories.filter(
+        (category) => (category.restaurantId ?? "diy-main") === restaurantId
+      ),
+    [categories, restaurantId]
   );
   const menuCombos = useMemo(
     () =>
-      combos.filter((combo) =>
-        isDiyChinese
-          ? combo.restaurant === "diy_chineese"
-          : combo.restaurant !== "diy_chineese"
+      combos.filter(
+        (combo) => (combo.restaurantId ?? "diy-main") === restaurantId
       ),
-    [isDiyChinese]
+    [combos, restaurantId]
   );
-  const screenTitle = isDiyChinese
-    ? "DIY Chinese Availability"
+  const restaurant = restaurants.find(
+    (entry) => entry.id === restaurantId
+  );
+  const screenTitle = restaurant
+    ? `${restaurant.name} Availability`
     : "Item Availability";
-  const screenSubtitle = isDiyChinese
-    ? "DIY Chinese staff controls for out of stock items"
-    : "Staff controls for out of stock items";
+  const screenSubtitle = `${screenTitle.replace(" Availability", "")} staff controls for out of stock items`;
 
   const [staffKey, setStaffKey] = useState("");
   const [unlockError, setUnlockError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-
-  useEffect(() => {
-    return () => {
-      void lock();
-    };
-  }, [lock]);
 
   const groups = useMemo<StaffGroup[]>(() => {
     const search = query.trim().toLowerCase();
@@ -249,23 +241,6 @@ export function DisabledItemsScreenView({
               {screenSubtitle}
             </Text>
           </View>
-          {!isDiyChinese && (
-            <Pressable
-              onPress={() =>
-                router.push(
-                  "/items/disabled/diy_chineese" as unknown as Parameters<
-                    typeof router.push
-                  >[0]
-                )
-              }
-              className="px-2.5 py-2 rounded-full bg-amber-100 active:opacity-80"
-              accessibilityLabel="Open DIY Chinese availability"
-            >
-              <Text className="text-[10px] font-sans-extrabold text-amber-700">
-                DIY CHINESE
-              </Text>
-            </Pressable>
-          )}
           {unlocked && (
             <>
               <Pressable

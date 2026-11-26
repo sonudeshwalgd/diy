@@ -24,12 +24,7 @@ export default function ProductCard({
   index = 0,
 }: Props) {
   const { getItemQuantity } = useCart();
-  const globalItemState = useDisabledItems();
-  const diyChineseItemState = useDisabledItems("diy_chineese");
-  const { isItemDisabled } =
-    (product.restaurant ?? category.restaurant) === "diy_chineese"
-      ? diyChineseItemState
-      : globalItemState;
+  const { isItemDisabled } = useDisabledItems("");
   const { cardWidth } = useResponsiveLayout();
   const quantity = getItemQuantity(product.id);
   const outOfStock = isItemDisabled(product.id);

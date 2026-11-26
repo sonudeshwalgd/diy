@@ -21,12 +21,12 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
 import { Rect, Svg, Text as SvgText } from "react-native-svg";
-import { useDisabledItems } from "../context/DisabledItemsContext";
-import { categories, combosCategory } from "../data/products";
+import { useMenu } from "../context/MenuContext";
 import {
   getOrderAnalytics,
   getTodaysOrders,
   updateOrderStatus,
+  verifyAdminKey,
   type AdminOrder,
   type AnalyticsDay,
   type AnalyticsItem,
@@ -48,11 +48,10 @@ const REFRESH_SECONDS = 30;
 const ALERT_DURATION_MS = 60_000;
 const ALERT_SOUND = require("../assets/sound/high_pitch_bird.mp3");
 
-type TabKey = "new" | "accepted" | "delivered" | "cancelled";
+type TabKey = "new" | "delivered" | "cancelled";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "new", label: "New" },
-  { key: "accepted", label: "Accepted" },
   { key: "delivered", label: "Delivered" },
   { key: "cancelled", label: "Cancelled" },
 ];
@@ -63,12 +62,6 @@ const STATUS_ACTIONS: {
   className: string;
   textClassName: string;
 }[] = [
-  {
-    label: "Accept",
-    status: "accepted",
-    className: "bg-emerald-50 border-emerald-100",
-    textClassName: "text-emerald-700",
-  },
   {
     label: "Delivered",
     status: "delivered",
@@ -90,13 +83,13 @@ function sourceLabel(order: AdminOrder): string {
 }
 
 function matchesTab(order: AdminOrder, tab: TabKey): boolean {
-  if (tab === "new") return order.orderStatus === "placed";
+  if (tab === "new") return order.orderStatus === "accepted";
   return order.orderStatus === tab;
 }
 
 function statusStyle(status: string): string {
   if (status === "placed") return "bg-orange-50 text-orange-700";
-  if (status === "accepted") return "bg-emerald-50 text-emerald-700";
+  if (status === "accepted") return "bg-orange-50 text-orange-700";
   if (status === "delivered") return "bg-sky-50 text-sky-700";
   return "bg-red-50 text-red-600";
 }
@@ -371,38 +364,40 @@ function shortLabel(value: string, max: number): string {
 }
 
 function ItemSalesChart({ items }: { items: AnalyticsItem[] }) {
+  const { categories, combosCategory, restaurants } = useMenu();
   const rows = useMemo(() => {
     const baseName = (name: string) => name.split(" · ")[0].trim();
     const result: {
       name: string;
       category: string;
-      restaurant?: string;
+      restaurantId?: string;
       quantity: number;
       revenue: number;
     }[] = [];
+    const restaurantName = (id?: string) =>
+      restaurants.find((restaurant) => restaurant.id === id)?.name ?? "Other";
 
     for (const category of [...categories, combosCategory]) {
       for (const sub of category.subcategories) {
         const name = baseName(sub.name);
-        const restaurant = sub.restaurant ?? category.restaurant;
+        const restaurantId =
+          sub.restaurantId ?? category.restaurantId ?? "diy-main";
         if (
           result.some(
-            (row) => row.name === name && row.restaurant === restaurant
+            (row) => row.name === name && row.restaurantId === restaurantId
           )
         ) {
           continue;
         }
         const matches = items.filter(
           (item) =>
-            baseName(item.name) === name && item.restaurant === restaurant
+            baseName(item.name) === name &&
+            (item.restaurantId ?? "diy-main") === restaurantId
         );
         result.push({
           name,
-          category:
-            restaurant === "diy_chineese"
-              ? `DIY Chinese · ${category.name}`
-              : category.name,
-          restaurant,
+          category: `${restaurantName(restaurantId)} · ${category.name}`,
+          restaurantId,
           quantity: matches.reduce((sum, item) => sum + item.quantity, 0),
           revenue: matches.reduce((sum, item) => sum + item.revenue, 0),
         });
@@ -411,16 +406,16 @@ function ItemSalesChart({ items }: { items: AnalyticsItem[] }) {
 
     for (const item of items) {
       const name = baseName(item.name);
+      const restaurantId = item.restaurantId ?? "diy-main";
       if (
         !result.some(
-          (row) => row.name === name && row.restaurant === item.restaurant
+          (row) => row.name === name && row.restaurantId === restaurantId
         )
       ) {
         result.push({
           name: item.name,
-          category:
-            item.restaurant === "diy_chineese" ? "DIY Chinese" : "Other",
-          restaurant: item.restaurant,
+          category: restaurantName(restaurantId),
+          restaurantId,
           quantity: item.quantity,
           revenue: item.revenue,
         });
@@ -428,7 +423,7 @@ function ItemSalesChart({ items }: { items: AnalyticsItem[] }) {
     }
 
     return result;
-  }, [items]);
+  }, [categories, combosCategory, items, restaurants]);
 
   const maxQuantity = Math.max(1, ...rows.map((row) => row.quantity));
   const maxRevenue = Math.max(1, ...rows.map((row) => row.revenue));
@@ -458,7 +453,7 @@ function ItemSalesChart({ items }: { items: AnalyticsItem[] }) {
             const quantityHeight = (row.quantity / maxQuantity) * plotHeight;
             const revenueHeight = (row.revenue / maxRevenue) * plotHeight;
             return (
-              <Fragment key={`${row.restaurant ?? "core"}-${row.name}`}>
+              <Fragment key={`${row.restaurantId ?? "core"}-${row.name}`}>
                 <Rect
                   x={left + 8}
                   y={plotHeight - quantityHeight}
@@ -695,8 +690,13 @@ function OrderDetailSheet({
   onStatusUpdate: (order: AdminOrder, status: OrderStatus) => void;
   updatingId: string | null;
 }) {
+  const { restaurants } = useMenu();
   if (!order) return null;
 
+  const restaurantLabel = (id?: string) =>
+    restaurants.find((restaurant) => restaurant.id === id)?.name ??
+    id ??
+    "Main Restaurant";
   const elapsed = getOrderElapsedMs(order.createdAt);
   const late = isLateOrder(order, elapsed);
 
@@ -738,6 +738,13 @@ function OrderDetailSheet({
           <View className="bg-orange-50 rounded-full px-2.5 py-1">
             <Text className="text-[10px] font-sans-bold text-orange-700">
               {sourceLabel(order)}
+            </Text>
+          </View>
+          <View className="bg-stone-100 rounded-full px-2.5 py-1">
+            <Text className="text-[10px] font-sans-bold text-stone-600">
+              {[...new Set(order.items.map((item) => item.restaurantId ?? item.restaurant ?? "diy-main"))]
+                .map(restaurantLabel)
+                .join(" + ")}
             </Text>
           </View>
         </View>
@@ -819,7 +826,9 @@ function OrderDetailSheet({
 
 export default function OrdersScreen() {
   const router = useRouter();
-  const { unlock, lock, unlocked, verifying } = useDisabledItems();
+  const { restaurants } = useMenu();
+  const [unlocked, setUnlocked] = useState(false);
+  const [verifying, setVerifying] = useState(false);
 
   const [staffKey, setStaffKey] = useState("");
   const [unlockError, setUnlockError] = useState<string | null>(null);
@@ -896,26 +905,22 @@ export default function OrdersScreen() {
 
   useEffect(() => {
     return () => {
-      void lock();
       void stopAlert();
     };
-  }, [lock, stopAlert]);
+  }, [stopAlert]);
 
-  const handleLoadError = useCallback(
-    (err: unknown) => {
-      const message = err instanceof Error ? err.message : "Could not load orders";
-      if (message.toLowerCase().includes("invalid staff key")) {
-        setStaffKey("");
-        setOrders([]);
-        knownIdsRef.current = null;
-        void lock();
-        setUnlockError("That staff key is not valid. Please try again.");
-      } else {
-        setLoadError(message);
-      }
-    },
-    [lock]
-  );
+  const handleLoadError = useCallback((err: unknown) => {
+    const message = err instanceof Error ? err.message : "Could not load orders";
+    if (message.toLowerCase().includes("invalid staff key")) {
+      setStaffKey("");
+      setUnlocked(false);
+      setOrders([]);
+      knownIdsRef.current = null;
+      setUnlockError("That staff key is not valid. Please try again.");
+    } else {
+      setLoadError(message);
+    }
+  }, []);
 
   const refreshOrders = useCallback(
     async (silent = false) => {
@@ -931,7 +936,7 @@ export default function OrdersScreen() {
           ? data.orders
               .filter(
                 (order) =>
-                  order.orderStatus === "placed" && !previous.has(order._id)
+                  order.orderStatus === "accepted" && !previous.has(order._id)
               )
               .map((order) => order._id)
           : [];
@@ -994,19 +999,29 @@ export default function OrdersScreen() {
   useEffect(() => {
     if (alertIdsRef.current.length === 0) return;
     const stillPlaced = alertIdsRef.current.some((id) =>
-      orders.some((order) => order._id === id && order.orderStatus === "placed")
+      orders.some((order) => order._id === id && order.orderStatus === "accepted")
     );
     if (!stillPlaced) void stopAlert();
   }, [orders, stopAlert]);
 
   const handleUnlock = async () => {
-    const ok = await unlock(staffKey);
-    if (!ok) {
-      setUnlockError("That staff key is not valid. Please try again.");
-      return;
+    setVerifying(true);
+    try {
+      const ok = await verifyAdminKey(staffKey);
+      if (!ok) {
+        setUnlockError("That staff key is not valid. Please try again.");
+        return;
+      }
+      setUnlocked(true);
+      setUnlockError(null);
+      setLoading(true);
+    } catch (err) {
+      setUnlockError(
+        err instanceof Error ? err.message : "Could not verify staff key"
+      );
+    } finally {
+      setVerifying(false);
     }
-    setUnlockError(null);
-    setLoading(true);
   };
 
   const openAnalytics = async () => {
@@ -1049,9 +1064,13 @@ export default function OrdersScreen() {
     setAnalyticsVisible(false);
     setUnlockError(null);
     void stopAlert();
-    void lock();
+    setUnlocked(false);
   };
 
+  const restaurantLabel = (id?: string) =>
+    restaurants.find((restaurant) => restaurant.id === id)?.name ??
+    id ??
+    "Main Restaurant";
   const visibleOrders = orders.filter((order) => matchesTab(order, activeTab));
   const selectedOrder = orders.find((order) => order._id === selectedOrderId) ?? null;
   const alertCount = alertOrderIds.length;
@@ -1106,6 +1125,32 @@ export default function OrdersScreen() {
           )}
         </View>
       </SafeAreaView>
+      {hasAccess && restaurants.length > 0 ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 8 }}
+          className="bg-white/70 border-b border-stone-200"
+        >
+          {restaurants.map((restaurant) => (
+            <Pressable
+              key={restaurant.id}
+              onPress={() =>
+                router.push(
+                  `/orders/${restaurant.slug}` as unknown as Parameters<
+                    typeof router.push
+                  >[0]
+                )
+              }
+              className="mr-2 rounded-full bg-stone-100 px-3 py-1.5 active:opacity-80"
+            >
+              <Text className="text-[11px] font-sans-bold text-stone-600">
+                {restaurant.name} kitchen →
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      ) : null}
 
       {!hasAccess ? (
         <ScrollView
@@ -1284,6 +1329,13 @@ export default function OrdersScreen() {
                         {sourceLabel(order)}
                       </Text>
                     </View>
+                    <View className="bg-stone-100 rounded-full px-2.5 py-1">
+                      <Text className="text-[10px] font-sans-bold text-stone-600">
+                        {[...new Set(order.items.map((item) => item.restaurantId ?? item.restaurant ?? "diy-main"))]
+                          .map(restaurantLabel)
+                          .join(" + ")}
+                      </Text>
+                    </View>
                     {order.customerMobile ? (
                       <Text className="text-[11px] text-stone-600 font-sans-medium">
                         📱 {order.customerMobile}
@@ -1300,6 +1352,8 @@ export default function OrdersScreen() {
                       <View key={`${item.name}-${index}`} className="flex-row justify-between py-0.5">
                         <Text className="text-xs text-stone-600 font-sans-medium flex-1" numberOfLines={1}>
                           {item.name} × {item.quantity}
+                          {" · "}
+                          {restaurantLabel(item.restaurantId ?? item.restaurant)}
                         </Text>
                         <Text className="text-xs text-stone-800 font-sans-semibold">
                           ₹{item.price * item.quantity}

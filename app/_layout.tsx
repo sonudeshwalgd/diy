@@ -14,10 +14,8 @@ import {
   PlusJakartaSans_800ExtraBold,
 } from "@expo-google-fonts/plus-jakarta-sans";
 import { CartProvider } from "../context/CartContext";
-import {
-  DiyChineseDisabledItemsProvider,
-  DisabledItemsProvider,
-} from "../context/DisabledItemsContext";
+import { DisabledItemsProvider } from "../context/DisabledItemsContext";
+import { MenuProvider } from "../context/MenuContext";
 import { ActiveOrdersProvider } from "../context/ActiveOrdersContext";
 import ApiLogSync from "../components/ApiLogSync";
 import ActivityTrackerSync from "../components/ActivityTrackerSync";
@@ -60,8 +58,8 @@ export default function RootLayout() {
     <AppErrorBoundary>
       <GestureHandlerRootView className="flex-1">
         <CartProvider>
-          <DisabledItemsProvider>
-            <DiyChineseDisabledItemsProvider>
+          <MenuProvider>
+            <DisabledItemsProvider>
               <ActiveOrdersProvider>
                 <ApiLogSync />
                 <ActivityTrackerSync />
@@ -73,12 +71,13 @@ export default function RootLayout() {
                   <Stack.Screen name="privacy" options={{ title: "Privacy Policy" }} />
                   <Stack.Screen name="feedback" options={{ title: "Feedback", headerShown: false }} />
                   <Stack.Screen name="items/disabled" options={{ headerShown: false }} />
-                  <Stack.Screen name="items/disabled/diy_chineese" options={{ headerShown: false }} />
+                  <Stack.Screen name="items/disabled/[slug]" options={{ headerShown: false }} />
                   <Stack.Screen name="orders" options={{ headerShown: false }} />
+                  <Stack.Screen name="orders/[slug]" options={{ headerShown: false }} />
                 </Stack>
               </ActiveOrdersProvider>
-            </DiyChineseDisabledItemsProvider>
-          </DisabledItemsProvider>
+            </DisabledItemsProvider>
+          </MenuProvider>
         </CartProvider>
       </GestureHandlerRootView>
     </AppErrorBoundary>

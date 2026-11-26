@@ -4,7 +4,6 @@ import { BlurView } from "expo-blur";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import {
   buildComboCartItem,
-  combosCategory,
   getComboDiscountAmount,
   getComboItemCount,
   getComboOriginalPrice,
@@ -14,6 +13,7 @@ import {
   type Combo,
 } from "../data/products";
 import { useCart } from "../context/CartContext";
+import { useMenu } from "../context/MenuContext";
 import { useDisabledItems } from "../context/DisabledItemsContext";
 import { useResponsiveLayout } from "../utils/responsive";
 
@@ -25,10 +25,8 @@ interface Props {
 
 export default function ComboCard({ combo, onPress, index = 0 }: Props) {
   const { getComboQuantity, addItem, decrement, getItemQuantity } = useCart();
-  const globalItemState = useDisabledItems();
-  const diyChineseItemState = useDisabledItems("diy_chineese");
-  const { getComboAvailability } =
-    combo.restaurant === "diy_chineese" ? diyChineseItemState : globalItemState;
+  const { combosCategory } = useMenu();
+  const { getComboAvailability } = useDisabledItems("");
   const { cardWidth } = useResponsiveLayout();
   const itemCount = getComboItemCount(combo);
   const price = getComboStartingPrice(combo);
