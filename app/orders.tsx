@@ -826,7 +826,7 @@ function OrderDetailSheet({
 
 export default function OrdersScreen() {
   const router = useRouter();
-  const { restaurants } = useMenu();
+  const { restaurants, combos } = useMenu();
   const [unlocked, setUnlocked] = useState(false);
   const [verifying, setVerifying] = useState(false);
 
@@ -1348,23 +1348,61 @@ export default function OrdersScreen() {
                     ) : null}
                   </View>
                   <View className="border-t border-stone-100 mt-3 pt-2">
-                    {order.items.slice(0, 3).map((item, index) => (
-                      <View key={`${item.name}-${index}`} className="flex-row justify-between py-0.5">
-                        <Text className="text-xs text-stone-600 font-sans-medium flex-1" numberOfLines={1}>
-                          {item.name} × {item.quantity}
-                          {" · "}
-                          {restaurantLabel(item.restaurantId ?? item.restaurant)}
-                        </Text>
-                        <Text className="text-xs text-stone-800 font-sans-semibold">
-                          ₹{item.price * item.quantity}
-                        </Text>
-                      </View>
-                    ))}
-                    {order.items.length > 3 ? (
-                      <Text className="text-[10px] text-stone-400 font-sans-medium mt-1">
-                        +{order.items.length - 3} more items
-                      </Text>
-                    ) : null}
+                    {order.items.map((item, index) => {
+                      const comboId =
+                        typeof item.itemId === "string" && item.itemId.startsWith("combo:")
+                          ? item.itemId.slice("combo:".length).split(":")[0]
+                          : null;
+                      const combo = comboId
+                        ? combos.find((entry) => entry.id === comboId)
+                        : undefined;
+                      const selectionIds = new Set(
+                        typeof item.itemId === "string" && item.itemId.startsWith("combo:")
+                          ? item.itemId.slice("combo:".length).split(":").slice(1).filter(Boolean)
+                          : []
+                      );
+                      const selectedOptions = combo
+                        ? combo.selectionGroups.flatMap((group) =>
+                            group.options.filter((option) => selectionIds.has(option.id))
+                          )
+                        : [];
+                      const comboParts = combo
+                        ? [
+                            ...combo.items.map((entry) => entry.name),
+                            ...selectedOptions.map((option) => option.name),
+                          ]
+                        : [];
+
+                      return (
+                        <View
+                          key={`${item.itemId ?? item.name}-${index}`}
+                          className="py-1 border-b border-stone-50 last:border-b-0"
+                        >
+                          <View className="flex-row justify-between">
+                            <Text className="text-xs text-stone-700 font-sans-semibold flex-1 pr-3">
+                              {item.name} × {item.quantity}
+                              {" · "}
+                              {restaurantLabel(item.restaurantId ?? item.restaurant)}
+                            </Text>
+                            <Text className="text-xs text-stone-800 font-sans-semibold">
+                              ₹{item.price * item.quantity}
+                            </Text>
+                          </View>
+                          {comboParts.length > 0 ? (
+                            <View className="mt-1 pl-2">
+                              {comboParts.map((part, partIndex) => (
+                                <Text
+                                  key={`${part}-${partIndex}`}
+                                  className="text-[11px] text-stone-500 font-sans-medium"
+                                >
+                                  • {part}
+                                </Text>
+                              ))}
+                            </View>
+                          ) : null}
+                        </View>
+                      );
+                    })}
                   </View>
                   <View className="flex-row items-center justify-between border-t border-stone-100 mt-2 pt-2">
                     <Text className="text-sm font-sans-bold text-stone-900">Final total</Text>
