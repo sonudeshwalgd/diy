@@ -219,6 +219,11 @@ function SubcategorySheetContent({
                 >
                   {sub.name}
                 </Text>
+                {sub.id === "strawberry-glass" && (
+                  <Text className="text-[10px] leading-4 text-amber-700 mt-1">
+                    Due to the current shortage and increased market prices of strawberries, the price is temporarily ₹139. We plan to reduce the price to ₹119 once strawberry prices become affordable again.
+                  </Text>
+                )}
                 {outOfStock && (
                   <Text className="text-[10px] font-sans-bold text-red-500 mt-0.5">
                     OUT OF STOCK
