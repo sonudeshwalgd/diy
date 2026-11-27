@@ -63,6 +63,12 @@ const STATUS_ACTIONS: {
   textClassName: string;
 }[] = [
   {
+    label: "Accepted",
+    status: "accepted",
+    className: "bg-emerald-50 border-emerald-100",
+    textClassName: "text-emerald-700",
+  },
+  {
     label: "Delivered",
     status: "delivered",
     className: "bg-sky-50 border-sky-100",
