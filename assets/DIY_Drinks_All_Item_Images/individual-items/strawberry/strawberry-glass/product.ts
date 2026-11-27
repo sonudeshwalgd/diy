@@ -3,7 +3,7 @@ import type { Subcategory } from "../../../../../data/products";
 const strawberryGlass: Subcategory = {
   id: "strawberry-glass",
   name: "Strawberry Chocolate Glass",
-  price: 152,
+  price: 119,
   image: require("./image.webp"),
 };
 
